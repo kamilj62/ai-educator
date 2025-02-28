@@ -1,6 +1,6 @@
-# MarvelAI - AI-Powered Presentation Generator
+# AI-Educator - AI-Powered Presentation Generator
 
-MarvelAI is an innovative educational tool that uses AI to generate engaging, informative presentations. Built with FastAPI and Next.js, it helps educators create well-structured slides with accurate historical content.
+AI-Educator is an innovative educational tool that uses AI to generate engaging, informative presentations. Built with FastAPI and Next.js, it helps educators create well-structured slides with accurate historical content.
 
 ## Features
 
@@ -26,8 +26,8 @@ MarvelAI is an innovative educational tool that uses AI to generate engaging, in
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/marvelAI.git
-cd marvelAI
+git clone https://github.com/yourusername/ai-educator.git
+cd ai-educator
 ```
 
 2. Install frontend dependencies:
