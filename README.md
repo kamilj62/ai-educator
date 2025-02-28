@@ -26,7 +26,7 @@ AI-Educator is an innovative educational tool that uses AI to generate engaging,
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/ai-educator.git
+git clone https://github.com/kamilj62/ai-educator.git
 cd ai-educator
 ```
 
