@@ -4,7 +4,6 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import InputSection from '../components/InputSection';
 import OutlineEditor from '../components/OutlineEditor';
-import SlidePreview from '../components/SlidePreview';
 
 const Home: React.FC = () => {
   const { error, presentation } = useSelector((state: RootState) => state.presentation);
@@ -27,17 +26,10 @@ const Home: React.FC = () => {
         </Paper>
 
         {presentation?.topics && presentation.topics.length > 0 && (
-          <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
-            <Box sx={{ flex: 1 }}>
-              <Paper elevation={1}>
-                <OutlineEditor />
-              </Paper>
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <Paper elevation={1}>
-                <SlidePreview />
-              </Paper>
-            </Box>
+          <Box sx={{ flex: 1 }}>
+            <Paper elevation={1}>
+              <OutlineEditor />
+            </Paper>
           </Box>
         )}
       </Box>

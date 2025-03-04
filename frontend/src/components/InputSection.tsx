@@ -1,77 +1,82 @@
-import React from 'react';
-import { TextField, Select, MenuItem, FormControl, InputLabel, Button, Box } from '@mui/material';
+import React, { useState } from 'react';
+import {
+  Box,
+  TextField,
+  Button,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  CircularProgress,
+  Typography,
+} from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '../store/store';
-import { generateOutline } from '../store/presentationSlice';
-
-type InstructionalLevel = 'elementary' | 'middle_school' | 'high_school' | 'university' | 'professional';
-
-interface PresentationInput {
-  context: string;
-  num_slides: number;
-  instructional_level: InstructionalLevel;
-}
+import { AppDispatch } from '../store/store';
+import {
+  generateOutline,
+  selectLoading,
+  selectError,
+  InstructionalLevel
+} from '../store/presentationSlice';
 
 const InputSection: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const [input, setInput] = React.useState<PresentationInput>({
-    context: '',
-    num_slides: 5,
-    instructional_level: 'high_school'
-  });
-  const { loading, error } = useSelector((state: RootState) => state.presentation);
+  const loading = useSelector(selectLoading);
+  const error = useSelector(selectError);
 
-  const handleInputChange = (field: keyof PresentationInput, value: string | number) => {
-    setInput(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
+  const [context, setContext] = useState('');
+  const [numSlides, setNumSlides] = useState(5);
+  const [instructionalLevel, setInstructionalLevel] = useState<InstructionalLevel>('high_school');
 
-  const handleGenerateOutline = async () => {
-    try {
-      await dispatch(generateOutline(input)).unwrap();
-    } catch (err) {
-      console.error('Failed to generate outline:', err);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (context.trim()) {
+      try {
+        await dispatch(generateOutline({
+          context,
+          num_slides: numSlides,
+          instructional_level: instructionalLevel
+        })).unwrap();
+      } catch (error) {
+        console.error('Failed to generate outline:', error);
+      }
     }
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 2 }}>
+    <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%', p: 2 }}>
+      {error && (
+        <Typography color="error" sx={{ mb: 2 }}>
+          Error: {error}
+        </Typography>
+      )}
       <TextField
         fullWidth
-        label="Presentation Context"
         multiline
         rows={4}
-        value={input.context}
-        onChange={(e) => handleInputChange('context', e.target.value)}
-        placeholder="Enter your presentation topic or description..."
-        error={!!error}
-        helperText={error}
+        label="Presentation Context"
+        value={context}
+        onChange={(e) => setContext(e.target.value)}
+        disabled={loading}
+        sx={{ mb: 2 }}
       />
-      
-      <Box sx={{ display: 'flex', gap: 2 }}>
-        <FormControl fullWidth>
-          <InputLabel>Number of Slides</InputLabel>
+      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+        <TextField
+          type="number"
+          label="Number of Slides"
+          value={numSlides}
+          onChange={(e) => setNumSlides(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
+          disabled={loading}
+          InputProps={{ inputProps: { min: 1, max: 20 } }}
+          sx={{ width: '200px' }}
+        />
+        <FormControl sx={{ width: '200px' }}>
+          <InputLabel>Level</InputLabel>
           <Select
-            value={input.num_slides}
-            label="Number of Slides"
-            onChange={(e) => handleInputChange('num_slides', Number(e.target.value))}
-          >
-            {[5, 10, 15, 20].map((num) => (
-              <MenuItem key={num} value={num}>
-                {num} slides
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        
-        <FormControl fullWidth>
-          <InputLabel>Educational Level</InputLabel>
-          <Select
-            value={input.instructional_level}
-            label="Educational Level"
-            onChange={(e) => handleInputChange('instructional_level', e.target.value as InstructionalLevel)}
+            value={instructionalLevel}
+            label="Level"
+            onChange={(e) => setInstructionalLevel(e.target.value as InstructionalLevel)}
+            disabled={loading}
           >
             <MenuItem value="elementary">Elementary School</MenuItem>
             <MenuItem value="middle_school">Middle School</MenuItem>
@@ -81,12 +86,12 @@ const InputSection: React.FC = () => {
           </Select>
         </FormControl>
       </Box>
-      
       <Button
+        type="submit"
         variant="contained"
         color="primary"
-        onClick={handleGenerateOutline}
-        disabled={loading || !input.context.trim()}
+        disabled={loading || !context.trim()}
+        startIcon={loading ? <CircularProgress size={20} /> : null}
       >
         {loading ? 'Generating...' : 'Generate Outline'}
       </Button>

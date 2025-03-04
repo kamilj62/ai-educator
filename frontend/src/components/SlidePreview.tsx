@@ -1,148 +1,155 @@
-import React, { useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../store/store';
-import { 
-  SlideContent, 
-  exportPresentation, 
-  ExportFormat,
-  setExportFormat,
-  BulletPoint,
-  Example 
-} from '../store/presentationSlice';
-import { AppDispatch } from '../store/store';
+import React from 'react';
+import {
+  Box,
+  Typography,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
+} from '@mui/material';
+import { NavigateNext, NavigateBefore } from '@mui/icons-material';
+import { SlideContent } from '../store/presentationSlice';
 
-const SlidePreview: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const presentation = useSelector((state: RootState) => state.presentation.presentation);
-  const loading = useSelector((state: RootState) => state.presentation.loading);
-  const error = useSelector((state: RootState) => state.presentation.error);
-  const exportStatus = useSelector((state: RootState) => state.presentation.exportStatus);
-  const exportError = useSelector((state: RootState) => state.presentation.exportError);
-  const [format, setFormat] = useState<ExportFormat>('pdf');
+interface SlidePreviewProps {
+  slides: SlideContent[];
+  currentIndex: number;
+  onPrevious: () => void;
+  onNext: () => void;
+}
 
-  const handleExport = async () => {
-    try {
-      dispatch(setExportFormat(format));
-      await dispatch(exportPresentation()).unwrap();
-      alert('Export successful!');
-    } catch (err) {
-      alert(`Export failed: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  };
-
-  const renderBulletPoints = (bulletPoints: BulletPoint[] = []) => {
-    if (!Array.isArray(bulletPoints) || bulletPoints.length === 0) return null;
-    
+const SlidePreview: React.FC<SlidePreviewProps> = ({
+  slides = [],
+  currentIndex = 0,
+  onPrevious,
+  onNext,
+}) => {
+  if (!slides || slides.length === 0 || !slides[currentIndex]) {
     return (
-      <ul>
-        {bulletPoints.map((point, index) => {
-          if (!point?.text) return null;
-          
-          return (
-            <li key={index}>
-              {point.text}
-              {Array.isArray(point.sub_points) && point.sub_points.length > 0 && (
-                <ul>
-                  {point.sub_points.map((subPoint, subIndex) => (
-                    subPoint ? <li key={subIndex}>{subPoint}</li> : null
-                  ))}
-                </ul>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+      <Box sx={{ p: 2, textAlign: 'center' }}>
+        <Typography variant="body1" color="text.secondary">
+          No slide content available. Please generate slides first.
+        </Typography>
+      </Box>
     );
-  };
-
-  const renderExamples = (examples: Example[] = []) => {
-    if (!Array.isArray(examples) || examples.length === 0) return null;
-
-    return (
-      <div>
-        <h3>Examples</h3>
-        {examples.map((example, index) => {
-          if (!example?.description) return null;
-
-          return (
-            <div key={index}>
-              <h4>{example.description}</h4>
-              {Array.isArray(example.details) && example.details.length > 0 && (
-                <ul>
-                  {example.details.map((detail, detailIndex) => (
-                    detail ? <li key={detailIndex}>{detail}</li> : null
-                  ))}
-                </ul>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
-  if (!presentation?.slides || !Array.isArray(presentation.slides) || presentation.slides.length === 0) {
-    return <div>No slides available</div>;
   }
 
+  const currentSlide = slides[currentIndex];
+
   return (
-    <div>
-      <div style={{ marginBottom: '1rem' }}>
-        <select 
-          value={format} 
-          onChange={(e) => setFormat(e.target.value as ExportFormat)}
+    <Box sx={{ p: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <IconButton 
+          onClick={onPrevious} 
+          disabled={currentIndex === 0}
+          sx={{ mr: 1 }}
         >
-          <option value="pdf">PDF</option>
-          <option value="pptx">PowerPoint</option>
-          <option value="google_slides">Google Slides</option>
-        </select>
-        <button 
-          onClick={handleExport}
-          disabled={exportStatus === 'loading'}
-          style={{ marginLeft: '0.5rem' }}
+          <NavigateBefore />
+        </IconButton>
+        <Typography variant="body1" sx={{ mx: 2 }}>
+          Slide {currentIndex + 1} of {slides.length}
+        </Typography>
+        <IconButton 
+          onClick={onNext} 
+          disabled={currentIndex === slides.length - 1}
+          sx={{ ml: 1 }}
         >
-          {exportStatus === 'loading' ? 'Exporting...' : 'Export'}
-        </button>
-        {exportError && <div style={{ color: 'red', marginTop: '0.5rem' }}>{exportError}</div>}
-      </div>
-
-      <div>
-        {presentation.slides.map((slide, index) => {
-          if (!slide?.title) return null;
-
-          return (
-            <div key={index} style={{ marginBottom: '2rem', padding: '1rem', border: '1px solid #ccc' }}>
-              <h2>{slide.title}</h2>
-              {slide.subtitle && <h3>{slide.subtitle}</h3>}
-              {slide.introduction && <p>{slide.introduction}</p>}
-              
-              {renderBulletPoints(slide.bullet_points)}
-              {renderExamples(slide.examples)}
-
-              {slide.key_takeaway && (
-                <div>
-                  <h3>Key Takeaway</h3>
-                  <p>{slide.key_takeaway}</p>
-                </div>
-              )}
-
-              {Array.isArray(slide.discussion_questions) && slide.discussion_questions.length > 0 && (
-                <div>
-                  <h3>Discussion Questions</h3>
-                  <ul>
-                    {slide.discussion_questions.map((question, questionIndex) => (
-                      question ? <li key={questionIndex}>{question}</li> : null
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
+          <NavigateNext />
+        </IconButton>
+      </Box>
+      <Box sx={{ p: 3, border: '1px solid rgba(0, 0, 0, 0.12)', borderRadius: 1, bgcolor: 'background.paper' }}>
+        <Typography variant="h4" gutterBottom>
+          {currentSlide.title}
+        </Typography>
+        {currentSlide.subtitle && (
+          <Typography variant="h6" gutterBottom color="text.secondary">
+            {currentSlide.subtitle}
+          </Typography>
+        )}
+        {currentSlide.introduction && (
+          <Typography variant="body1" paragraph>
+            {currentSlide.introduction}
+          </Typography>
+        )}
+        {currentSlide.bullet_points?.length > 0 && (
+          <>
+            <Typography variant="subtitle1" gutterBottom sx={{ mt: 2, fontWeight: 'medium' }}>
+              Key Points:
+            </Typography>
+            <List>
+              {currentSlide.bullet_points.map((bullet, idx) => (
+                <ListItem key={idx} sx={{ py: 0.5 }}>
+                  <ListItemText 
+                    primary={bullet.text}
+                    secondary={
+                      bullet.sub_points?.length > 0 && (
+                        <List dense>
+                          {bullet.sub_points.map((sub, subIdx) => (
+                            <ListItem key={subIdx} sx={{ py: 0.5 }}>
+                              <ListItemText secondary={`• ${sub}`} />
+                            </ListItem>
+                          ))}
+                        </List>
+                      )
+                    }
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </>
+        )}
+        {currentSlide.examples?.length > 0 && (
+          <>
+            <Typography variant="subtitle1" gutterBottom sx={{ mt: 2, fontWeight: 'medium' }}>
+              Examples:
+            </Typography>
+            <List>
+              {currentSlide.examples.map((example, idx) => (
+                <ListItem key={idx} sx={{ py: 0.5 }}>
+                  <ListItemText
+                    primary={example.description}
+                    secondary={
+                      example.details?.length > 0 && (
+                        <List dense>
+                          {example.details.map((detail, detailIdx) => (
+                            <ListItem key={detailIdx} sx={{ py: 0.5 }}>
+                              <ListItemText secondary={`• ${detail}`} />
+                            </ListItem>
+                          ))}
+                        </List>
+                      )
+                    }
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </>
+        )}
+        {currentSlide.key_takeaway && (
+          <>
+            <Typography variant="subtitle1" gutterBottom sx={{ mt: 2, fontWeight: 'medium' }}>
+              Key Takeaway:
+            </Typography>
+            <Typography variant="body1" paragraph>
+              {currentSlide.key_takeaway}
+            </Typography>
+          </>
+        )}
+        {currentSlide.discussion_questions?.length > 0 && (
+          <>
+            <Typography variant="subtitle1" gutterBottom sx={{ mt: 2, fontWeight: 'medium' }}>
+              Discussion Questions:
+            </Typography>
+            <List>
+              {currentSlide.discussion_questions.map((question, idx) => (
+                <ListItem key={idx} sx={{ py: 0.5 }}>
+                  <ListItemText primary={`${idx + 1}. ${question}`} />
+                </ListItem>
+              ))}
+            </List>
+          </>
+        )}
+      </Box>
+    </Box>
   );
 };
 
