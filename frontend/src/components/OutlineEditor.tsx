@@ -38,7 +38,6 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
       if (retryTimeout) {
         clearTimeout(retryTimeout);
       }
-      dispatch(setError(null));
     };
   }, [retryTimeout, dispatch]);
 
