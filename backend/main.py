@@ -9,6 +9,7 @@ import logging
 import traceback
 import json
 import time
+import pathlib
 from backend.models import (
     PresentationInput, 
     OutlineResponse, 
@@ -38,6 +39,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Load environment variables
+load_dotenv()
+
 # Load OpenAI API key from credentials or environment
 try:
     api_key = os.environ.get('OPENAI_API_KEY')
@@ -53,7 +57,18 @@ except Exception as e:
     logger.error(f"Error loading credentials: {str(e)}")
     raise
 
-app = FastAPI()
+# Initialize services
+ai_service = None
+rate_limiter = RateLimiter()
+
+# Ensure static directories exist
+STATIC_DIR = pathlib.Path(__file__).parent / "static"
+IMAGES_DIR = STATIC_DIR / "images"
+STATIC_DIR.mkdir(exist_ok=True)
+IMAGES_DIR.mkdir(exist_ok=True)
+logger.info(f"Static directories created: {STATIC_DIR}, {IMAGES_DIR}")
+
+app = FastAPI(title="MarvelAI Presentation Generator")
 
 # Configure CORS
 origins = [
@@ -63,7 +78,6 @@ origins = [
     "https://ai-educator-jfpenqilf-kamilj62s-projects.vercel.app",
     "https://frontend-303seubxr-kamilj62s-projects.vercel.app"
 ]
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -102,18 +116,15 @@ async def generate_outline(input_data: PresentationInput) -> OutlineResponse:
     """Generate presentation outline with enhanced error handling."""
     try:
         logger.info(f"Received outline generation request: {input_data}")
-        
         # Validate input
         if not input_data.context.strip():
             raise HTTPException(status_code=400, detail="Context cannot be empty")
         if not 1 <= input_data.num_slides <= 20:
             raise HTTPException(status_code=400, detail="Number of slides must be between 1 and 20")
-            
         # Check for sensitive topics
         sensitive = is_sensitive_topic(input_data.context)
         if sensitive:
             logger.info(f"Detected sensitive topic in context: {input_data.context}")
-            
         try:
             # Generate outline with safety checks if needed
             response = await ai_service.generate_outline(
@@ -122,16 +133,11 @@ async def generate_outline(input_data: PresentationInput) -> OutlineResponse:
                 level=input_data.instructional_level,
                 sensitive=sensitive
             )
-            
-            logger.info(f"Generated outline with {len(response['topics'])} topics")
-            logger.debug(f"Response: {response}")
-            
             # Convert to OutlineResponse model
             return OutlineResponse(
                 topics=[SlideTopic(**topic) for topic in response["topics"]],
                 warnings=response.get("warnings", [])
             )
-            
         except ContentSafetyError as cse:
             logger.error(f"Content safety error: {str(cse)}")
             return JSONResponse(
@@ -139,20 +145,26 @@ async def generate_outline(input_data: PresentationInput) -> OutlineResponse:
                 content={
                     "type": "SAFETY_VIOLATION",
                     "message": str(cse),
-                    "context": {"topic": input_data.context},
                     "recommendations": [
-                        "Consider focusing on factual, educational content",
+                        "Focus on verified historical facts and academic sources",
+                        "Maintain neutral, balanced perspective",
+                        "Use precise, non-inflammatory language",
+                        "Include multiple viewpoints when appropriate",
+                        "Emphasize historical context and complexity",
+                        "Avoid bias or taking sides",
+                        "Focus on education rather than advocacy",
+                        "Include citations and sources when possible",
+                        "Use appropriate academic tone",
+                        "Consider the educational level of the audience",
                         "Use balanced and objective language",
                         "Include multiple perspectives when appropriate"
                     ]
                 }
             )
-            
     except ValueError as ve:
         logger.error(f"Value error in generate_outline: {str(ve)}")
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=400, detail=str(ve))
-            
     except Exception as e:
         logger.error(f"Error in generate_outline: {str(e)}")
         logger.error(traceback.format_exc())
@@ -161,117 +173,29 @@ async def generate_outline(input_data: PresentationInput) -> OutlineResponse:
             detail=f"Error generating outline: {str(e)}"
         )
 
-@app.post("/api/generate/slides", response_model=SlideContentNew)
-async def generate_slide_content(request: SlideGenerationRequest) -> SlideContentNew:
+@app.post("/api/generate/slide")
+async def generate_slide_content(request: SlideGenerationRequest):
+    """Generate slide content for a given topic."""
     try:
-        slide_content = await ai_service.generate_slide_content(
-            topic=request.topic,
-            instructional_level=request.instructional_level,
-            layout=request.layout
-        )
-        return slide_content
-    except ImageGenerationError as e:
-        error_response = {
-            "type": e.error_type,
-            "message": str(e),
-            "service": e.service,
-            "retry_after": e.retry_after,
-            "context": {
-                "topic": request.topic.title,
-                "level": request.instructional_level,
-                "layout": request.layout
-            },
-            "recommendations": e.recommendations or [
-                "Try again with simpler content",
-                "Check your connection and try again",
-                "Contact support if the issue persists"
-            ]
-        }
-        raise HTTPException(status_code=400, detail=error_response)
-    except ContentSafetyError as e:
-        error_response = {
-            "type": ErrorType.SAFETY_VIOLATION,
-            "message": str(e),
-            "context": {
-                "topic": request.topic.title,
-                "level": request.instructional_level,
-                "layout": request.layout
-            },
-            "recommendations": [
-                "Review content guidelines",
-                "Modify content to comply with safety policies",
-                "Contact support for clarification"
-            ]
-        }
-        raise HTTPException(status_code=400, detail=error_response)
+        logger.info(f"Received slide generation request: {request}")
+        response = await ai_service.generate_slide_content(request)
+        return response
     except Exception as e:
-        error_info = {
-            "type": ErrorType.API_ERROR,
-            "message": f"Error generating slide content: {str(e)}",
-            "context": {
-                "topic": request.topic.title,
-                "level": request.instructional_level,
-                "layout": request.layout,
-                "error_details": traceback.format_exc()
-            },
-            "recommendations": [
-                "Try again with simpler content",
-                "Check your connection and try again",
-                "Contact support if the issue persists"
-            ]
-        }
-        logging.error(f"Error in generate_slide_content: {traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=error_info)
+        logger.error(f"Error generating slide content: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Error generating slide content: {str(e)}")
 
-@app.post("/api/generate-image")
-async def generate_image(request: ImageGenerationRequest):
+@app.post("/api/generate/image")
+async def generate_image(request: dict):
+    """Generate an image for a slide."""
     try:
-        if not request.prompt:
-            raise HTTPException(status_code=400, detail="Prompt is required")
-            
-        logger.info(f"Generating image with prompt: {request.prompt}")
-        response = client.images.generate(
-            model="dall-e-3",
-            prompt=request.prompt,
-            n=1,
-            size="1024x1024"
-        )
-        image_url = response.data[0].url
-        logger.info(f"Generated image URL: {image_url}")
-        return {"imageUrl": image_url}
+        logger.info(f"Received image generation request: {request}")
+        response = await ai_service.generate_image(request)
+        return response
     except Exception as e:
         logger.error(f"Error generating image: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/test-image-generation")
-async def test_image_generation(request: ImageGenerationRequest):
-    """Test endpoint for image generation with proper error handling."""
-    try:
-        # Generate image with automatic fallback to DALL-E if Imagen fails
-        image_base64 = await ai_service.generate_image(request.prompt)
-        return {"status": "success", "image": image_base64}
-    except ImageGenerationError as e:
-        logger.error(f"Image generation error: {e.message} ({e.error_type.value})")
-        return JSONResponse(
-            status_code=500,
-            content={
-                "status": "error",
-                "message": e.message,
-                "error_type": e.error_type.value,
-                "service": e.service.value if e.service else None,
-                "retry_after": e.retry_after
-            }
-        )
-    except Exception as e:
-        logger.error(f"Unexpected error in image generation: {str(e)}")
-        return JSONResponse(
-            status_code=500,
-            content={
-                "status": "error",
-                "message": str(e),
-                "error_type": "UNEXPECTED_ERROR"
-            }
-        )
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Error generating image: {str(e)}")
 
 @app.post("/export")
 async def export_presentation(request: ExportRequest):
@@ -295,34 +219,27 @@ async def quick_export(presentation: Presentation):
         # Create exports directory if it doesn't exist
         export_dir = os.path.join("static", "exports")
         os.makedirs(export_dir, exist_ok=True)
-        
         # Generate filename with timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"renewable_energy_{timestamp}.pptx"
         output_path = os.path.join(export_dir, filename)
-        
         # Create basic presentation
         prs = pptx_Presentation()
-        
         # Add title slide
         title_slide = prs.slides.add_slide(prs.slide_layouts[0])
         title_slide.shapes.title.text = "Renewable Energy"
         subtitle = title_slide.placeholders[1]
         subtitle.text = f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M')}"
-        
         # Add content slides
         for slide in presentation.slides:
             content_slide = prs.slides.add_slide(prs.slide_layouts[1])
             content_slide.shapes.title.text = slide.title
-            
             # Add content
             body_shape = content_slide.shapes.placeholders[1]
             tf = body_shape.text_frame
-            
             for point in slide.bullet_points:
                 p = tf.add_paragraph()
                 p.text = point.text
-            
             # Save image if present
             if slide.image_url:
                 img_path = os.path.join("marvelAI", slide.image_url)
@@ -333,12 +250,9 @@ async def quick_export(presentation: Presentation):
                         Inches(2),
                         width=Inches(8)
                     )
-        
         # Save presentation
         prs.save(output_path)
-        
         return {"file_path": f"exports/{filename}"}
-        
     except Exception as e:
         logger.error(f"Export error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
@@ -354,10 +268,6 @@ def is_sensitive_topic(context: str) -> bool:
         "middle east conflict"
     ]
     return any(topic in context_lower for topic in SENSITIVE_TOPICS)
-
-# Initialize services
-ai_service = None
-rate_limiter = RateLimiter()
 
 @app.on_event("startup")
 async def startup_event():

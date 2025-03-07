@@ -2,6 +2,7 @@ import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { v4 as uuidv4 } from 'uuid';
 import type { Slide, SlideTopic, SlideLayout, InstructionalLevel } from '../components/types';
 import { RootState } from './store';
+import { API_BASE_URL, API_ENDPOINTS } from '../../config';
 
 export type ExportFormat = 'pdf' | 'google_slides' | 'pptx';
 
@@ -93,6 +94,7 @@ export const generateSlides = createAsyncThunk(
           const errorText = await response.text();
           throw new Error(`API Error: ${response.statusText} - ${errorText}`);
         }
+
         const data = await response.json();
         slides.push(data);
       }

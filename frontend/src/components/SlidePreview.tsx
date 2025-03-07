@@ -6,6 +6,7 @@ import {
   List,
   ListItem,
   ListItemText,
+  Paper,
 } from '@mui/material';
 import { NavigateNext, NavigateBefore } from '@mui/icons-material';
 import { SlideContent } from '../store/presentationSlice';
@@ -36,6 +37,18 @@ const SlidePreview: React.FC<SlidePreviewProps> = ({
 
   const currentSlide = slides[currentIndex];
 
+  const getImageUrl = (imageUrl: string) => {
+    // Extract image name from the static/images path
+    const imageName = imageUrl.replace('static/images/', '');
+    const fullUrl = `${imageUrl}`;
+    console.log('Image URL construction:', {
+      originalUrl: imageUrl,
+      imageName,
+      fullUrl
+    });
+    return fullUrl;
+  };
+
   return (
     <Box sx={{ p: 2 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -57,7 +70,7 @@ const SlidePreview: React.FC<SlidePreviewProps> = ({
           <NavigateNext />
         </IconButton>
       </Box>
-      <Box sx={{ p: 3, border: '1px solid rgba(0, 0, 0, 0.12)', borderRadius: 1, bgcolor: 'background.paper' }}>
+      <Paper elevation={2} sx={{ p: 3, borderRadius: 1, bgcolor: 'background.paper' }}>
         <Typography variant="h4" gutterBottom>
           {currentSlide.title}
         </Typography>
@@ -65,6 +78,26 @@ const SlidePreview: React.FC<SlidePreviewProps> = ({
           <Typography variant="h6" gutterBottom color="text.secondary">
             {currentSlide.subtitle}
           </Typography>
+        )}
+        {currentSlide.image_url && (
+          <Box sx={{ my: 3, textAlign: 'center' }}>
+            <img 
+              src={getImageUrl(currentSlide.image_url)}
+              alt={currentSlide.image_caption || 'Slide illustration'}
+              style={{ 
+                maxWidth: '100%', 
+                maxHeight: '400px',
+                objectFit: 'contain',
+                borderRadius: '8px',
+                boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+              }}
+            />
+            {currentSlide.image_caption && (
+              <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
+                {currentSlide.image_caption}
+              </Typography>
+            )}
+          </Box>
         )}
         {currentSlide.introduction && (
           <Typography variant="body1" paragraph>
@@ -107,7 +140,7 @@ const SlidePreview: React.FC<SlidePreviewProps> = ({
               {currentSlide.examples.map((example, idx) => (
                 <ListItem key={idx} sx={{ py: 0.5 }}>
                   <ListItemText
-                    primary={example.description}
+                    primary={example.text}
                     secondary={
                       example.details?.length > 0 && (
                         <List dense>
@@ -149,7 +182,7 @@ const SlidePreview: React.FC<SlidePreviewProps> = ({
             </List>
           </>
         )}
-      </Box>
+      </Paper>
     </Box>
   );
 };
