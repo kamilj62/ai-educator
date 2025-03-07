@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from './store';
+import { API_BASE_URL, API_ENDPOINTS } from '../../config';
 
 export type ExportFormat = 'pdf' | 'google_slides' | 'pptx';
 export type InstructionalLevel = 
@@ -16,13 +17,13 @@ export interface SlideTopic {
 
 export interface BulletPoint {
   text: string;
-  sub_points: string[];
-  emphasis: boolean;
+  sub_points?: string[];
+  emphasis?: boolean;
 }
 
 export interface Example {
-  description: string;
-  details: string[];
+  text: string;
+  details?: string[];
 }
 
 export interface SlideContent {
@@ -33,6 +34,8 @@ export interface SlideContent {
   examples: Example[];
   key_takeaway?: string;
   discussion_questions: string[];
+  image_url?: string;
+  image_caption?: string;
 }
 
 export interface Presentation {
@@ -60,8 +63,6 @@ const initialState: PresentationState = {
   exportError: null
 };
 
-const API_BASE_URL = 'http://localhost:8002/api';
-
 export const generateOutline = createAsyncThunk(
   'presentation/generateOutline',
   async (input: { context: string; num_slides: number; instructional_level: InstructionalLevel }, { rejectWithValue }) => {
@@ -69,7 +70,7 @@ export const generateOutline = createAsyncThunk(
       console.log('Generating outline with input:', input);
       console.log('Using API URL:', API_BASE_URL);
       
-      const response = await fetch(`${API_BASE_URL}/generate-outline`, {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.generateOutline}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -124,7 +125,7 @@ export const generateSlides = createAsyncThunk(
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minute timeout
 
-      const response = await fetch(`${API_BASE_URL}/generate-slides`, {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.generateSlides}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -155,7 +156,7 @@ export const generateSlides = createAsyncThunk(
       const data = await response.json();
       console.log('Received slide data:', data);
       
-      // Return the slide content directly from the response
+      // Return the slide content directly since it's already in the correct format
       return data;
     } catch (error) {
       console.error('Network error:', error);
@@ -181,7 +182,7 @@ export const exportPresentation = createAsyncThunk(
         return rejectWithValue('No presentation to export');
       }
 
-      const response = await fetch(`${API_BASE_URL}/export`, {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.export}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

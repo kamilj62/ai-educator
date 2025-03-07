@@ -48,6 +48,8 @@ class SlideContent(BaseModel):
     bullet_points: List[BulletPoint]
     discussion_questions: List[str]
     examples: List[Example]
+    image_url: Optional[str] = None  # URL or path to the image
+    image_caption: Optional[str] = None  # Optional caption for the image
 
     @validator('title')
     def title_must_not_be_empty(cls, v):

@@ -89,7 +89,7 @@ const OutlineEditor: React.FC = () => {
         const results = await Promise.all(promises);
         console.log('All slides generated successfully:', results);
         
-        // Update slides in presentation
+        // Extract slides from the nested response structure
         const allSlides = results.map(result => result.data.slide);
         dispatch(updateSlides(allSlides));
         
