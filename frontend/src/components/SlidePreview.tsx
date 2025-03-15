@@ -9,7 +9,7 @@ import {
   Paper,
 } from '@mui/material';
 import { NavigateNext, NavigateBefore, Fullscreen, FullscreenExit } from '@mui/icons-material';
-import { SlideContent } from '../store/presentationSlice';
+import { API_BASE_URL } from '../../config';
 import { Slide } from '../components/types';
 
 interface SlidePreviewProps {
@@ -62,18 +62,27 @@ const SlidePreview: React.FC<SlidePreviewProps> = ({
 
   const currentSlide = slides[currentIndex];
 
-  const getImageUrl = (imageUrl: string) => {
-    const imageName = imageUrl.replace('static/images/', '');
-    const fullUrl = `${imageUrl}`;
-    console.log('Image URL construction:', {
-      originalUrl: imageUrl,
-      imageName,
-      fullUrl
-    });
-    return fullUrl;
-
-    return `${API_BASE_URL}/api/images/${imageName}`;
+  // Helper to get image URL and caption (fix type errors)
+  const getImageUrl = (image?: any) => {
+    if (!image) return undefined;
+    if (typeof image === 'string') {
+      const imageName = image.replace('static/images/', '');
+      return `${API_BASE_URL}/api/images/${imageName}`;
+    }
+    if (image.url) {
+      return image.url.startsWith('http') ? image.url : `${API_BASE_URL}/api/images/${image.url.replace('static/images/', '')}`;
+    }
+    return undefined;
   };
+
+  const getImageCaption = (image?: any) => {
+    if (!image) return '';
+    if (typeof image === 'string') return '';
+    return image.caption || image.alt || '';
+  };
+
+  // Helper to safely get array fields
+  const getArray = (field: any) => Array.isArray(field) ? field : [];
 
   return (
     <Box sx={{ p: 2 }}>
@@ -131,15 +140,15 @@ const SlidePreview: React.FC<SlidePreviewProps> = ({
 
         <Box sx={{ mt: isFullscreen ? 6 : 0 }}>
           <Typography variant="h4" gutterBottom>
-            {currentSlide.title}
+            {currentSlide.content.title}
           </Typography>
 
-          {currentSlide.image_url && (
+          {(currentSlide.content?.image) && (
             <Box sx={{ my: 3, textAlign: 'center' }}>
-              <img 
-                src={getImageUrl(currentSlide.image_url)}
-                alt={currentSlide.image_caption || 'Slide illustration'}
-                style={{ 
+              <img
+                src={getImageUrl(currentSlide.content.image)}
+                alt={getImageCaption(currentSlide.content.image) || 'Slide illustration'}
+                style={{
                   maxWidth: '100%',
                   maxHeight: isFullscreen ? '50vh' : '400px',
                   objectFit: 'contain',
@@ -147,17 +156,17 @@ const SlidePreview: React.FC<SlidePreviewProps> = ({
                   boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
                 }}
               />
-              {currentSlide.image_caption && (
+              {getImageCaption(currentSlide.content.image) && (
                 <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                  {currentSlide.image_caption}
+                  {getImageCaption(currentSlide.content.image)}
                 </Typography>
               )}
             </Box>
           )}
 
-          {currentSlide.bullet_points?.length > 0 && (
+          {getArray(currentSlide.content?.bullets).length > 0 && (
             <List>
-              {currentSlide.bullet_points.map((point, index) => (
+              {getArray(currentSlide.content.bullets).map((point: any, index: number) => (
                 <ListItem key={index}>
                   <ListItemText primary={point.text} />
                 </ListItem>
@@ -165,24 +174,24 @@ const SlidePreview: React.FC<SlidePreviewProps> = ({
             </List>
           )}
 
-          {currentSlide.examples?.length > 0 && (
+          {getArray(currentSlide.content?.examples).length > 0 && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="h6" gutterBottom>Examples:</Typography>
               <List>
-                {currentSlide.examples.map((example, index) => (
+                {getArray(currentSlide.content.examples).map((example: any, index: number) => (
                   <ListItem key={index}>
-                    <ListItemText primary={example.text} />
+                    <ListItemText primary={example.text || example} />
                   </ListItem>
                 ))}
               </List>
             </Box>
           )}
 
-          {currentSlide.discussion_questions?.length > 0 && (
+          {getArray(currentSlide.content?.discussion_questions).length > 0 && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="h6" gutterBottom>Discussion Questions:</Typography>
               <List>
-                {currentSlide.discussion_questions.map((question, index) => (
+                {getArray(currentSlide.content.discussion_questions).map((question: any, index: number) => (
                   <ListItem key={index}>
                     <ListItemText primary={question} />
                   </ListItem>
