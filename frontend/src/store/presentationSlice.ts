@@ -1,6 +1,14 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from './store';
-import { API_BASE_URL, API_ENDPOINTS } from '../../config';
+
+// API Configuration
+const API_BASE_URL = 'http://localhost:8005';
+const API_ENDPOINTS = {
+  generateOutline: '/generate/outline',
+  generateSlides: '/generate/slide',
+  generateImage: '/api/test-image-generation',
+  export: '/export'
+};
 
 export type ExportFormat = 'pdf' | 'google_slides' | 'pptx';
 export type InstructionalLevel = 
@@ -67,48 +75,63 @@ export const generateOutline = createAsyncThunk(
   'presentation/generateOutline',
   async (input: { context: string; num_slides: number; instructional_level: InstructionalLevel }, { rejectWithValue }) => {
     try {
-      console.log('Generating outline with input:', input);
-      console.log('Using API URL:', API_BASE_URL);
-      
       const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.generateOutline}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        mode: 'cors',
-        credentials: 'omit',
-        body: JSON.stringify(input),
+        credentials: 'include',  // Include credentials for CORS
+        body: JSON.stringify({
+          context: input.context,
+          num_slides: input.num_slides,
+          instructional_level: input.instructional_level
+        }),
       });
 
-      console.log('Server response:', response.status);
-
       if (!response.ok) {
-        const text = await response.text();
-        console.error('Server error response:', text);
-        let errorMessage;
-        try {
-          const errorData = JSON.parse(text);
-          errorMessage = errorData.detail || `Server error: ${response.status}`;
-        } catch (e) {
-          errorMessage = `Server error: ${text.slice(0, 100)}${text.length > 100 ? '...' : ''}`;
+        const errorData = await response.json();
+        console.error('Server error response:', errorData);
+        
+        // Map to our custom error types from memory
+        let errorMessage = 'An unexpected error occurred';
+        if (errorData.error_type) {
+          switch (errorData.error_type) {
+            case 'RATE_LIMIT':
+              errorMessage = `Rate limit exceeded. Please try again in ${errorData.retry_after} seconds.`;
+              break;
+            case 'QUOTA_EXCEEDED':
+              errorMessage = 'API quota exceeded. Please try again later.';
+              break;
+            case 'SAFETY_VIOLATION':
+              errorMessage = 'Content safety violation detected. Please modify your request.';
+              break;
+            case 'INVALID_REQUEST':
+              errorMessage = errorData.detail || 'Invalid request parameters.';
+              break;
+            case 'API_ERROR':
+              errorMessage = 'API service error. Please try again later.';
+              break;
+            case 'NETWORK_ERROR':
+              errorMessage = 'Network connection error. Please check your connection.';
+              break;
+            default:
+              errorMessage = errorData.detail || 'Server error occurred.';
+          }
         }
         return rejectWithValue(errorMessage);
       }
 
       const data = await response.json();
-      console.log('Received outline data:', data);
-      
       if (!data.topics) {
-        console.error('Invalid response format:', data);
-        return rejectWithValue('Server returned invalid response format');
+        return rejectWithValue('Invalid response format from server');
       }
 
       return {
         topics: data.topics,
         instructional_level: input.instructional_level,
         num_slides: input.num_slides,
-        slides: [] // Initialize empty slides array
+        slides: []
       };
     } catch (error) {
       console.error('Network error:', error);

@@ -11,6 +11,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 class PresentationService:
+    def __init__(self, ai_service):
+        """Initialize PresentationService with required dependencies."""
+        self.ai_service = ai_service
+        logger.info("PresentationService initialized with AIService")
+
     def _add_image_to_slide(self, slide, image_url: str, image_caption: Optional[str] = None):
         """Add an image to a slide with optional caption."""
         try:

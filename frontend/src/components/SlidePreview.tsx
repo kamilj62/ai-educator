@@ -28,26 +28,78 @@ const SlidePreview: React.FC<SlidePreviewProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const slideRef = React.useRef<HTMLDivElement>(null);
 
+  // Check if fullscreen is supported
+  const isFullscreenSupported = document.fullscreenEnabled || 
+    (document as any).webkitFullscreenEnabled || 
+    (document as any).mozFullScreenEnabled ||
+    (document as any).msFullscreenEnabled;
+
   const toggleFullscreen = async () => {
     try {
+      if (!isFullscreenSupported) {
+        console.warn('Fullscreen mode is not supported in this browser');
+        return;
+      }
+
       if (!document.fullscreenElement) {
-        await slideRef.current?.requestFullscreen();
-        setIsFullscreen(true);
+        if (slideRef.current) {
+          // Try different vendor prefixes for better browser support
+          if (slideRef.current.requestFullscreen) {
+            await slideRef.current.requestFullscreen();
+          } else if ((slideRef.current as any).webkitRequestFullscreen) {
+            await (slideRef.current as any).webkitRequestFullscreen();
+          } else if ((slideRef.current as any).mozRequestFullScreen) {
+            await (slideRef.current as any).mozRequestFullScreen();
+          } else if ((slideRef.current as any).msRequestFullscreen) {
+            await (slideRef.current as any).msRequestFullscreen();
+          }
+          setIsFullscreen(true);
+        }
       } else {
-        await document.exitFullscreen();
+        // Try different vendor prefixes for exiting fullscreen
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen();
+        } else if ((document as any).mozCancelFullScreen) {
+          await (document as any).mozCancelFullScreen();
+        } else if ((document as any).msExitFullscreen) {
+          await (document as any).msExitFullscreen();
+        }
         setIsFullscreen(false);
       }
     } catch (err) {
-      console.error('Fullscreen error:', err);
+      // Some browsers may not support fullscreen or may deny the request
+      console.error('Fullscreen error:', err instanceof Error ? err.message : 'Fullscreen mode not supported');
+      // Continue in non-fullscreen mode
+      setIsFullscreen(false);
     }
   };
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      const isInFullscreen = !!(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).mozFullScreenElement ||
+        (document as any).msFullscreenElement
+      );
+      setIsFullscreen(isInFullscreen);
     };
+
+    // Add event listeners for all vendor prefixes
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      // Clean up event listeners
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
   }, []);
 
   if (!slides || slides.length === 0 || !slides[currentIndex]) {
@@ -63,8 +115,14 @@ const SlidePreview: React.FC<SlidePreviewProps> = ({
   const currentSlide = slides[currentIndex];
 
   const getImageUrl = (imageUrl: string) => {
-    const imageName = imageUrl.replace('static/images/', '');
-    return `${API_BASE_URL}/api/images/${imageName}`;
+    // If it's already a full URL, return it as is
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl;
+    }
+    // Handle case where imageUrl might start with a slash
+    const cleanPath = imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl;
+    // Construct the full URL
+    return `${API_BASE_URL}/${cleanPath}`;
   };
 
   return (

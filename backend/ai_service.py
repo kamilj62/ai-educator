@@ -1,61 +1,108 @@
-from typing import List, Optional, Tuple
-from openai import AsyncOpenAI, APIError, RateLimitError, APIConnectionError, APITimeoutError, AuthenticationError
-from google.cloud import aiplatform
-from models import InstructionalLevel, SlideContent, SlideTopic, BulletPoint, Example
-from rate_limiter import RateLimiter
-import json
+from enum import Enum
+from typing import List, Optional, Tuple, Dict, Any
 import os
-import logging
-import traceback
-import aiohttp
 import asyncio
-import re
+import traceback
+import logging
+import tempfile
+import base64
+import json
 from datetime import datetime
 from pathlib import Path
-import hashlib
 import re
+import hashlib
+import vertexai
+from vertexai.preview import generative_models
+from google.cloud import aiplatform
+from google.oauth2 import service_account
+from google.api_core import retry, exceptions
+from fastapi import HTTPException
+from models import InstructionalLevel, SlideContent, SlideTopic, BulletPoint, Example
+from rate_limiter import RateLimiter
+from exceptions import (
+    ImageGenerationError,
+    ImageServiceProvider,
+    ImageGenerationErrorType
+)
+import openai
+from openai import AsyncOpenAI, APIError, RateLimitError, APIConnectionError, APITimeoutError, AuthenticationError
+import time
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
 class AIService:
-    def __init__(self):
-        # Get OpenAI API key
-        self.openai_key = os.getenv("OPENAI_API_KEY")
-        if not self.openai_key:
+    def __init__(self, rate_limiter: RateLimiter):
+        """Initialize the AIService."""
+        self.rate_limiter = rate_limiter
+        self.imagen_available = False
+        
+        # Get OpenAI API key from environment
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
             logger.error("OPENAI_API_KEY environment variable is not set")
             raise ValueError("OPENAI_API_KEY environment variable is not set")
             
+        # Initialize OpenAI client with API key
+        self.client = AsyncOpenAI(api_key=openai_key)
+        
         # Log API key validation (safely)
-        logger.info(f"API Key loaded and starts with: {self.openai_key[:4]}...")
+        logger.info(f"OpenAI API Key loaded and starts with: {openai_key[:4]}...")
             
-        # Initialize rate limiter
-        self.rate_limiter = RateLimiter(
-            requests_per_minute=50,    # Base rate limit
-            requests_per_day=500       # Base daily limit
-        )
-        logger.info("Rate limiter initialized with OpenAI production limits")
+        # Initialize Vertex AI with Google Cloud credentials
+        project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+        if not project_id:
+            raise ValueError("GOOGLE_CLOUD_PROJECT environment variable not set")
             
-        # Initialize AsyncOpenAI client
+        credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        if not credentials_path:
+            raise ValueError("GOOGLE_APPLICATION_CREDENTIALS environment variable not set")
+            
+        if not os.path.exists(credentials_path):
+            raise ValueError(f"Credentials file not found at: {credentials_path}")
+        
+        # Initialize credentials from service account file
         try:
-            self.client = AsyncOpenAI(
-                api_key=self.openai_key,
-                timeout=30.0
+            credentials = service_account.Credentials.from_service_account_file(
+                credentials_path,
+                scopes=["https://www.googleapis.com/auth/cloud-platform"]
             )
-            logger.debug("AsyncOpenAI client initialized successfully")
             
-            # Create images directory if it doesn't exist
-            self.images_dir = Path("static/images")
-            self.images_dir.mkdir(parents=True, exist_ok=True)
-            logger.debug(f"Images directory created at {self.images_dir}")
+            # Verify required roles are present
+            required_roles = [
+                "roles/aiplatform.user",
+                "roles/serviceusage.serviceUsageViewer"
+            ]
             
-        except AuthenticationError as e:
-            logger.error(f"OpenAI API key is invalid: {str(e)}")
-            raise ValueError("Invalid OpenAI API key. Please check your API key and try again.")
+            if hasattr(credentials, 'roles'):
+                missing_roles = [role for role in required_roles if role not in credentials.roles]
+                if missing_roles:
+                    logger.warning(f"Missing required roles: {', '.join(missing_roles)}")
+            
         except Exception as e:
-            logger.error(f"Failed to initialize OpenAI client: {str(e)}")
-            logger.error(traceback.format_exc())
-            raise ValueError(f"Failed to initialize OpenAI client: {str(e)}")
-
+            logger.error(f"Failed to initialize Google Cloud credentials: {str(e)}")
+            raise ValueError(f"Invalid Google Cloud credentials: {str(e)}")
+        
+        # Initialize Vertex AI with the correct project and region
+        try:
+            vertexai.init(
+                project=project_id,
+                location="us-central1",  # Imagen is available in us-central1
+                credentials=credentials
+            )
+            logger.info(f"Initialized AIService with project: {project_id}")
+        except Exception as e:
+            logger.error(f"Failed to initialize Vertex AI: {str(e)}")
+            raise ValueError(f"Failed to initialize Vertex AI: {str(e)}")
+        
+        # Create images directory if it doesn't exist
+        self.images_dir = Path("static/images")
+        self.images_dir.mkdir(parents=True, exist_ok=True)
+        logger.debug(f"Images directory created at {self.images_dir}")
+            
     async def initialize(self):
         """Initialize async components."""
         try:
@@ -211,36 +258,327 @@ class AIService:
             logger.error(f"Failed to download and save image: {str(e)}")
             raise ValueError(f"Failed to download and save image: {str(e)}")
 
-    async def _generate_image_url(self, topic: str, level: InstructionalLevel) -> Tuple[str, str]:
-        """Generate an educational image using DALL-E 3."""
+    async def _verify_imagen_access(self) -> bool:
+        """Verify access to Imagen API."""
         try:
-            # Create a detailed prompt for DALL-E
-            prompt = f"""Create a detailed, educational illustration for {topic}.
-            Style: Clean, modern, suitable for {level.value.replace('_', ' ')} level education.
-            Type: Diagram or illustration that clearly explains key concepts.
-            Must be: Scientifically accurate, visually engaging, and educational."""
+            # 1. Check environment variables (from our memory requirements)
+            project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+            if not project_id:
+                logger.error("GOOGLE_CLOUD_PROJECT environment variable not set")
+                return False
+
+            credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+            if not credentials_path or not os.path.exists(credentials_path):
+                logger.error("Invalid GOOGLE_APPLICATION_CREDENTIALS")
+                return False
+
+            # 2. Load and verify credentials
+            try:
+                from google.oauth2 import service_account
+                import json
+                
+                # Read service account info to verify project
+                with open(credentials_path) as f:
+                    creds_data = json.load(f)
+                    
+                if creds_data.get('project_id') != project_id:
+                    logger.error(f"Project ID mismatch: {project_id} != {creds_data.get('project_id')}")
+                    return False
+                    
+                credentials = service_account.Credentials.from_service_account_file(
+                    credentials_path,
+                    scopes=['https://www.googleapis.com/auth/cloud-platform']
+                )
+                logger.info(f"Successfully loaded credentials for {credentials.service_account_email}")
+            except Exception as e:
+                logger.error(f"Failed to load credentials: {str(e)}")
+                return False
+
+            # 3. Initialize Vertex AI with explicit project and region
+            try:
+                # Initialize Vertex AI with our project settings
+                vertexai.init(
+                    project=project_id,
+                    location="us-central1",
+                    credentials=credentials
+                )
+                logger.info("Successfully initialized Vertex AI")
+                
+                # Get the Imagen model
+                model = generative_models.GenerativeModel("imagegeneration@002")
+                logger.info("Successfully loaded Imagen model")
+            except Exception as e:
+                logger.error(f"Failed to initialize Imagen model: {str(e)}")
+                return False
             
+            # 4. Try a minimal test request
+            try:
+                response = model.generate_content(
+                    "A simple test image of a blue circle"
+                )
+                
+                if response and response.candidates:
+                    logger.info("Successfully generated test image with Imagen")
+                    return True
+                else:
+                    logger.error("Imagen API test request returned no images")
+                    return False
+                    
+            except Exception as e:
+                error_msg = str(e)
+                if "permission" in error_msg.lower():
+                    logger.error(f"Permission error with Imagen API: {error_msg}")
+                elif "quota" in error_msg.lower():
+                    logger.error(f"Quota error with Imagen API: {error_msg}")
+                else:
+                    logger.error(f"Unknown error with Imagen API: {error_msg}")
+                return False
+            
+        except Exception as e:
+            logger.error(f"Failed to verify Imagen access: {str(e)}")
+            return False
+
+    async def generate_image(self, prompt: str, context: Optional[Dict[str, Any]] = None, retry_count: int = 0, max_retries: int = 3) -> str:
+        """Generate image with Imagen, falling back to DALL-E if needed.
+        
+        Args:
+            prompt: The image generation prompt
+            context: Optional dictionary containing request context (e.g., topic, level)
+            retry_count: Current retry attempt number
+            max_retries: Maximum number of retries allowed
+            
+        Returns:
+            str: Base64 encoded image data
+        """
+        try:
+            # First try Imagen
+            try:
+                return await self._generate_image_imagen(prompt, context)
+            except ImageGenerationError as e:
+                logger.warning(f"Imagen generation failed: {e.message}")
+                if retry_count < max_retries:
+                    # Exponential backoff
+                    wait_time = 2 ** retry_count
+                    logger.info(f"Retrying Imagen in {wait_time} seconds...")
+                    await asyncio.sleep(wait_time)
+                    return await self.generate_image(prompt, context, retry_count + 1, max_retries)
+                else:
+                    logger.warning(f"Imagen failed after {max_retries} attempts, falling back to DALL-E")
+                    return await self._generate_image_dalle(prompt, context)
+            except Exception as e:
+                logger.error(f"Unexpected error in Imagen generation: {str(e)}")
+                raise ImageGenerationError(
+                    message=str(e),
+                    error_type=ImageGenerationErrorType.API_ERROR,
+                    service=ImageServiceProvider.IMAGEN
+                )
+
+        except Exception as e:
+            logger.error(f"Failed to generate image: {str(e)}")
+            raise ImageGenerationError(
+                message=str(e),
+                error_type=ImageGenerationErrorType.API_ERROR,
+                service=ImageServiceProvider.IMAGEN
+            )
+
+    async def _generate_image_imagen(self, prompt: str, context: Optional[Dict[str, Any]] = None) -> str:
+        """Generate image using Google Cloud Imagen.
+        
+        Args:
+            prompt: The image generation prompt
+            context: Optional dictionary containing request context (e.g., topic, level)
+            
+        Returns:
+            str: Base64 encoded image data
+        """
+        try:
+            # Wait if we're at the rate limit
+            await self.rate_limiter.wait_if_needed('imagen')
+
+            # Initialize Vertex AI
+            model = generative_models.GenerativeModel("imagegeneration@002")
+
+            # Generate the image
+            response = await model.generate_images(
+                prompt=prompt,
+                number_of_images=1,
+                image_size="1024x1024"
+            )
+
+            # Get the base64 encoded image
+            if response and response.images:
+                return response.images[0].base64
+            else:
+                raise ImageGenerationError(
+                    message="No image generated by Imagen",
+                    error_type=ImageGenerationErrorType.API_ERROR,
+                    service=ImageServiceProvider.IMAGEN
+                )
+
+        except exceptions.PermissionDenied as e:
+            raise ImageGenerationError(
+                message=str(e),
+                error_type=ImageGenerationErrorType.API_ERROR,
+                service=ImageServiceProvider.IMAGEN
+            )
+        except exceptions.ResourceExhausted as e:
+            if "quota" in str(e).lower():
+                raise ImageGenerationError(
+                    message=str(e),
+                    error_type=ImageGenerationErrorType.QUOTA_EXCEEDED,
+                    service=ImageServiceProvider.IMAGEN,
+                    retry_after=3600  # 1 hour
+                )
+            else:
+                raise ImageGenerationError(
+                    message=str(e),
+                    error_type=ImageGenerationErrorType.RATE_LIMIT,
+                    service=ImageServiceProvider.IMAGEN,
+                    retry_after=60  # 1 minute
+                )
+        except exceptions.InvalidArgument as e:
+            if "safety" in str(e).lower():
+                raise ImageGenerationError(
+                    message=str(e),
+                    error_type=ImageGenerationErrorType.SAFETY_VIOLATION,
+                    service=ImageServiceProvider.IMAGEN
+                )
+            else:
+                raise ImageGenerationError(
+                    message=str(e),
+                    error_type=ImageGenerationErrorType.INVALID_REQUEST,
+                    service=ImageServiceProvider.IMAGEN
+                )
+        except exceptions.ServiceUnavailable as e:
+            raise ImageGenerationError(
+                message=str(e),
+                error_type=ImageGenerationErrorType.NETWORK_ERROR,
+                service=ImageServiceProvider.IMAGEN,
+                retry_after=30  # 30 seconds
+            )
+        except Exception as e:
+            raise ImageGenerationError(
+                message=str(e),
+                error_type=ImageGenerationErrorType.API_ERROR,
+                service=ImageServiceProvider.IMAGEN
+            )
+
+    async def _generate_image_dalle(self, prompt: str, context: Optional[Dict[str, Any]] = None) -> str:
+        """Generate image using DALL-E as fallback.
+        
+        Args:
+            prompt: The image generation prompt
+            context: Optional dictionary containing request context (e.g., topic, level)
+            
+        Returns:
+            str: Base64 encoded image data
+        """
+        try:
+            # Wait if we're at the rate limit
+            await self.rate_limiter.wait_if_needed('dalle')
+
+            # Generate the image
             response = await self._make_openai_request(
-                'image',
+                'dalle',
                 self.client.images.generate,
                 model="dall-e-3",
                 prompt=prompt,
+                n=1,
                 size="1024x1024",
-                quality="standard",
-                n=1
+                response_format="b64_json"
             )
-            
-            image_url = response.data[0].url
-            image_caption = f"AI-generated educational illustration for {topic}"
-            
-            # Download and save the image locally
-            local_path = await self._download_and_save_image(image_url)
-            
-            return local_path, image_caption
-                
+
+            if response and response.data:
+                return response.data[0].b64_json
+            else:
+                raise ImageGenerationError(
+                    message="No image generated by DALL-E",
+                    error_type=ImageGenerationErrorType.API_ERROR,
+                    service=ImageServiceProvider.DALLE
+                )
+
         except Exception as e:
-            logger.error(f"Error in generate_image_url: {str(e)}")
-            raise ValueError(str(e))
+            # Convert to our custom error format
+            raise ImageGenerationError.from_dalle_error(e, context)
+
+    async def _generate_image_url(self, topic: str, level: InstructionalLevel) -> Tuple[str, str]:
+        """Generate an educational image using Imagen with DALL-E fallback."""
+        MAX_IMAGEN_RETRIES = 3
+        RETRY_DELAY = 2  # seconds
+
+        # Sanitize topic for file naming
+        safe_topic = topic.lower().replace('/', '_').replace('\\', '_').replace(' ', '_')
+
+        # Generate the base prompt for both services
+        prompt = f"""Create a detailed, educational illustration for {topic}.
+        Style: Clean, modern, suitable for {level.value.replace('_', ' ')} level education.
+        Type: Diagram or illustration that clearly explains key concepts.
+        Must be: Scientifically accurate, visually engaging, and educational."""
+
+        context = {"topic": topic, "level": level.value}
+
+        try:
+            # Try generating with Imagen first (with retries)
+            try:
+                image_data = await self.generate_image(prompt, context=context, max_retries=MAX_IMAGEN_RETRIES)
+                image_path = self._save_base64_image(image_data, f"slide_{safe_topic}")
+                return image_path, "Generated educational illustration with Imagen"
+            except ImageGenerationError as e:
+                # If Imagen fails, try DALL-E
+                logger.warning(f"Imagen generation failed, trying DALL-E: {e.message}")
+                try:
+                    image_data = await self._generate_image_dalle(prompt, context)
+                    image_path = self._save_base64_image(image_data, f"slide_{safe_topic}")
+                    return image_path, "Generated educational illustration with DALL-E"
+                except ImageGenerationError as dalle_error:
+                    # If both fail, raise the DALL-E error
+                    logger.error(f"Both Imagen and DALL-E failed: {dalle_error.message}")
+                    raise dalle_error
+            except Exception as e:
+                logger.error(f"Unexpected error in image generation: {str(e)}")
+                # Try DALL-E as fallback
+                try:
+                    image_data = await self._generate_image_dalle(prompt, context)
+                    image_path = self._save_base64_image(image_data, f"slide_{safe_topic}")
+                    return image_path, "Generated educational illustration with DALL-E"
+                except ImageGenerationError as dalle_error:
+                    logger.error(f"DALL-E fallback also failed: {dalle_error.message}")
+                    raise dalle_error
+
+        except Exception as e:
+            if isinstance(e, ImageGenerationError):
+                raise e
+            logger.error(f"Failed to generate image: {str(e)}")
+            raise ImageGenerationError(
+                message=str(e),
+                error_type=ImageGenerationErrorType.API_ERROR,
+                service=ImageServiceProvider.IMAGEN
+            )
+
+    def _save_base64_image(self, base64_data: str, name_prefix: str) -> str:
+        """Save a base64 encoded image to the static directory."""
+        try:
+            # Create a hash of the image data for unique naming
+            image_hash = hashlib.md5(base64_data.encode()).hexdigest()[:8]
+            # Sanitize the name prefix to avoid directory path issues
+            safe_prefix = name_prefix.replace('/', '_').replace('\\', '_').lower()
+            image_name = f"{safe_prefix}_{image_hash}.png"
+            image_path = self.images_dir / image_name
+
+            # Decode and save the image
+            image_data = base64.b64decode(base64_data)
+            with open(image_path, "wb") as f:
+                f.write(image_data)
+
+            # Return the URL path (without domain) that will be served by FastAPI's static files
+            return f"static/images/{image_name}"
+        except Exception as e:
+            logger.error(f"Error saving image: {str(e)}")
+            raise ImageGenerationError(
+                message=f"Failed to save generated image: {str(e)}",
+                error_type=ImageGenerationErrorType.API_ERROR,
+                service=ImageServiceProvider.IMAGEN
+            )
 
     async def generate_outline(self, context: str, num_slides: int, level: InstructionalLevel) -> List[SlideTopic]:
         """Generate a presentation outline based on context and parameters."""
@@ -347,7 +685,18 @@ class AIService:
             content_data = await self._validate_json_response(response_text)
             
             # Generate an image for the slide
-            image_path, image_caption = await self._generate_image_url(topic.title, level)
+            try:
+                image_path, image_caption = await self._generate_image_url(topic.title, level)
+            except ImageGenerationError as e:
+                # Re-raise ImageGenerationError to be handled by the endpoint
+                raise
+            except Exception as e:
+                # Convert other errors to ImageGenerationError
+                raise ImageGenerationError(
+                    message=f"Failed to generate image: {str(e)}",
+                    error_type=ImageGenerationErrorType.API_ERROR,
+                    service=ImageServiceProvider.IMAGEN
+                )
             
             # Create the slide content
             return SlideContent(
@@ -355,20 +704,23 @@ class AIService:
                 bullet_points=[BulletPoint(text=point) for point in content_data["bullet_points"]],
                 examples=[Example(text=example) for example in content_data["examples"]],
                 discussion_questions=content_data["discussion_questions"],
-                image_url=str(image_path),
+                image_url=image_path,
                 image_caption=image_caption
             )
             
+        except ImageGenerationError:
+            # Re-raise ImageGenerationError to be handled by the endpoint
+            raise
         except Exception as e:
             logger.error(f"Error generating slide content: {str(e)}")
             logger.error(traceback.format_exc())
             raise ValueError(f"Failed to generate slide content: {str(e)}")
 
-    async def enhance_content(self, slide_content: SlideContent, level: InstructionalLevel) -> SlideContent:
+    async def enhance_content(self, slide_content: SlideContent) -> SlideContent:
         """Enhance slide content with Gemini Pro (optional enhancement)."""
         try:
             # Initialize Vertex AI
-            aiplatform.init(project=os.getenv("GOOGLE_CLOUD_PROJECT"))
+            vertexai.init(project="marvelai-imagen")
             return slide_content
         except Exception as e:
             logger.error(f"Error in enhance_content: {str(e)}")

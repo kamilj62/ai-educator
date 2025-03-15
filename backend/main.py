@@ -1,9 +1,11 @@
-from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Body
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse, Response
-from fastapi.exceptions import RequestValidationError
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, ValidationError
+import uvicorn
+import os
+import logging
+import traceback
 from models import (
     PresentationInput, 
     OutlineResponse, 
@@ -12,172 +14,75 @@ from models import (
     SlideTopic,
     InstructionalLevel,
     SlideContent,
-    SlideGenerationRequest
+    SlideGenerationRequest,
+    ImageGenerationRequest
 )
 from ai_service import AIService
-from presentation_service import PresentationService
-import logging
-import traceback
-import json
-from typing import List, Dict, Any, Union
-import asyncio
-from contextlib import asynccontextmanager
-import os
-from dotenv import load_dotenv
-import pathlib
+from rate_limiter import RateLimiter
+from exceptions import ImageGenerationError
 
-# Load environment variables
-load_dotenv()
-
-# Configure logging with more detail
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Check OpenAI API key
-api_key = os.getenv('OPENAI_API_KEY')
-if not api_key:
-    logger.error("OPENAI_API_KEY not found in environment variables")
-    raise RuntimeError("OPENAI_API_KEY not found in environment variables")
-else:
-    # Only log the first few characters for security
-    logger.info(f"OPENAI_API_KEY found, starts with: {api_key[:4]}...")
+app = FastAPI()
 
-# Initialize services
-ai_service = None
-presentation_service = None
-
-# Ensure static directories exist
-STATIC_DIR = pathlib.Path(__file__).parent / "static"
-IMAGES_DIR = STATIC_DIR / "images"
-STATIC_DIR.mkdir(exist_ok=True)
-IMAGES_DIR.mkdir(exist_ok=True)
-logger.info(f"Static directories created: {STATIC_DIR}, {IMAGES_DIR}")
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Initialize services on startup
-    global ai_service, presentation_service
-    try:
-        ai_service = AIService()
-        await ai_service.initialize()
-        presentation_service = PresentationService()
-        logger.info("Services initialized successfully")
-    except Exception as e:
-        logger.error(f"Failed to initialize services: {str(e)}")
-        logger.error(traceback.format_exc())
-        raise
-    yield
-    # Cleanup on shutdown (if needed)
-    logger.info("Shutting down services")
-
-app = FastAPI(title="MarvelAI Presentation Generator", lifespan=lifespan)
-
-# Configure CORS
+# Configure CORS with specific origins
 origins = [
-    "http://localhost:3000",  # Next.js frontend
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:3002",
+    "http://localhost:3003",
+    "http://localhost:3004",
+    "http://localhost:3005",
+    "http://localhost:3006",
+    "http://localhost:3007",
     "http://127.0.0.1:3000",
-    "http://localhost:3001",  # Alternative Next.js port
     "http://127.0.0.1:3001",
+    "http://127.0.0.1:3002",
+    "http://127.0.0.1:3003",
+    "http://127.0.0.1:3004",
+    "http://127.0.0.1:3005",
+    "http://127.0.0.1:3006",
+    "http://127.0.0.1:3007",
+    "http://127.0.0.1:58802",  # Current browser preview proxy
+    "http://127.0.0.1:63932",  # Previous browser preview proxy
+    "http://127.0.0.1:56737",  # Previous browser preview proxy
+    "http://127.0.0.1:53543",  # Previous browser preview proxy
+    "http://127.0.0.1:49616"   # Previous browser preview proxy
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_credentials=True,  # Changed to True to allow credentials
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Accept", "Authorization", "X-Requested-With"],
+    max_age=86400  # Cache preflight requests for 24 hours
 )
 
-@app.get("/api/images/{image_name}")
-async def get_image(image_name: str, request: Request):
-    """Serve images with proper CORS headers."""
-    try:
-        # Log request details
-        logger.debug(f"Received image request: {request.url}")
-        logger.debug(f"Request headers: {dict(request.headers)}")
-        
-        image_path = IMAGES_DIR / image_name
-        logger.debug(f"Looking for image at path: {image_path}")
-        
-        if not image_path.exists():
-            logger.error(f"Image not found: {image_path}")
-            raise HTTPException(status_code=404, detail="Image not found")
-        
-        # Log file details
-        file_stat = image_path.stat()
-        logger.debug(f"Image file stats: size={file_stat.st_size}, modified={file_stat.st_mtime}")
-        
-        # Read the image file
-        with open(image_path, "rb") as f:
-            image_data = f.read()
-        
-        logger.debug(f"Successfully read image data: {len(image_data)} bytes")
-        
-        # Return the image with proper headers
-        headers = {
-            "Content-Disposition": f'inline; filename="{image_name}"',
-            "Access-Control-Allow-Origin": "*",
-            "Cache-Control": "public, max-age=3600"
-        }
-        logger.debug(f"Sending response with headers: {headers}")
-        
-        return Response(
-            content=image_data,
-            media_type="image/png",
-            headers=headers
-        )
-    except Exception as e:
-        logger.error(f"Error serving image {image_name}: {str(e)}")
-        logger.error(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+# Mount static files directory for images
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Initialize rate limiter and AI service
+rate_limiter = RateLimiter()
+ai_service = AIService(rate_limiter)
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services on startup."""
+    await ai_service.initialize()
+    logger.info("AI service initialized")
 
 @app.get("/")
 async def root():
-    """Root endpoint."""
-    return {"message": "MarvelAI Presentation Generator API"}
+    return {"message": "Welcome to the Marvel AI Presentation Generator API"}
 
-@app.get("/health")
-async def health_check():
-    """Health check endpoint."""
-    try:
-        # Test OpenAI connection
-        await ai_service.test_connection()
-        return {"status": "healthy", "message": "All services operational"}
-    except Exception as e:
-        logger.error(f"Health check failed: {str(e)}")
-        return JSONResponse(
-            status_code=500,
-            content={"status": "unhealthy", "message": str(e)}
-        )
-
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    """Handle validation errors."""
-    logger.error(f"Validation error: {str(exc)}")
-    return JSONResponse(
-        status_code=422,
-        content={"detail": str(exc)},
-    )
-
-@app.exception_handler(Exception)
-async def general_exception_handler(request: Request, exc: Exception):
-    """Handle all other exceptions."""
-    logger.error(f"Unhandled exception: {str(exc)}")
-    logger.error(traceback.format_exc())
-    return JSONResponse(
-        status_code=500,
-        content={"detail": str(exc)},
-    )
-
-@app.post("/api/generate-outline")
-async def generate_outline(input_data: PresentationInput):
-    """Generate a presentation outline based on the input context."""
+@app.post("/generate/outline")
+async def generate_outline(input_data: PresentationInput) -> dict:
     try:
         logger.info(f"Received outline generation request: {input_data}")
-        logger.debug(f"Request data: {json.dumps(input_data.dict(), indent=2)}")
+        logger.debug(f"Request data: {input_data.dict()}")
         
         # Validate input
         if not input_data.context.strip():
@@ -196,7 +101,7 @@ async def generate_outline(input_data: PresentationInput):
             )
             
             logger.info(f"Generated {len(topics)} topics")
-            logger.debug(f"Topics: {json.dumps([topic.dict() for topic in topics], indent=2)}")
+            logger.debug(f"Topics: {[topic.dict() for topic in topics]}")
             
             return {"topics": [topic.dict() for topic in topics]}
             
@@ -223,12 +128,11 @@ async def generate_outline(input_data: PresentationInput):
             detail=f"Unexpected error: {str(e)}"
         )
 
-@app.post("/api/generate-slides")
-async def generate_slides(request: SlideGenerationRequest):
-    """Generate content for a single slide."""
+@app.post("/generate/slide")
+async def generate_slide_content(request: SlideGenerationRequest):
     try:
         logger.info(f"Received slide generation request for topic: {request.topic.title}")
-        logger.debug(f"Request data: {json.dumps(request.dict(), indent=2)}")
+        logger.debug(f"Request data: {request.dict()}")
         
         try:
             slide_content = await ai_service.generate_slide_content(
@@ -237,7 +141,7 @@ async def generate_slides(request: SlideGenerationRequest):
             )
             
             logger.info(f"Successfully generated content for topic: {request.topic.title}")
-            logger.debug(f"Slide content: {json.dumps(slide_content.dict(), indent=2)}")
+            logger.debug(f"Slide content: {slide_content.dict()}")
             
             # Return slide content in a consistent format
             return {
@@ -246,6 +150,19 @@ async def generate_slides(request: SlideGenerationRequest):
                     "warnings": []  # Add any warnings if needed
                 }
             }
+            
+        except ImageGenerationError as e:
+            logger.error(f"Image generation error: {e.message} ({e.error_type.value})")
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "message": e.message,
+                    "error_type": e.error_type.value,
+                    "service": e.service.value if e.service else None,
+                    "retry_after": e.retry_after
+                }
+            )
             
         except ValueError as ve:
             logger.error(f"Value error in generate_slide_content: {str(ve)}")
@@ -270,12 +187,42 @@ async def generate_slides(request: SlideGenerationRequest):
             detail=f"Unexpected error: {str(e)}"
         )
 
-@app.post("/api/export")
+@app.post("/api/test-image-generation")
+async def test_image_generation(request: ImageGenerationRequest):
+    """Test endpoint for image generation with proper error handling."""
+    try:
+        # Generate image with automatic fallback to DALL-E if Imagen fails
+        image_base64 = await ai_service.generate_image(request.prompt)
+        return {"status": "success", "image": image_base64}
+    except ImageGenerationError as e:
+        logger.error(f"Image generation error: {e.message} ({e.error_type.value})")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error",
+                "message": e.message,
+                "error_type": e.error_type.value,
+                "service": e.service.value if e.service else None,
+                "retry_after": e.retry_after
+            }
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error in image generation: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error",
+                "message": str(e),
+                "error_type": "UNEXPECTED_ERROR"
+            }
+        )
+
+@app.post("/export")
 async def export_presentation(request: ExportRequest):
     """Export presentation to specified format."""
     try:
         logger.info(f"Received export request for format: {request.format}")
-        result = presentation_service.export_presentation(request)
+        result = ai_service.export_presentation(request)
         return {"file_path": result}
     except Exception as e:
         logger.error(f"Error exporting presentation: {str(e)}")
@@ -286,21 +233,4 @@ async def export_presentation(request: ExportRequest):
         )
 
 if __name__ == "__main__":
-    import uvicorn
-    import sys
-    
-    try:
-        logger.info("Starting server...")
-        uvicorn.run(
-            app,  
-            host="127.0.0.1",  
-            port=8002,
-            reload=False,  
-            log_level="debug",
-            access_log=True,
-            workers=1
-        )
-    except Exception as e:
-        logger.error(f"Failed to start server: {str(e)}")
-        logger.error(traceback.format_exc())
-        sys.exit(1)
+    uvicorn.run("main:app", host="0.0.0.0", port=8005, reload=True)

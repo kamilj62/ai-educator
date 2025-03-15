@@ -222,7 +222,7 @@ const OutlineEditor: React.FC = () => {
             slides={presentation.slides}
             currentIndex={currentSlideIndex}
             onPrevious={() => setCurrentSlideIndex(Math.max(0, currentSlideIndex - 1))}
-            onNext={() => setCurrentSlideIndex(Math.min(presentation.slides.length - 1, currentSlideIndex + 1))}
+            onNext={() => setCurrentSlideIndex(Math.min((presentation?.slides?.length ?? 1) - 1, currentSlideIndex + 1))}
           />
         )}
       </Box>

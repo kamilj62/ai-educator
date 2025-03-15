@@ -124,3 +124,7 @@ class ExportFormat(str, Enum):
 class ExportRequest(BaseModel):
     presentation: Presentation
     format: ExportFormat
+
+class ImageGenerationRequest(BaseModel):
+    """Request model for image generation."""
+    prompt: str = Field(..., description="The prompt to generate an image from")
