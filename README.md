@@ -64,7 +64,7 @@ npm install
 # From the project root
 source venv/bin/activate
 cd backend
-python main.py
+python3 main.py
 ```
 
 2. Start the frontend development server:
