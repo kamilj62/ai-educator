@@ -1,72 +1,99 @@
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { Box, Paper, Typography, styled } from '@mui/material';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import { Slide } from './types';
-
-const SlidePreview = styled(Paper, {
-  shouldForwardProp: (prop) => prop !== 'isActive',
-})<{ isActive?: boolean }>(({ theme, isActive }) => ({
-  padding: theme.spacing(2),
-  marginBottom: theme.spacing(1),
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  gap: theme.spacing(1),
-  backgroundColor: isActive ? theme.palette.primary.light : theme.palette.background.paper,
-  '&:hover': {
-    backgroundColor: isActive ? theme.palette.primary.light : theme.palette.grey[100],
-  },
-}));
-
-const PreviewContent = styled(Box)({
-  flex: 1,
-  overflow: 'hidden',
-});
+import React from 'react';
+import { Card, CardContent, Typography, Box } from '@mui/material';
+import { Slide } from '../types';
 
 interface SortableSlideProps {
   slide: Slide;
+  isDragging?: boolean;
   isActive?: boolean;
-  onClick: () => void;
+  onClick?: () => void;
+  index?: number;
 }
 
-export const SortableSlide = ({ slide, isActive, onClick }: SortableSlideProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: slide.id });
+const SortableSlide: React.FC<SortableSlideProps> = ({
+  slide,
+  isDragging = false,
+  isActive = false,
+  onClick,
+  index = 0,
+}) => {
+  const renderThumbnail = () => {
+    return (
+      <Box sx={{ p: 1.5 }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: 'block', mb: 0.5 }}
+        >
+          Slide {index + 1}
+        </Typography>
+        <Typography
+          variant="body2"
+          sx={{
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            lineHeight: 1.4,
+            fontWeight: isActive ? 500 : 400,
+            color: isActive ? 'primary.main' : 'text.primary',
+          }}
+        >
+          {slide.content.title || 'Untitled Slide'}
+        </Typography>
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  const getPreviewText = () => {
-    const title = slide.content.title?.replace(/<[^>]*>/g, '') || 'Untitled Slide';
-    return title.length > 30 ? `${title.substring(0, 30)}...` : title;
+        {slide.content.image?.url && (
+          <Box
+            sx={{
+              mt: 1,
+              width: '100%',
+              height: '60px',
+              overflow: 'hidden',
+              borderRadius: 1,
+              border: 1,
+              borderColor: 'divider',
+            }}
+          >
+            <img 
+              src={slide.content.image.url} 
+              alt={slide.content.image.alt || 'Slide thumbnail'} 
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover'
+              }}
+            />
+          </Box>
+        )}
+      </Box>
+    );
   };
 
   return (
-    <SlidePreview
-      ref={setNodeRef}
-      style={style}
-      isActive={isActive}
+    <Card
+      sx={{
+        height: '100px',
+        cursor: 'pointer',
+        opacity: isDragging ? 0.5 : 1,
+        transition: 'all 0.2s ease-in-out',
+        border: isActive ? '2px solid' : '1px solid',
+        borderColor: isActive ? 'primary.main' : 'divider',
+        backgroundColor: isActive ? 'action.selected' : 'background.paper',
+        '&:hover': {
+          borderColor: 'primary.main',
+          backgroundColor: isActive ? 'action.selected' : 'action.hover',
+          transform: isDragging ? 'none' : 'translateY(-2px)',
+        },
+      }}
       onClick={onClick}
-      elevation={isDragging ? 4 : 1}
+      elevation={isActive ? 2 : 1}
     >
-      <Box {...attributes} {...listeners}>
-        <DragIndicatorIcon color="action" />
-      </Box>
-      <PreviewContent>
-        <Typography variant="body2" noWrap>
-          {getPreviewText()}
-        </Typography>
-      </PreviewContent>
-    </SlidePreview>
+      <CardContent sx={{ height: '100%', p: '0 !important' }}>
+        {renderThumbnail()}
+      </CardContent>
+    </Card>
   );
 };
+
+export default SortableSlide;

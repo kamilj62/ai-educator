@@ -1,242 +1,217 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Typography,
-  List,
-  ListItem,
-  ListItemText,
-  IconButton,
   Button,
-  Drawer,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Typography,
   CircularProgress,
+  Alert,
+  AlertTitle,
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon, Close as CloseIcon } from '@mui/icons-material';
-import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch } from '../store/store';
-import {
-  selectPresentation,
-  selectLoading,
-  selectError,
-  updateTopics,
-  updateSlides,
-  generateSlides,
-  SlideTopic,
-  SlideContent,
-} from '../store/presentationSlice';
-import EditDialog from './EditDialog';
-import SlidePreview from './SlidePreview';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { generateOutline, selectError, clearError, InstructionalLevel, APIError } from '../store/presentationSlice';
+import { LayoutSelector } from './SlideEditor/components/LayoutSelector';
+import { BackendSlideLayout } from './SlideEditor/types';
 
-const OutlineEditor: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const presentation = useSelector(selectPresentation);
-  const loading = useSelector(selectLoading);
-  const error = useSelector(selectError);
-  const topics = presentation?.topics || [];
+interface OutlineEditorProps {
+  onOutlineGenerated?: () => void;
+}
 
-  const [editingTopic, setEditingTopic] = useState<{ index: number; topic: SlideTopic } | null>(null);
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => {
+  const dispatch = useAppDispatch();
+  const error = useAppSelector(selectError) as APIError | null;
+  const [topic, setTopic] = useState('');
+  const [numSlides, setNumSlides] = useState(5);
+  const [level, setLevel] = useState<InstructionalLevel>('high_school');
+  const [layout, setLayout] = useState<BackendSlideLayout>('title-bullets');
+  const [isLayoutSelectorOpen, setIsLayoutSelectorOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [retryTimeout, setRetryTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  const handleEditTopic = (index: number, topic: SlideTopic) => {
-    console.log('Editing topic:', { index, topic });
-    console.log('Current slide:', presentation?.slides?.[index]);
-    setEditingTopic({ index, topic });
-  };
-
-  const handleSaveTopic = (updatedTopic: SlideTopic, updatedSlide?: SlideContent) => {
-    if (editingTopic === null) return;
-    
-    console.log('Saving topic:', { updatedTopic, updatedSlide });
-    
-    const updatedTopics = [...topics];
-    updatedTopics[editingTopic.index] = updatedTopic;
-    
-    if (updatedSlide && presentation?.slides) {
-      const updatedSlides = [...presentation.slides];
-      updatedSlides[editingTopic.index] = updatedSlide;
-      dispatch(updateSlides(updatedSlides));
-    }
-    
-    dispatch(updateTopics(updatedTopics));
-    setEditingTopic(null);
-  };
-
-  const handleDeleteTopic = (index: number) => {
-    const updatedTopics = topics.filter((_, i) => i !== index);
-    dispatch(updateTopics(updatedTopics));
-    
-    if (presentation?.slides) {
-      const updatedSlides = presentation.slides.filter((_, i) => i !== index);
-      dispatch(updateSlides(updatedSlides));
-    }
-
-    if (currentSlideIndex >= updatedTopics.length) {
-      setCurrentSlideIndex(Math.max(0, updatedTopics.length - 1));
-    }
-  };
-
-  const handleGenerateSlides = async () => {
-    if (topics.length > 0 && presentation?.instructional_level) {
-      try {
-        console.log('Starting slide generation...');
-        const promises = topics.map(topic => 
-          dispatch(generateSlides({ 
-            topic,
-            instructional_level: presentation.instructional_level 
-          })).unwrap()
-        );
-        
-        const results = await Promise.all(promises);
-        console.log('All slides generated successfully:', results);
-        
-        // Extract slides from the nested response structure
-        const allSlides = results.map(result => result.data.slide);
-        dispatch(updateSlides(allSlides));
-        
-        // Show first slide after generation
-        setCurrentSlideIndex(0);
-        setIsPreviewOpen(true);
-      } catch (error) {
-        console.error('Failed to generate slides:', error);
-        // Error is already handled by the Redux store
+  useEffect(() => {
+    return () => {
+      if (retryTimeout) {
+        clearTimeout(retryTimeout);
       }
-    } else {
-      console.error('Cannot generate slides: missing topics or instructional level', {
-        topicsLength: topics.length,
-        instructionalLevel: presentation?.instructional_level
-      });
+      dispatch(clearError());
+    };
+  }, [retryTimeout, dispatch]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!topic.trim()) {
+      return;
+    }
+
+    setIsLoading(true);
+    dispatch(clearError());
+
+    try {
+      await dispatch(generateOutline({
+        topic: topic.trim(),
+        numSlides: Math.max(1, Math.min(20, numSlides)),
+        instructionalLevel: level,
+      })).unwrap();
+      onOutlineGenerated?.();
+    } catch (err) {
+      const apiError = err as APIError;
+      if (apiError?.type === 'RATE_LIMIT' && apiError?.retryAfter) {
+        const timeout = setTimeout(() => {
+          setRetryTimeout(null);
+          dispatch(clearError());
+        }, apiError.retryAfter * 1000);
+        setRetryTimeout(timeout);
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleViewSlide = (index: number) => {
-    if (presentation?.slides?.length) {
-      setCurrentSlideIndex(index);
-      setIsPreviewOpen(true);
+  const handleLayoutSelect = (selectedLayout: BackendSlideLayout) => {
+    setLayout(selectedLayout);
+    setIsLayoutSelectorOpen(false);
+  };
+
+  const getErrorSeverity = (errorType?: string): 'error' | 'warning' => {
+    switch (errorType) {
+      case 'SAFETY_VIOLATION':
+      case 'NETWORK_ERROR':
+        return 'error';
+      case 'RATE_LIMIT':
+      case 'QUOTA_EXCEEDED':
+        return 'warning';
+      default:
+        return 'warning';
     }
   };
 
-  if (!presentation || topics.length === 0) {
-    return (
-      <Box sx={{ p: 2, textAlign: 'center' }}>
-        <Typography variant="body1" color="text.secondary">
-          No presentation content available. Please generate an outline first.
-        </Typography>
-      </Box>
-    );
-  }
+  const getErrorTitle = (errorType?: string): string => {
+    switch (errorType) {
+      case 'RATE_LIMIT':
+        return 'Rate Limit Exceeded';
+      case 'QUOTA_EXCEEDED':
+        return 'API Quota Exceeded';
+      case 'SAFETY_VIOLATION':
+        return 'Content Safety Warning';
+      case 'INVALID_REQUEST':
+        return 'Invalid Request';
+      case 'API_ERROR':
+        return 'API Error';
+      case 'NETWORK_ERROR':
+        return 'Network Error';
+      default:
+        return 'Error';
+    }
+  };
+
+  const getErrorMessage = (error: APIError): string => {
+    if (error.type === 'SAFETY_VIOLATION') {
+      return `The topic "${error.context?.topic}" contains potentially sensitive content. Please ensure your topic is appropriate for educational purposes.`;
+    }
+    return error.message;
+  };
 
   return (
-    <Box sx={{ display: 'flex', width: '100%', gap: 2, p: 2 }}>
-      {/* Left side - Outline */}
-      <Box sx={{ width: '50%' }}>
-        {error && (
-          <Typography color="error" sx={{ mb: 2 }}>
-            Error: {error}
-          </Typography>
-        )}
-        <Typography variant="h6" gutterBottom>
-          Presentation Outline
-        </Typography>
-        <List sx={{ width: '100%' }}>
-          {topics.map((topic: SlideTopic, index: number) => (
-            <ListItem
-              key={index}
-              onClick={() => handleViewSlide(index)}
-              sx={{ 
-                mb: 1,
-                border: '1px solid rgba(0, 0, 0, 0.12)',
-                borderRadius: 1,
-                cursor: presentation?.slides?.length ? 'pointer' : 'default',
-                '&:hover': presentation?.slides?.length ? { bgcolor: 'action.hover' } : undefined,
-                bgcolor: currentSlideIndex === index ? 'action.selected' : undefined
-              }}
-            >
-              <Box sx={{ width: '100%' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
-                  <ListItemText
-                    primary={
-                      <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
-                        {`${index + 1}. ${topic.title}`}
-                      </Typography>
-                    }
-                    secondary={topic.description}
-                    sx={{ pr: 2 }}
-                  />
-                  <Box>
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditTopic(index, topic);
-                      }}
-                      sx={{ mr: 1 }}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteTopic(index);
-                      }}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                </Box>
-                {presentation?.slides?.[index]?.bullet_points && presentation.slides[index].bullet_points.length > 0 && (
-                  <Box sx={{ mt: 1, pl: 2, borderLeft: '2px solid rgba(0, 0, 0, 0.12)' }}>
-                    {presentation.slides[index].bullet_points.slice(0, 3).map((bullet, idx) => (
-                      <Typography key={idx} variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                        • {bullet.text}
-                      </Typography>
-                    ))}
-                    {presentation.slides[index].bullet_points.length > 3 && (
-                      <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                        + {presentation.slides[index].bullet_points.length - 3} more points...
-                      </Typography>
-                    )}
-                  </Box>
-                )}
-              </Box>
-            </ListItem>
-          ))}
-        </List>
-        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleGenerateSlides}
-            disabled={loading}
-            startIcon={loading ? <CircularProgress size={20} /> : undefined}
-          >
-            {loading ? 'Generating...' : 'Generate Slides'}
-          </Button>
-        </Box>
-      </Box>
+    <Box
+      component="form"
+      onSubmit={handleSubmit}
+      sx={{ width: '100%', maxWidth: 600, mx: 'auto' }}
+    >
+      <Typography variant="h5" gutterBottom>
+        Generate Presentation Outline
+      </Typography>
 
-      {/* Right side - Slide Preview */}
-      <Box sx={{ width: '50%' }}>
-        {presentation?.slides && presentation.slides.length > 0 && (
-          <SlidePreview
-            slides={presentation.slides}
-            currentIndex={currentSlideIndex}
-            onPrevious={() => setCurrentSlideIndex(Math.max(0, currentSlideIndex - 1))}
-            onNext={() => setCurrentSlideIndex(Math.min((presentation?.slides?.length ?? 1) - 1, currentSlideIndex + 1))}
-          />
-        )}
-      </Box>
-
-      {/* Edit Dialog */}
-      {editingTopic && presentation?.slides && (
-        <EditDialog
-          open={true}
-          topic={editingTopic.topic}
-          slide={presentation.slides[editingTopic.index]}
-          onClose={() => setEditingTopic(null)}
-          onSave={handleSaveTopic}
-        />
+      {error && (
+        <Alert 
+          severity={getErrorSeverity(error.type)}
+          onClose={() => dispatch(clearError())}
+          sx={{ mb: 2, whiteSpace: 'pre-wrap' }}
+        >
+          <AlertTitle>{getErrorTitle(error.type)}</AlertTitle>
+          {getErrorMessage(error)}
+          {error.retryAfter && (
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              Please try again in {error.retryAfter} seconds.
+            </Typography>
+          )}
+        </Alert>
       )}
+
+      <TextField
+        fullWidth
+        label="Topic"
+        value={topic}
+        onChange={(e) => setTopic(e.target.value)}
+        margin="normal"
+        required
+        error={!!error && error.type === 'SAFETY_VIOLATION'}
+        helperText={error?.type === 'SAFETY_VIOLATION' ? getErrorMessage(error) : ''}
+      />
+
+      <TextField
+        fullWidth
+        type="number"
+        label="Number of Slides"
+        value={numSlides}
+        onChange={(e) => setNumSlides(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
+        margin="normal"
+        inputProps={{ min: 1, max: 20 }}
+        required
+      />
+
+      <FormControl 
+        fullWidth 
+        margin="normal"
+      >
+        <InputLabel>Instructional Level</InputLabel>
+        <Select
+          value={level}
+          onChange={(e) => setLevel(e.target.value as InstructionalLevel)}
+          label="Instructional Level"
+          required
+        >
+          <MenuItem value="elementary">Elementary School</MenuItem>
+          <MenuItem value="middle_school">Middle School</MenuItem>
+          <MenuItem value="high_school">High School</MenuItem>
+          <MenuItem value="university">University</MenuItem>
+          <MenuItem value="professional">Professional</MenuItem>
+        </Select>
+      </FormControl>
+
+      <Button
+        variant="outlined"
+        onClick={() => setIsLayoutSelectorOpen(true)}
+        sx={{ mt: 2, mb: 1 }}
+        disabled={isLoading}
+      >
+        {layout ? `Selected Layout: ${layout}` : 'Select Layout'}
+      </Button>
+
+      <LayoutSelector
+        open={isLayoutSelectorOpen}
+        onClose={() => setIsLayoutSelectorOpen(false)}
+        onSelect={handleLayoutSelect}
+        topic={{
+          title: topic || 'Untitled',
+          key_points: [],
+          image_prompt: topic ? `Generate an educational image for ${topic}` : undefined,
+        }}
+      />
+
+      <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          disabled={isLoading || !!retryTimeout || !topic.trim()}
+        >
+          {isLoading ? <CircularProgress size={24} /> : 'Generate'}
+        </Button>
+      </Box>
     </Box>
   );
 };
