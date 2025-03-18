@@ -2,7 +2,7 @@ import { Box, styled } from '@mui/material';
 import BaseLayout from './BaseLayout';
 import TiptapEditor from '../components/TiptapEditor';
 import ImageUploader from '../components/ImageUploader';
-import { Slide } from '../types';
+import type { Slide, ImageService } from '../types';
 
 const ContentContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -22,15 +22,25 @@ const Column = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   gap: theme.spacing(2),
+  minHeight: 0,
+  '& .tiptap-editor': {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    '& .ProseMirror': {
+      flex: 1,
+    },
+  },
 }));
 
 interface TwoColumnLayoutProps {
   slide: Slide;
-  onChange: (slide: Slide) => void;
+  onChange: (updatedSlide: Slide) => void;
   onImageUpload?: (file: File) => Promise<string>;
+  onImageGenerate?: (prompt: string, service?: ImageService) => Promise<string>;
 }
 
-const TwoColumnLayout = ({ slide, onChange, onImageUpload }: TwoColumnLayoutProps) => {
+const TwoColumnLayout = ({ slide, onChange, onImageUpload, onImageGenerate }: TwoColumnLayoutProps) => {
   const handleTitleChange = (content: string) => {
     onChange({
       ...slide,
@@ -68,10 +78,23 @@ const TwoColumnLayout = ({ slide, onChange, onImageUpload }: TwoColumnLayoutProp
         ...slide.content,
         image: {
           url: imageUrl,
-          alt: 'Slide image',
-        },
+          alt: `Educational illustration for ${slide.content.title || 'two-column slide'}`,
+          service: 'dalle',
+          caption: ''
+        }
       },
     });
+  };
+
+  const handleImageGenerate = async (prompt: string) => {
+    if (onImageGenerate) {
+      try {
+        const url = await onImageGenerate(prompt, 'dalle');
+        handleImageChange(url);
+      } catch (error) {
+        console.error('Failed to generate image:', error);
+      }
+    }
   };
 
   return (
@@ -93,13 +116,14 @@ const TwoColumnLayout = ({ slide, onChange, onImageUpload }: TwoColumnLayoutProp
             />
           </Column>
           <Column>
-            {slide.layout === 'two-column-image' ? (
+            {slide.layout === 'two-column-image' && (
               <ImageUploader
                 imageUrl={slide.content.image?.url}
                 onImageChange={handleImageChange}
                 onImageUpload={onImageUpload}
               />
-            ) : (
+            )}
+            {slide.layout !== 'two-column-image' && (
               <TiptapEditor
                 content={slide.content.columnRight || ''}
                 onChange={handleRightColumnChange}
