@@ -44,8 +44,15 @@ const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', edit
         placeholder,
       },
     },
-    immediatelyRender: false, // Fix SSR hydration issue
+    immediatelyRender: false
   });
+
+  // Update editor content when prop changes
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content);
+    }
+  }, [editor, content]);
 
   // Call onMount when editor is ready
   useEffect(() => {

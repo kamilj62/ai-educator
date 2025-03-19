@@ -25,6 +25,7 @@ export type SlideImage = {
   alt: string;
   caption?: string;
   service: ImageService;
+  prompt?: string;
   metadata?: {
     topics?: string[];
     level?: 'low' | 'medium' | 'high';
@@ -45,6 +46,7 @@ export type SlideContent = {
   body?: string;
   bullets?: BulletPoint[];
   image?: SlideImage;
+  image_prompt?: string;
   columnLeft?: string;
   columnRight?: string;
   instructionalLevel?: InstructionalLevel;
