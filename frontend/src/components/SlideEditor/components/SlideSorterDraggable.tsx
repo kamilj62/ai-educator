@@ -9,6 +9,7 @@ interface SlideSorterDraggableProps {
   activeSlideId?: string;
   onSlidesReorder: (newSlides: Slide[]) => void;
   onSlideSelect: (slideId: string) => void;
+  onSlideDelete: (slideId: string) => void;
 }
 
 const SlideSorterDraggable: React.FC<SlideSorterDraggableProps> = ({
@@ -16,6 +17,7 @@ const SlideSorterDraggable: React.FC<SlideSorterDraggableProps> = ({
   activeSlideId,
   onSlidesReorder,
   onSlideSelect,
+  onSlideDelete,
 }) => {
   const [isReady, setIsReady] = useState(false);
 
@@ -34,22 +36,7 @@ const SlideSorterDraggable: React.FC<SlideSorterDraggableProps> = ({
     onSlidesReorder(items);
   };
 
-  if (!isReady) {
-    return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {slides.map((slide, index) => (
-          <Box key={slide.id}>
-            <SortableSlide
-              slide={slide}
-              index={index}
-              isActive={slide.id === activeSlideId}
-              onClick={() => onSlideSelect(slide.id)}
-            />
-          </Box>
-        ))}
-      </Box>
-    );
-  }
+  if (!isReady) return null;
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
@@ -58,23 +45,22 @@ const SlideSorterDraggable: React.FC<SlideSorterDraggableProps> = ({
           <Box
             {...provided.droppableProps}
             ref={provided.innerRef}
-            sx={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
               gap: 2,
-              minHeight: '100%'
+              p: 2,
+              height: '100%',
+              overflowY: 'auto'
             }}
           >
             {slides.map((slide, index) => (
               <Draggable key={slide.id} draggableId={slide.id} index={index}>
-                {(dragProvided, snapshot) => (
-                  <Box
-                    ref={dragProvided.innerRef}
-                    {...dragProvided.draggableProps}
-                    {...dragProvided.dragHandleProps}
-                    sx={{
-                      position: 'relative',
-                    }}
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
                   >
                     <SortableSlide
                       slide={slide}
@@ -82,8 +68,9 @@ const SlideSorterDraggable: React.FC<SlideSorterDraggableProps> = ({
                       isDragging={snapshot.isDragging}
                       isActive={slide.id === activeSlideId}
                       onClick={() => onSlideSelect(slide.id)}
+                      onDelete={() => onSlideDelete(slide.id)}
                     />
-                  </Box>
+                  </div>
                 )}
               </Draggable>
             ))}
