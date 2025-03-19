@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { Box, Button, Typography, styled, CircularProgress } from '@mui/material';
 import { AddPhotoAlternate as AddPhotoIcon, Refresh as RefreshIcon } from '@mui/icons-material';
+import { SlideImage, ImageService } from '../types';
 
 const UploadContainer = styled('div')(({ theme }) => ({
   width: '100%',
@@ -29,204 +30,159 @@ const ImagePreview = styled('img')({
 });
 
 export interface ImageUploaderProps {
-  imageUrl?: string;
-  onImageChange: (imageUrl: string) => void;
+  currentImage?: SlideImage;
+  onImageChange: (image: SlideImage) => void;
   onImageUpload?: (file: File) => Promise<string>;
-  onImageGenerate?: (prompt: string) => Promise<string>;
-  generatePrompt?: string;
+  onImageGenerate?: (prompt: string, service?: ImageService) => Promise<string>;
   maxWidth?: number;
   maxHeight?: number;
   acceptedTypes?: string[];
 }
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
-  imageUrl,
+  currentImage,
   onImageChange,
   onImageUpload,
   onImageGenerate,
-  generatePrompt,
   maxWidth = 1920,
   maxHeight = 1080,
   acceptedTypes = ['image/jpeg', 'image/png', 'image/gif'],
 }) => {
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleImageSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleFileUpload = useCallback(async (file: File) => {
+    if (!onImageUpload) return;
 
     try {
-      setLoading(true);
+      setIsLoading(true);
       setError(null);
-
-      // Validate file type
-      if (!acceptedTypes.includes(file.type)) {
-        throw new Error(`Please select a valid image file (${acceptedTypes.map(type => type.split('/')[1]).join(', ')})`);
-      }
-
-      // Create a URL for the selected file
-      const tempUrl = URL.createObjectURL(file);
-
-      // Load the image to check dimensions
-      const img = new Image();
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-        img.src = tempUrl;
+      const imageUrl = await onImageUpload(file);
+      onImageChange({
+        url: imageUrl,
+        alt: currentImage?.alt || '',
+        caption: currentImage?.caption || '',
+        service: 'upload',
       });
-
-      // Clean up the temporary URL
-      URL.revokeObjectURL(tempUrl);
-
-      // Check dimensions
-      if (img.width > maxWidth || img.height > maxHeight) {
-        throw new Error(`Image dimensions should not exceed ${maxWidth}x${maxHeight} pixels`);
-      }
-
-      // Upload the image if a handler is provided
-      if (onImageUpload) {
-        const uploadedUrl = await onImageUpload(file);
-        onImageChange(uploadedUrl);
-      } else {
-        // Convert to base64 for local storage
-        const reader = new FileReader();
-        const base64String = await new Promise<string>((resolve, reject) => {
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-        onImageChange(base64String);
-      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to process image');
+      setError('Failed to upload image. Please try again.');
       console.error('Image upload error:', err);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  }, [onImageChange, onImageUpload, maxWidth, maxHeight, acceptedTypes]);
+  }, [onImageUpload, onImageChange, currentImage]);
 
-  const handleRetry = () => {
-    setError(null);
-    document.getElementById('image-upload')?.click();
-  };
+  const handleImageGenerate = useCallback(async () => {
+    if (!onImageGenerate || !currentImage) {
+      console.error('ImageUploader - Cannot generate image:', { onImageGenerate: !!onImageGenerate, currentImage });
+      return;
+    }
+
+    const prompt = currentImage.prompt || '';
+    if (!prompt) {
+      console.error('ImageUploader - No prompt provided for image generation');
+      return;
+    }
+
+    try {
+      console.log('ImageUploader - Generating image with prompt:', prompt);
+      setIsLoading(true);
+      setError(null);
+      const imageUrl = await onImageGenerate(prompt, 'dalle');
+      onImageChange({
+        url: imageUrl,
+        alt: currentImage.alt || prompt,
+        caption: currentImage.caption || prompt,
+        service: 'dalle',
+        prompt
+      });
+    } catch (err) {
+      setError('Failed to generate image. Please try again.');
+      console.error('Image generation error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [onImageGenerate, onImageChange, currentImage]);
+
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!onImageUpload) return;
+
+    const file = e.dataTransfer.files[0];
+    if (file && acceptedTypes.includes(file.type)) {
+      handleFileUpload(file);
+    } else {
+      setError('Please upload a valid image file (JPEG, PNG, or GIF).');
+    }
+  }, [acceptedTypes, handleFileUpload, onImageUpload]);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0]) return;
+    handleFileUpload(e.target.files[0]);
+  }, [handleFileUpload]);
 
   return (
-    <Box sx={{ width: '100%', height: '100%' }}>
-      {imageUrl ? (
-        <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
-          <ImagePreview src={imageUrl} alt="Slide content" />
-          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center', gap: 2 }}>
+    <Box>
+      {currentImage?.url ? (
+        <Box sx={{ textAlign: 'center' }}>
+          <ImagePreview src={currentImage.url} alt={currentImage.alt || 'Slide image'} />
+          <Box sx={{ mt: 2, display: 'flex', gap: 1, justifyContent: 'center' }}>
             <Button
               variant="outlined"
-              component="label"
               startIcon={<RefreshIcon />}
+              onClick={() => onImageChange({ url: '', alt: '', caption: '', service: 'upload' })}
             >
               Change Image
-              <input
-                id="image-upload"
-                type="file"
-                accept={acceptedTypes.join(',')}
-                onChange={handleImageSelect}
-                style={{ display: 'none' }}
-              />
             </Button>
-            {onImageGenerate && generatePrompt && (
-              <Button
-                variant="outlined"
-                onClick={async () => {
-                  try {
-                    setLoading(true);
-                    setError(null);
-                    const url = await onImageGenerate(generatePrompt);
-                    onImageChange(url);
-                  } catch (err) {
-                    setError(err instanceof Error ? err.message : 'Failed to generate image');
-                    console.error('Image generation error:', err);
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-                startIcon={<RefreshIcon />}
-              >
-                Generate New
-              </Button>
-            )}
           </Box>
         </Box>
       ) : (
-        <UploadContainer>
-          <input
-            id="image-upload"
-            type="file"
-            accept={acceptedTypes.join(',')}
-            onChange={handleImageSelect}
-            style={{ display: 'none' }}
-          />
-          {loading ? (
-            <>
-              <CircularProgress size={40} />
-              <Typography variant="body1" color="text.secondary">
-                {onImageGenerate ? 'Generating image...' : 'Uploading image...'}
-              </Typography>
-            </>
-          ) : error ? (
-            <>
-              <Typography variant="body1" color="error" align="center">
-                {error}
-              </Typography>
-              <Button
-                variant="outlined"
-                onClick={handleRetry}
-                startIcon={<RefreshIcon />}
-              >
-                Try Again
-              </Button>
-            </>
+        <UploadContainer
+          onDrop={handleDrop}
+          onDragOver={(e) => e.preventDefault()}
+          onDragEnter={(e) => e.preventDefault()}
+        >
+          {isLoading ? (
+            <CircularProgress />
           ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}>
-              <Button
-                component="label"
-                variant="outlined"
-                startIcon={<AddPhotoIcon />}
-                sx={{ p: 2 }}
-              >
-                Upload Image
-                <input
-                  type="file"
-                  accept={acceptedTypes.join(',')}
-                  onChange={handleImageSelect}
-                  style={{ display: 'none' }}
-                />
-              </Button>
-              {onImageGenerate && generatePrompt && (
+            <>
+              <AddPhotoIcon sx={{ fontSize: 48, color: 'action.active' }} />
+              <Typography variant="body1" color="text.secondary" align="center">
+                Drag and drop an image here, or click to select
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2 }}>
                 <Button
-                  variant="outlined"
-                  onClick={async () => {
-                    try {
-                      setLoading(true);
-                      setError(null);
-                      const url = await onImageGenerate(generatePrompt);
-                      onImageChange(url);
-                    } catch (err) {
-                      setError(err instanceof Error ? err.message : 'Failed to generate image');
-                      console.error('Image generation error:', err);
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
+                  variant="contained"
+                  component="label"
+                  disabled={isLoading || !onImageUpload}
                 >
-                  Generate Image
+                  Upload Image
+                  <input
+                    type="file"
+                    hidden
+                    accept={acceptedTypes.join(',')}
+                    onChange={handleFileSelect}
+                  />
                 </Button>
+                {onImageGenerate && (
+                  <Button
+                    variant="outlined"
+                    onClick={handleImageGenerate}
+                    disabled={isLoading}
+                  >
+                    Generate Image
+                  </Button>
+                )}
+              </Box>
+              {error && (
+                <Typography variant="body2" color="error" align="center">
+                  {error}
+                </Typography>
               )}
-            </Box>
+            </>
           )}
-          <Typography variant="caption" color="text.secondary" align="center">
-            Supported formats: {acceptedTypes.map(type => type.split('/')[1]).join(', ')}
-          </Typography>
-          <Typography variant="caption" color="text.secondary" align="center">
-            Max size: {maxWidth}x{maxHeight}px
-          </Typography>
         </UploadContainer>
       )}
     </Box>

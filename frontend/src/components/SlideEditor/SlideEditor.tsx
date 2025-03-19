@@ -1,10 +1,14 @@
-import React, { useEffect } from 'react';
-import { Box, Typography } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { Box, Typography, Button, IconButton, Tooltip } from '@mui/material';
+import SaveIcon from '@mui/icons-material/Save';
+import EditIcon from '@mui/icons-material/Edit';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../store/store';
 import { setActiveSlide, setSlides } from '../../store/presentationSlice';
 import SlideSorter from './components/SlideSorter';
-import { Slide } from './types';
+import SavePresentation from './components/SavePresentation';
+import SlideEditDialog from './components/SlideEditDialog';
+import { Slide, ImageService } from './types';
 import SlideLayoutRenderer from './components/SlideLayoutRenderer';
 
 const SlideEditor: React.FC = () => {
@@ -13,19 +17,29 @@ const SlideEditor: React.FC = () => {
   const activeSlideId = useSelector((state: RootState) => state.presentation.activeSlideId);
   const activeSlide = slides.find(slide => slide.id === activeSlideId);
 
-  // Set the first slide as active if none is selected
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+  // Set the first slide as active when slides are loaded
   useEffect(() => {
     if (slides.length > 0 && !activeSlideId) {
       dispatch(setActiveSlide(slides[0].id));
     }
   }, [slides, activeSlideId, dispatch]);
 
-  const handleSlideSelect = (slideId: string) => {
-    dispatch(setActiveSlide(slideId));
+  const handleSlideSelect = async (slideId: string) => {
+    if (slideId !== activeSlideId) {
+      const selectedSlide = slides.find(s => s.id === slideId);
+      dispatch(setActiveSlide(slideId));
+    }
   };
 
   const handleSlidesReorder = (newSlides: Slide[]) => {
     dispatch(setSlides(newSlides));
+    // Ensure we have an active slide after reordering
+    if (!activeSlideId && newSlides.length > 0) {
+      dispatch(setActiveSlide(newSlides[0].id));
+    }
   };
 
   const handleSlideChange = (updatedSlide: Slide) => {
@@ -33,6 +47,44 @@ const SlideEditor: React.FC = () => {
       slide.id === updatedSlide.id ? updatedSlide : slide
     );
     dispatch(setSlides(newSlides));
+  };
+
+  const handleImageUpload = async (file: File): Promise<string> => {
+    // TODO: Implement actual file upload
+    return URL.createObjectURL(file);
+  };
+
+  const handleImageGenerate = async (prompt: string, service: ImageService = 'dalle'): Promise<string> => {
+    try {
+      console.log('SlideEditor - Generating image:', { prompt, service });
+      const response = await fetch('http://localhost:8000/api/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          prompt,
+          context: { service }
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('SlideEditor - Image generation failed:', error);
+        throw new Error(error.detail || 'Failed to generate image');
+      }
+
+      const data = await response.json();
+      console.log('SlideEditor - Image generated:', data);
+      return data.imageUrl;
+    } catch (error) {
+      console.error('SlideEditor - Error generating image:', error);
+      throw error;
+    }
+  };
+
+  const handleSave = (filename: string) => {
+    console.log(`Presentation saved as ${filename}.json`);
   };
 
   return (
@@ -46,72 +98,77 @@ const SlideEditor: React.FC = () => {
         width: 300, 
         borderRight: 1, 
         borderColor: 'divider',
-        overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column'
       }}>
+        <Box sx={{ 
+          p: 2, 
+          borderBottom: 1, 
+          borderColor: 'divider',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <Typography variant="h6">Slides</Typography>
+          <Tooltip title="Save Presentation">
+            <IconButton onClick={() => setSaveDialogOpen(true)}>
+              <SaveIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
         <SlideSorter
           slides={slides}
           onSlidesReorder={handleSlidesReorder}
           onSlideSelect={handleSlideSelect}
-          activeSlideId={activeSlideId ?? undefined}
+          activeSlideId={activeSlideId || ''}
         />
       </Box>
 
-      <Box sx={{ 
-        flex: 1,
-        p: 3,
-        overflow: 'auto',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
+      <Box sx={{ flex: 1, p: 3, overflow: 'auto' }}>
         {activeSlide ? (
-          <Box sx={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: 0
-          }}>
-            <Box sx={{
-              width: '100%',
-              maxWidth: '90%',
-              aspectRatio: '16/9',
-              backgroundColor: 'background.paper',
-              borderRadius: 1,
-              boxShadow: 3,
-              overflow: 'hidden',
-              position: 'relative'
+          <>
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'flex-end', 
+              mb: 2
             }}>
-              <Box sx={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                overflow: 'auto'
-              }}>
-                <SlideLayoutRenderer 
-                  slide={activeSlide} 
-                  onChange={handleSlideChange}
-                />
-              </Box>
+              <Button
+                startIcon={<EditIcon />}
+                variant="contained"
+                onClick={() => setEditDialogOpen(true)}
+              >
+                Edit Slide
+              </Button>
             </Box>
-          </Box>
+            <SlideLayoutRenderer
+              slide={activeSlide}
+              onChange={handleSlideChange}
+            />
+          </>
         ) : (
-          <Box sx={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <Typography variant="h6" color="text.secondary">
-              {slides.length === 0 ? 'No slides available' : 'Select a slide to edit'}
-            </Typography>
-          </Box>
+          <Typography variant="h6" sx={{ textAlign: 'center', mt: 4 }}>
+            Select a slide to edit
+          </Typography>
         )}
       </Box>
+
+      <SavePresentation
+        open={saveDialogOpen}
+        onClose={() => setSaveDialogOpen(false)}
+        onSave={handleSave}
+        slides={slides}
+      />
+
+      {activeSlide && (
+        <SlideEditDialog
+          open={editDialogOpen}
+          onClose={() => setEditDialogOpen(false)}
+          slide={activeSlide}
+          onSave={handleSlideChange}
+          onImageUpload={handleImageUpload}
+          onImageGenerate={handleImageGenerate}
+        />
+      )}
     </Box>
   );
 };
