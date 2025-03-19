@@ -22,7 +22,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import ImageIcon from '@mui/icons-material/Image';
-import { Slide, SlideLayout, BulletPoint, ImageService, SlideImage } from '../types';
+import { Slide, SlideLayout, BulletPoint, ImageService, SlideImage, convertLayoutToFrontend, convertLayoutToBackend } from '../types';
 import ImageUploader from './ImageUploader';
 
 interface SlideEditDialogProps {
@@ -56,6 +56,11 @@ const layoutOptions: { value: SlideLayout; label: string; description: string }[
     description: 'A title with an image below',
   },
   {
+    value: 'title-body-image',
+    label: 'Title, Body & Image',
+    description: 'A title with a text body and an image below',
+  },
+  {
     value: 'two-column',
     label: 'Two Columns',
     description: 'Content split into two columns',
@@ -72,9 +77,16 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
 }) => {
   const [editedSlide, setEditedSlide] = useState<Slide>({
     ...slide,
+    layout: convertLayoutToFrontend(slide.layout),
     content: {
       ...slide.content,
       bullets: slide.content.bullets ? [...slide.content.bullets] : [],
+      image: slide.content.image_prompt ? {
+        url: '',
+        alt: '',
+        prompt: slide.content.image_prompt,
+        service: 'dalle' as ImageService
+      } : slide.content.image
     },
   });
 
@@ -82,51 +94,37 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   useEffect(() => {
     const newSlide = {
       ...slide,
+      layout: convertLayoutToFrontend(slide.layout),
       content: {
         ...slide.content,
         bullets: slide.content.bullets ? [...slide.content.bullets] : [],
-      },
+        image: slide.content.image_prompt ? {
+          url: '',
+          alt: '',
+          prompt: slide.content.image_prompt,
+          service: 'dalle' as ImageService
+        } : slide.content.image
+      }
     };
     setEditedSlide(newSlide);
 
-    // Auto-generate image if needed when dialog opens
-    if (open && 
-        slide.content.image_prompt && 
-        (!slide.content.image || !slide.content.image.url) &&
-        onImageGenerate) {
+    // Auto-generate image if needed
+    if (slide.content.image_prompt && !slide.content.image?.url) {
       console.log('Auto-generating image in edit dialog');
-      onImageGenerate(slide.content.image_prompt).then(imageUrl => {
-        const updatedSlide = {
-          ...newSlide,
-          content: {
-            ...newSlide.content,
-            image: {
-              url: imageUrl,
-              alt: slide.content.image_prompt || '',
-              caption: slide.content.image_prompt || '',
-              service: 'dalle' as ImageService,
-              prompt: slide.content.image_prompt
-            }
-          }
-        };
-        setEditedSlide(updatedSlide);
-        onSave(updatedSlide); // Save the changes back to the parent
-      }).catch(error => {
-        console.error('Failed to auto-generate image:', error);
-      });
+      handleImageGenerate(slide.content.image_prompt);
     }
-  }, [slide, open, onImageGenerate, onSave]);
+  }, [slide]);
 
   const handleLayoutChange = (newLayout: SlideLayout) => {
     // Create a new content object based on the selected layout
     const newContent = {
       title: editedSlide.content.title || '',
       subtitle: editedSlide.content.subtitle,
-      body: newLayout === 'title-body' ? (editedSlide.content.body || '') : undefined,
+      body: (newLayout === 'title-body' || newLayout === 'title-body-image') ? (editedSlide.content.body || '') : undefined,
       bullets: (newLayout === 'title-bullets' || newLayout === 'title-bullets-image') ? (editedSlide.content.bullets || []) : undefined,
       columnLeft: newLayout === 'two-column' ? (editedSlide.content.columnLeft || '') : undefined,
       columnRight: newLayout === 'two-column' ? (editedSlide.content.columnRight || '') : undefined,
-      image: (newLayout === 'title-image' || newLayout === 'title-bullets-image') ? editedSlide.content.image : undefined,
+      image: (newLayout === 'title-image' || newLayout === 'title-bullets-image' || newLayout === 'title-body-image') ? editedSlide.content.image : undefined,
     };
 
     setEditedSlide({
@@ -222,8 +220,27 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     }));
   };
 
+  const handleImageGenerate = async (prompt: string) => {
+    if (!onImageGenerate) return;
+    try {
+      const imageUrl = await onImageGenerate(prompt, 'dalle');
+      handleImageChange({
+        url: imageUrl,
+        alt: prompt,
+        caption: prompt,
+        service: 'dalle',
+        prompt
+      });
+    } catch (err) {
+      console.error('Failed to generate image:', err);
+    }
+  };
+
   const handleSave = () => {
-    onSave(editedSlide);
+    onSave({
+      ...editedSlide,
+      layout: convertLayoutToBackend(editedSlide.layout)
+    });
     onClose();
   };
 
@@ -261,7 +278,7 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
             onChange={(e) => handleSubtitleChange(e.target.value)}
           />
 
-          {editedSlide.layout === 'title-body' && (
+          {(editedSlide.layout === 'title-body' || editedSlide.layout === 'title-body-image') && (
             <TextField
               fullWidth
               label="Body"
@@ -329,7 +346,9 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
             </Grid>
           )}
 
-          {(editedSlide.layout === 'title-image' || editedSlide.layout === 'title-bullets-image') && (
+          {(editedSlide.layout === 'title-image' || 
+            editedSlide.layout === 'title-bullets-image' || 
+            editedSlide.layout === 'title-body-image') && (
             <Box>
               <Typography variant="h6" gutterBottom>Image</Typography>
               <ImageUploader

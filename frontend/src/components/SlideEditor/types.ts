@@ -59,13 +59,23 @@ export type Slide = {
 };
 
 // Layout conversion utilities
-export const convertLayoutToBackend = (layout: SlideLayout): SlideLayout => {
-  return layout;
-};
+export function convertLayoutToFrontend(layout: SlideLayout): SlideLayout {
+  switch (layout) {
+    case 'title-body-image':
+      return 'title-bullets-image';
+    default:
+      return layout;
+  }
+}
 
-export const convertLayoutToFrontend = (layout: SlideLayout): SlideLayout => {
-  return layout;
-};
+export function convertLayoutToBackend(layout: SlideLayout): SlideLayout {
+  switch (layout) {
+    case 'title-bullets-image':
+      return 'title-body-image';
+    default:
+      return layout;
+  }
+}
 
 // Content conversion utilities
 export const convertContentToBackend = (content: SlideContent): SlideContent => {
