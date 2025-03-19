@@ -73,12 +73,12 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   }, [onImageUpload, onImageChange, currentImage]);
 
   const handleImageGenerate = useCallback(async () => {
-    if (!onImageGenerate || !currentImage) {
-      console.error('ImageUploader - Cannot generate image:', { onImageGenerate: !!onImageGenerate, currentImage });
+    if (!onImageGenerate) {
+      console.error('ImageUploader - Cannot generate image: no onImageGenerate handler');
       return;
     }
 
-    const prompt = currentImage.prompt || '';
+    const prompt = currentImage?.prompt;
     if (!prompt) {
       console.error('ImageUploader - No prompt provided for image generation');
       return;
@@ -91,8 +91,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       const imageUrl = await onImageGenerate(prompt, 'dalle');
       onImageChange({
         url: imageUrl,
-        alt: currentImage.alt || prompt,
-        caption: currentImage.caption || prompt,
+        alt: currentImage?.alt || prompt,
+        caption: currentImage?.caption || prompt,
         service: 'dalle',
         prompt
       });
