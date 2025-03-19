@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Box, Button, Typography, styled, CircularProgress } from '@mui/material';
+import { Box, Button, Typography, styled, CircularProgress, TextField } from '@mui/material';
 import { AddPhotoAlternate as AddPhotoIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { SlideImage, ImageService } from '../types';
 
@@ -50,19 +50,19 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [prompt, setPrompt] = useState(currentImage?.prompt || '');
 
   const handleFileUpload = useCallback(async (file: File) => {
     if (!onImageUpload) return;
-
     try {
       setIsLoading(true);
       setError(null);
       const imageUrl = await onImageUpload(file);
       onImageChange({
         url: imageUrl,
-        alt: currentImage?.alt || '',
-        caption: currentImage?.caption || '',
-        service: 'upload',
+        alt: file.name,
+        caption: file.name,
+        service: 'upload'
       });
     } catch (err) {
       setError('Failed to upload image. Please try again.');
@@ -70,29 +70,22 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [onImageUpload, onImageChange, currentImage]);
+  }, [onImageUpload, onImageChange]);
 
   const handleImageGenerate = useCallback(async () => {
-    if (!onImageGenerate) {
-      console.error('ImageUploader - Cannot generate image: no onImageGenerate handler');
-      return;
-    }
-
-    const prompt = currentImage?.prompt;
-    if (!prompt) {
-      console.error('ImageUploader - No prompt provided for image generation');
+    if (!onImageGenerate || !prompt.trim()) {
+      setError('Please enter a prompt for image generation');
       return;
     }
 
     try {
-      console.log('ImageUploader - Generating image with prompt:', prompt);
       setIsLoading(true);
       setError(null);
       const imageUrl = await onImageGenerate(prompt, 'dalle');
       onImageChange({
         url: imageUrl,
-        alt: currentImage?.alt || prompt,
-        caption: currentImage?.caption || prompt,
+        alt: prompt,
+        caption: prompt,
         service: 'dalle',
         prompt
       });
@@ -102,25 +95,21 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [onImageGenerate, onImageChange, currentImage]);
+  }, [onImageGenerate, onImageChange, prompt]);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileUpload(file);
+    }
+  }, [handleFileUpload]);
 
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    e.stopPropagation();
-
-    if (!onImageUpload) return;
-
-    const file = e.dataTransfer.files[0];
-    if (file && acceptedTypes.includes(file.type)) {
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
       handleFileUpload(file);
-    } else {
-      setError('Please upload a valid image file (JPEG, PNG, or GIF).');
     }
-  }, [acceptedTypes, handleFileUpload, onImageUpload]);
-
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || !e.target.files[0]) return;
-    handleFileUpload(e.target.files[0]);
   }, [handleFileUpload]);
 
   return (
@@ -129,13 +118,16 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         <Box sx={{ textAlign: 'center' }}>
           <ImagePreview src={currentImage.url} alt={currentImage.alt || 'Slide image'} />
           <Box sx={{ mt: 2, display: 'flex', gap: 1, justifyContent: 'center' }}>
-            <Button
-              variant="outlined"
-              startIcon={<RefreshIcon />}
-              onClick={() => onImageChange({ url: '', alt: '', caption: '', service: 'upload' })}
-            >
-              Change Image
-            </Button>
+            {onImageGenerate && (
+              <Button
+                variant="outlined"
+                startIcon={<RefreshIcon />}
+                onClick={handleImageGenerate}
+                disabled={isLoading || !prompt.trim()}
+              >
+                Regenerate Image
+              </Button>
+            )}
           </Box>
         </Box>
       ) : (
@@ -145,36 +137,52 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           onDragEnter={(e) => e.preventDefault()}
         >
           {isLoading ? (
-            <CircularProgress />
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+              <CircularProgress />
+              <Typography>Generating image...</Typography>
+            </Box>
           ) : (
             <>
               <AddPhotoIcon sx={{ fontSize: 48, color: 'action.active' }} />
               <Typography variant="body1" color="text.secondary" align="center">
                 Drag and drop an image here, or click to select
               </Typography>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Button
-                  variant="contained"
-                  component="label"
-                  disabled={isLoading || !onImageUpload}
-                >
-                  Upload Image
-                  <input
-                    type="file"
-                    hidden
-                    accept={acceptedTypes.join(',')}
-                    onChange={handleFileSelect}
-                  />
-                </Button>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center', width: '100%', maxWidth: 400 }}>
                 {onImageGenerate && (
-                  <Button
-                    variant="outlined"
-                    onClick={handleImageGenerate}
-                    disabled={isLoading}
-                  >
-                    Generate Image
-                  </Button>
+                  <TextField
+                    label="Image Prompt"
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    fullWidth
+                    multiline
+                    rows={2}
+                    placeholder="Enter a description of the image you want to generate..."
+                  />
                 )}
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Button
+                    variant="contained"
+                    component="label"
+                    disabled={isLoading || !onImageUpload}
+                  >
+                    Upload Image
+                    <input
+                      type="file"
+                      hidden
+                      accept={acceptedTypes.join(',')}
+                      onChange={handleFileSelect}
+                    />
+                  </Button>
+                  {onImageGenerate && (
+                    <Button
+                      variant="outlined"
+                      onClick={handleImageGenerate}
+                      disabled={isLoading || !prompt.trim()}
+                    >
+                      Generate Image
+                    </Button>
+                  )}
+                </Box>
               </Box>
               {error && (
                 <Typography variant="body2" color="error" align="center">

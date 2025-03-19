@@ -81,12 +81,13 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     content: {
       ...slide.content,
       bullets: slide.content.bullets ? [...slide.content.bullets] : [],
-      image: slide.content.image_prompt ? {
+      image: slide.content.image || (slide.content.image_prompt ? {
         url: '',
-        alt: '',
+        alt: slide.content.image_prompt,
+        caption: slide.content.image_prompt,
         prompt: slide.content.image_prompt,
         service: 'dalle' as ImageService
-      } : slide.content.image
+      } : undefined)
     },
   });
 
@@ -98,18 +99,19 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
       content: {
         ...slide.content,
         bullets: slide.content.bullets ? [...slide.content.bullets] : [],
-        image: slide.content.image_prompt ? {
+        image: slide.content.image || (slide.content.image_prompt ? {
           url: '',
-          alt: '',
+          alt: slide.content.image_prompt,
+          caption: slide.content.image_prompt,
           prompt: slide.content.image_prompt,
           service: 'dalle' as ImageService
-        } : slide.content.image
+        } : undefined)
       }
     };
     setEditedSlide(newSlide);
 
     // Auto-generate image if needed
-    if (slide.content.image_prompt && !slide.content.image?.url) {
+    if (slide.content.image_prompt && (!slide.content.image || !slide.content.image.url)) {
       console.log('Auto-generating image in edit dialog');
       handleImageGenerate(slide.content.image_prompt);
     }
@@ -223,12 +225,13 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   const handleImageGenerate = async (prompt: string) => {
     if (!onImageGenerate) return;
     try {
+      console.log('SlideEditDialog - Generating image with prompt:', prompt);
       const imageUrl = await onImageGenerate(prompt, 'dalle');
       handleImageChange({
         url: imageUrl,
         alt: prompt,
         caption: prompt,
-        service: 'dalle',
+        service: 'dalle' as ImageService,
         prompt
       });
     } catch (err) {

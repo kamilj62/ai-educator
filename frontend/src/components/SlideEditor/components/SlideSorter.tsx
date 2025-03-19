@@ -5,10 +5,11 @@ import SortableSlide from './SortableSlide';
 import { Slide } from '../types';
 
 // Static version without drag and drop
-const StaticList = ({ slides, activeSlideId, onSlideSelect }: {
+const StaticList = ({ slides, activeSlideId, onSlideSelect, onSlideDelete }: {
   slides: Slide[];
   activeSlideId?: string;
   onSlideSelect: (slideId: string) => void;
+  onSlideDelete: (slideId: string) => void;
 }) => (
   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
     {slides.map((slide, index) => (
@@ -18,6 +19,7 @@ const StaticList = ({ slides, activeSlideId, onSlideSelect }: {
           index={index}
           isActive={slide.id === activeSlideId}
           onClick={() => onSlideSelect(slide.id)}
+          onDelete={() => onSlideDelete(slide.id)}
         />
       </Box>
     ))}
@@ -29,6 +31,7 @@ interface SlideSorterProps {
   activeSlideId?: string;
   onSlidesReorder: (newSlides: Slide[]) => void;
   onSlideSelect: (slideId: string) => void;
+  onSlideDelete: (slideId: string) => void;
 }
 
 // Dynamic import of the draggable version
@@ -37,33 +40,17 @@ const DraggableList = dynamic<SlideSorterProps>(() => import('./SlideSorterDragg
 });
 
 const SlideSorter: React.FC<SlideSorterProps> = (props) => {
-  const [isMounted, setIsMounted] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
+    setMounted(true);
   }, []);
 
-  return (
-    <Box
-      sx={{
-        width: '100%',
-        height: '100%',
-        backgroundColor: 'background.paper',
-        overflowY: 'auto',
-        p: 2,
-      }}
-    >
-      {isMounted ? (
-        <DraggableList {...props} />
-      ) : (
-        <StaticList
-          slides={props.slides}
-          activeSlideId={props.activeSlideId}
-          onSlideSelect={props.onSlideSelect}
-        />
-      )}
-    </Box>
-  );
+  if (!mounted) {
+    return <StaticList {...props} />;
+  }
+
+  return <DraggableList {...props} />;
 };
 
 export default SlideSorter;

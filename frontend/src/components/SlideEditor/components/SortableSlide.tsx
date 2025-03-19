@@ -1,5 +1,6 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box } from '@mui/material';
+import { Card, CardContent, Typography, Box, IconButton, Tooltip } from '@mui/material';
+import { Delete as DeleteIcon } from '@mui/icons-material';
 import { Slide } from '../types';
 
 interface SortableSlideProps {
@@ -7,6 +8,7 @@ interface SortableSlideProps {
   isDragging?: boolean;
   isActive?: boolean;
   onClick?: () => void;
+  onDelete?: () => void;
   index?: number;
 }
 
@@ -15,18 +17,36 @@ const SortableSlide: React.FC<SortableSlideProps> = ({
   isDragging = false,
   isActive = false,
   onClick,
+  onDelete,
   index = 0,
 }) => {
   const renderThumbnail = () => {
     return (
-      <Box sx={{ p: 1.5 }}>
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ display: 'block', mb: 0.5 }}
-        >
-          Slide {index + 1}
-        </Typography>
+      <Box sx={{ p: 1.5, position: 'relative' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+          <Typography variant="caption" color="text.secondary">
+            Slide {index + 1}
+          </Typography>
+          {onDelete && (
+            <Tooltip title="Delete slide">
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                sx={{ 
+                  opacity: 0,
+                  transition: 'opacity 0.2s',
+                  '&:hover': { opacity: 1 },
+                  '.MuiCard-root:hover &': { opacity: 0.7 }
+                }}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
         <Typography
           variant="body2"
           sx={{
@@ -49,19 +69,19 @@ const SortableSlide: React.FC<SortableSlideProps> = ({
               mt: 1,
               width: '100%',
               height: '60px',
-              overflow: 'hidden',
               borderRadius: 1,
-              border: 1,
-              borderColor: 'divider',
+              overflow: 'hidden',
+              position: 'relative',
+              bgcolor: 'action.hover',
             }}
           >
-            <img 
-              src={slide.content.image.url} 
-              alt={slide.content.image.alt || 'Slide thumbnail'} 
+            <img
+              src={slide.content.image.url}
+              alt={slide.content.image.alt || ''}
               style={{
                 width: '100%',
                 height: '100%',
-                objectFit: 'cover'
+                objectFit: 'cover',
               }}
             />
           </Box>
@@ -72,26 +92,22 @@ const SortableSlide: React.FC<SortableSlideProps> = ({
 
   return (
     <Card
-      sx={{
-        height: '100px',
-        cursor: 'pointer',
-        opacity: isDragging ? 0.5 : 1,
-        transition: 'all 0.2s ease-in-out',
-        border: isActive ? '2px solid' : '1px solid',
-        borderColor: isActive ? 'primary.main' : 'divider',
-        backgroundColor: isActive ? 'action.selected' : 'background.paper',
-        '&:hover': {
-          borderColor: 'primary.main',
-          backgroundColor: isActive ? 'action.selected' : 'action.hover',
-          transform: isDragging ? 'none' : 'translateY(-2px)',
-        },
-      }}
       onClick={onClick}
-      elevation={isActive ? 2 : 1}
+      sx={{
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+        transform: isDragging ? 'scale(1.02)' : 'none',
+        '&:hover': {
+          boxShadow: 2,
+        },
+        ...(isActive && {
+          borderColor: 'primary.main',
+          borderWidth: 2,
+          borderStyle: 'solid',
+        }),
+      }}
     >
-      <CardContent sx={{ height: '100%', p: '0 !important' }}>
-        {renderThumbnail()}
-      </CardContent>
+      <CardContent sx={{ p: 0 }}>{renderThumbnail()}</CardContent>
     </Card>
   );
 };
