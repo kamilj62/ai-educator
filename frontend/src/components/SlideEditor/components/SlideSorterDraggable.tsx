@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box } from '@mui/material';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import SortableSlide from './SortableSlide';
 import { Slide } from '../types';
 
@@ -12,6 +12,26 @@ interface SlideSorterDraggableProps {
   onSlideDelete: (slideId: string) => void;
 }
 
+const DROPPABLE_ID = 'slide-list';
+
+const getItemStyle = (isDragging: boolean, draggableStyle: any) => ({
+  userSelect: 'none' as const,
+  padding: '16px',
+  marginBottom: '16px',
+  width: '300px',
+  background: isDragging ? 'rgba(63, 81, 181, 0.08)' : 'transparent',
+  borderRadius: '8px',
+  border: '1px solid rgba(0, 0, 0, 0.12)',
+  ...draggableStyle
+});
+
+const getListStyle = (isDraggingOver: boolean) => ({
+  background: isDraggingOver ? 'rgba(63, 81, 181, 0.04)' : 'transparent',
+  padding: '16px',
+  minHeight: '200px',
+  width: '332px' // 300px + 32px padding
+});
+
 const SlideSorterDraggable: React.FC<SlideSorterDraggableProps> = ({
   slides,
   activeSlideId,
@@ -19,66 +39,68 @@ const SlideSorterDraggable: React.FC<SlideSorterDraggableProps> = ({
   onSlideSelect,
   onSlideDelete,
 }) => {
-  const [isReady, setIsReady] = useState(false);
+  const [internalSlides, setInternalSlides] = useState<Slide[]>(slides);
 
   useEffect(() => {
-    // Ensure component is mounted before enabling drag and drop
-    setIsReady(true);
-  }, []);
+    if (slides.length !== internalSlides.length) {
+      setInternalSlides(slides);
+    }
+  }, [slides, internalSlides.length]);
 
-  const handleDragEnd = (result: any) => {
-    if (!result.destination) return;
+  const onDragEnd = (result: DropResult) => {
+    if (!result.destination || result.destination.droppableId !== DROPPABLE_ID) return;
 
-    const items = Array.from(slides);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
+    const reorderedSlides = Array.from(internalSlides);
+    const [removed] = reorderedSlides.splice(result.source.index, 1);
+    reorderedSlides.splice(result.destination.index, 0, removed);
 
-    onSlidesReorder(items);
+    setInternalSlides(reorderedSlides);
+    onSlidesReorder(reorderedSlides);
   };
 
-  if (!isReady) return null;
-
   return (
-    <DragDropContext onDragEnd={handleDragEnd}>
-      <Droppable droppableId="slides">
-        {(provided) => (
-          <Box
-            {...provided.droppableProps}
-            ref={provided.innerRef}
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2,
-              p: 2,
-              height: '100%',
-              overflowY: 'auto'
-            }}
-          >
-            {slides.map((slide, index) => (
-              <Draggable key={slide.id} draggableId={slide.id} index={index}>
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                  >
-                    <SortableSlide
-                      slide={slide}
-                      index={index}
-                      isDragging={snapshot.isDragging}
-                      isActive={slide.id === activeSlideId}
-                      onClick={() => onSlideSelect(slide.id)}
-                      onDelete={() => onSlideDelete(slide.id)}
-                    />
-                  </div>
-                )}
-              </Draggable>
-            ))}
-            {provided.placeholder}
-          </Box>
-        )}
-      </Droppable>
-    </DragDropContext>
+    <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable droppableId={DROPPABLE_ID}>
+          {(provided, snapshot) => (
+            <Box
+              {...provided.droppableProps}
+              ref={provided.innerRef}
+              sx={{
+                ...getListStyle(snapshot.isDraggingOver),
+                boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)',
+              }}
+            >
+              {internalSlides.map((slide, index) => (
+                <Draggable 
+                  key={slide.id} 
+                  draggableId={`slide-${slide.id}`}
+                  index={index}
+                >
+                  {(provided, snapshot) => (
+                    <Box
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                      sx={getItemStyle(snapshot.isDragging, provided.draggableProps.style)}
+                    >
+                      <SortableSlide
+                        slide={slide}
+                        index={index}
+                        isActive={slide.id === activeSlideId}
+                        onClick={() => onSlideSelect(slide.id)}
+                        onDelete={() => onSlideDelete(slide.id)}
+                      />
+                    </Box>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </Box>
+          )}
+        </Droppable>
+      </DragDropContext>
+    </Box>
   );
 };
 
