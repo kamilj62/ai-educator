@@ -6,12 +6,16 @@ import type { Slide } from '../types';
 interface TitleBulletsLayoutProps {
   slide: Slide;
   onChange: (slide: Slide) => void;
+  onImageUpload?: (file: File) => Promise<string>;
+  onImageGenerate?: (prompt: string) => Promise<string>;
 }
 
-const TitleBulletsLayout: React.FC<{
-  slide: Slide;
-  onChange: (slide: Slide) => void;
-}> = ({ slide, onChange }) => {
+const TitleBulletsLayout: React.FC<TitleBulletsLayoutProps> = ({ 
+  slide, 
+  onChange,
+  onImageUpload,
+  onImageGenerate 
+}) => {
   return (
     <BaseLayout>
       <ContentContainer>
@@ -31,19 +35,13 @@ const TitleBulletsLayout: React.FC<{
               <Box
                 component="img"
                 src={slide.content.image.url}
-                alt={slide.content.image.alt || ''}
+                alt={slide.content.image.alt || 'Slide image'}
                 sx={{
                   maxWidth: '100%',
-                  maxHeight: '400px',
-                  objectFit: 'contain',
-                  borderRadius: 1
+                  maxHeight: '100%',
+                  objectFit: 'contain'
                 }}
               />
-              {slide.content.image.caption && (
-                <Typography variant="caption" sx={{ mt: 1, textAlign: 'center', display: 'block' }}>
-                  {slide.content.image.caption}
-                </Typography>
-              )}
             </ImageContainer>
           )}
         </BulletsContainer>
@@ -56,20 +54,23 @@ const ContentContainer = styled(Box)(({ theme }) => ({
   padding: theme.spacing(4),
   height: '100%',
   display: 'flex',
-  flexDirection: 'column'
+  flexDirection: 'column',
+  justifyContent: 'flex-start',
+  alignItems: 'stretch',
+  gap: theme.spacing(2)
 }));
 
-const BulletsContainer = styled(Box)({
+const BulletsContainer = styled(Box)(({ theme }) => ({
   flex: 1,
   display: 'flex',
   flexDirection: 'column',
-  gap: '1rem'
-});
+  gap: theme.spacing(2)
+}));
 
 const TitleContainer = styled(Typography)(({ theme }) => ({
   fontSize: '2rem',
   fontWeight: 'bold',
-  marginBottom: theme.spacing(2)
+  color: theme.palette.text.primary
 }));
 
 const BulletList = styled(Box)(({ theme }) => ({
@@ -79,21 +80,23 @@ const BulletList = styled(Box)(({ theme }) => ({
 }));
 
 const BulletPoint = styled(Typography)(({ theme }) => ({
-  fontSize: '1.2rem',
-  display: 'flex',
-  alignItems: 'center',
+  fontSize: '1.25rem',
+  color: theme.palette.text.secondary,
   '&:before': {
     content: '"•"',
-    marginRight: theme.spacing(1),
-    fontSize: '1.5rem'
+    marginRight: theme.spacing(1)
   }
 }));
 
-const ImageContainer = styled(Box)({
+const ImageContainer = styled(Box)(({ theme }) => ({
+  width: '100%',
+  height: '200px',
   display: 'flex',
-  flexDirection: 'column',
+  justifyContent: 'center',
   alignItems: 'center',
-  marginTop: '1rem'
-});
+  overflow: 'hidden',
+  borderRadius: theme.shape.borderRadius,
+  backgroundColor: theme.palette.background.paper
+}));
 
 export default TitleBulletsLayout;

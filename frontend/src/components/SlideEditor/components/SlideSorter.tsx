@@ -11,7 +11,7 @@ const StaticList = ({ slides, activeSlideId, onSlideSelect, onSlideDelete }: {
   onSlideSelect: (slideId: string) => void;
   onSlideDelete: (slideId: string) => void;
 }) => (
-  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 2 }}>
     {slides.map((slide, index) => (
       <Box key={slide.id}>
         <SortableSlide
@@ -35,22 +35,45 @@ interface SlideSorterProps {
 }
 
 // Dynamic import of the draggable version
-const DraggableList = dynamic<SlideSorterProps>(() => import('./SlideSorterDraggable'), {
-  ssr: false,
-});
+const DraggableList = dynamic<SlideSorterProps>(
+  () => import('./SlideSorterDraggable'),
+  {
+    ssr: false,
+    loading: () => (
+      <Box sx={{ opacity: 0.7 }}>
+        <StaticList
+          slides={[]}
+          onSlideSelect={() => {}}
+          onSlideDelete={() => {}}
+        />
+      </Box>
+    ),
+  }
+);
 
 const SlideSorter: React.FC<SlideSorterProps> = (props) => {
-  const [mounted, setMounted] = useState(false);
+  const [isBrowser, setIsBrowser] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => {
+      setIsBrowser(true);
+    }, 100);
+    return () => clearTimeout(timer);
   }, []);
 
-  if (!mounted) {
-    return <StaticList {...props} />;
+  if (!isBrowser) {
+    return (
+      <Box sx={{ height: '100%', overflowY: 'auto' }}>
+        <StaticList {...props} />
+      </Box>
+    );
   }
 
-  return <DraggableList {...props} />;
+  return (
+    <Box sx={{ height: '100%', overflowY: 'auto' }}>
+      <DraggableList {...props} />
+    </Box>
+  );
 };
 
 export default SlideSorter;
