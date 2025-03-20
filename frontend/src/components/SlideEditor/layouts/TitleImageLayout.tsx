@@ -1,8 +1,8 @@
 import React, { useCallback } from 'react';
-import { Box, Paper, styled } from '@mui/material';
+import { Box, Paper, styled, Typography } from '@mui/material';
 import { TiptapSlideEditor as TiptapEditor } from '../components/TiptapSlideEditor';
 import ImageUploader from '../components/ImageUploader';
-import type { Slide, ImageService } from '../types';
+import type { Slide, SlideImage, ImageService } from '../types';
 
 const LayoutContainer = styled(Paper)(({ theme }) => ({
   width: '100%',
@@ -52,7 +52,7 @@ const ImageContainer = styled(Box)(({ theme }) => ({
 
 interface TitleImageLayoutProps {
   slide: Slide;
-  onChange: (updatedSlide: Slide) => void;
+  onChange: (slide: Slide) => void;
   onImageUpload?: (file: File) => Promise<string>;
   onImageGenerate?: (prompt: string, service?: ImageService) => Promise<string>;
 }
@@ -73,17 +73,12 @@ const TitleImageLayout: React.FC<TitleImageLayoutProps> = ({
     });
   }, [slide, onChange]);
 
-  const handleImageChange = useCallback((imageUrl: string) => {
+  const handleImageChange = useCallback((image: SlideImage) => {
     onChange({
       ...slide,
       content: {
         ...slide.content,
-        image: {
-          url: imageUrl,
-          alt: `Educational illustration for ${slide.content.title || 'title slide'}`,
-          service: 'dalle' as ImageService, // Use DALL-E as fallback per memory [16a76540]
-          caption: ''
-        },
+        image,
       },
     });
   }, [slide, onChange]);
@@ -101,9 +96,10 @@ const TitleImageLayout: React.FC<TitleImageLayoutProps> = ({
       <ContentArea>
         <Box width="60%" height="100%">
           <ImageUploader
-            imageUrl={slide.content.image?.url}
+            currentImage={slide.content.image}
             onImageChange={handleImageChange}
             onImageUpload={onImageUpload}
+            onImageGenerate={onImageGenerate}
             maxWidth={1920}
             maxHeight={1080}
           />

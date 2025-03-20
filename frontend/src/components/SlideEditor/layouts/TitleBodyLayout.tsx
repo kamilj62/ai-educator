@@ -1,66 +1,9 @@
-import { useCallback } from 'react';
 import { styled } from '@mui/material/styles';
-import { Box } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import BaseLayout from './BaseLayout';
 import TiptapEditor from '../components/TiptapEditor';
 import ImageUploader from '../components/ImageUploader';
-import type { Slide, ImageService } from '../types';
-
-const ContentContainer = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: theme.spacing(2),
-  height: '100%',
-  padding: theme.spacing(4),
-  '& .ProseMirror': {
-    '&:focus': {
-      outline: 'none',
-    },
-  },
-  '& .title-editor': {
-    '& .ProseMirror': {
-      fontSize: '2.5rem',
-      fontWeight: 600,
-      color: theme.palette.text.primary,
-      lineHeight: 1.2,
-      marginBottom: theme.spacing(2),
-    },
-  },
-}));
-
-const BodyContainer = styled(Box)(({ theme }) => ({
-  flex: 1,
-  display: 'flex',
-  gap: theme.spacing(4),
-  minHeight: 0,
-}));
-
-const TextContent = styled(Box)(({ theme }) => ({
-  flex: 1,
-  minWidth: 0,
-  '& .ProseMirror': {
-    fontSize: '1.25rem',
-    color: theme.palette.text.primary,
-    lineHeight: 1.6,
-    '& p': {
-      margin: '0.75em 0',
-      '&:first-child': {
-        marginTop: 0,
-      },
-      '&:last-child': {
-        marginBottom: 0,
-      },
-    },
-  },
-}));
-
-const ImageContainer = styled(Box)(({ theme }) => ({
-  width: '40%',
-  minWidth: 200,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: theme.spacing(1),
-}));
+import type { Slide, ImageService, SlideImage } from '../types';
 
 interface TitleBodyLayoutProps {
   slide: Slide;
@@ -69,8 +12,13 @@ interface TitleBodyLayoutProps {
   onImageGenerate?: (prompt: string) => Promise<string>;
 }
 
-const TitleBodyLayout = ({ slide, onChange, onImageUpload, onImageGenerate }: TitleBodyLayoutProps) => {
-  const handleBodyChange = useCallback((content: string) => {
+const TitleBodyLayout: React.FC<TitleBodyLayoutProps> = ({ 
+  slide, 
+  onChange,
+  onImageUpload,
+  onImageGenerate 
+}) => {
+  const handleBodyChange = (content: string) => {
     onChange({
       ...slide,
       content: {
@@ -78,7 +26,7 @@ const TitleBodyLayout = ({ slide, onChange, onImageUpload, onImageGenerate }: Ti
         body: content,
       },
     });
-  }, [slide, onChange]);
+  };
 
   const handleTitleChange = (content: string) => {
     onChange({
@@ -90,15 +38,14 @@ const TitleBodyLayout = ({ slide, onChange, onImageUpload, onImageGenerate }: Ti
     });
   };
 
-  const handleImageChange = (imageUrl: string) => {
+  const handleImageChange = (image: SlideImage) => {
     onChange({
       ...slide,
       content: {
         ...slide.content,
         image: {
-          url: imageUrl,
-          alt: '',
-          service: 'generated' as ImageService,
+          ...image,
+          prompt: image.prompt || slide.content.title || 'Educational illustration'
         },
       },
     });
@@ -107,38 +54,56 @@ const TitleBodyLayout = ({ slide, onChange, onImageUpload, onImageGenerate }: Ti
   return (
     <BaseLayout>
       <ContentContainer>
-        <Box className="title-editor">
+        <TitleContainer>
           <TiptapEditor
             content={slide.content.title || ''}
             onChange={handleTitleChange}
             placeholder="Enter title..."
             bulletList={false}
           />
-        </Box>
+        </TitleContainer>
         <BodyContainer>
-          <TextContent>
-            <TiptapEditor
-              content={slide.content.body || ''}
-              onChange={handleBodyChange}
-              placeholder="Enter content..."
-              bulletList={false}
-            />
-          </TextContent>
+          <TiptapEditor
+            content={slide.content.body || ''}
+            onChange={handleBodyChange}
+            placeholder="Enter content..."
+            bulletList={false}
+          />
           {slide.layout.includes('image') && (
-            <ImageContainer>
-              <ImageUploader
-                imageUrl={slide.content.image?.url}
-                onImageChange={handleImageChange}
-                onImageUpload={onImageUpload}
-                onImageGenerate={onImageGenerate}
-                generatePrompt={slide.content.title || 'Educational illustration'}
-              />
-            </ImageContainer>
+            <ImageUploader
+              currentImage={slide.content.image ? {
+                ...slide.content.image,
+                prompt: slide.content.image.prompt || slide.content.title || 'Educational illustration'
+              } : undefined}
+              onImageChange={handleImageChange}
+              onImageUpload={onImageUpload}
+              onImageGenerate={onImageGenerate}
+            />
           )}
         </BodyContainer>
       </ContentContainer>
     </BaseLayout>
   );
 };
+
+const ContentContainer = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(4),
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: theme.spacing(2)
+}));
+
+const TitleContainer = styled(Typography)(({ theme }) => ({
+  fontSize: '2rem',
+  fontWeight: 'bold',
+  color: theme.palette.text.primary
+}));
+
+const BodyContainer = styled(Box)(({ theme }) => ({
+  fontSize: '1.25rem',
+  color: theme.palette.text.secondary,
+  flex: 1
+}));
 
 export default TitleBodyLayout;
