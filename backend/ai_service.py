@@ -39,7 +39,7 @@ from backend.exceptions import (
 import openai
 from openai import APIError, RateLimitError, APIConnectionError, APITimeoutError, AuthenticationError
 from dotenv import load_dotenv
-from utils.export_utils import create_presentation
+from backend.utils.export_utils import create_presentation
 
 import httpx
 
