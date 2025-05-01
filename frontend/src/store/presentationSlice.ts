@@ -55,8 +55,9 @@ export const generateOutline = createAsyncThunk(
       };
 
       console.log("🚀 Sending outline request:", requestBody);
+      console.log("🌍 API URL:", `${process.env.NEXT_PUBLIC_API_BASE_URL || '/api'}/generate/outline`);
 
-      const response = await fetch('http://localhost:8000/api/generate/outline', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || '/api'}/generate/outline`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
