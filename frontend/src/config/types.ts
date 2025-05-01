@@ -1,8 +1,8 @@
 import { BackendSlideLayout } from '../components/SlideEditor/types';
 
 export interface APIEndpoints {
-  GENERATE_OUTLINE: '/generate/outline';
-  GENERATE_SLIDE: '/generate/slide';
+  GENERATE_OUTLINE: '/api/generate/outline';
+  GENERATE_SLIDE: '/api/generate/slide';
 }
 
 export interface APIConfig {

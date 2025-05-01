@@ -64,7 +64,7 @@ npm install
 # From the project root
 source venv/bin/activate
 cd backend
-python main.py
+python3 main.py
 ```
 
 2. Start the frontend development server:
@@ -76,7 +76,7 @@ npm start
 
 The application will be available at:
 - Frontend: http://localhost:3000
-- Backend API: http://localhost:8005
+- Backend API: http://localhost:8000
 
 ## Error Handling
 
