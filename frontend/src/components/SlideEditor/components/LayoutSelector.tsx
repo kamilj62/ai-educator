@@ -13,8 +13,8 @@ import {
   Button,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { BackendSlideLayout, getLayoutFeatures, layoutOptions } from '../types';
-import { SlideTopic } from '../../../store/presentationSlice';
+import { BackendSlideLayout, getLayoutFeatures } from '../types';
+import type { SlideTopic } from '../types';
 
 interface LayoutOption {
   layout: BackendSlideLayout;
@@ -34,6 +34,14 @@ export interface LayoutSelectorProps {
   onClose: () => void;
 }
 
+function addLegacyFeatureKeys(features: any): any {
+  return {
+    ...features,
+    hasImage: features.supportsImage,
+    hasBullets: features.supportsBullets,
+  };
+}
+
 export const LayoutSelector: React.FC<LayoutSelectorProps> = ({
   open,
   topic,
@@ -43,6 +51,65 @@ export const LayoutSelector: React.FC<LayoutSelectorProps> = ({
   const handleSelect = (layout: BackendSlideLayout) => {
     onSelect(layout);
   };
+
+  const layoutOptionsList: LayoutOption[] = [
+    {
+      layout: 'title-only',
+      title: 'Title Only',
+      description: 'Simple title slide with optional subtitle',
+      preview: '📝',
+      features: addLegacyFeatureKeys(getLayoutFeatures('title-only')),
+    },
+    {
+      layout: 'title-image',
+      title: 'Title with Image',
+      description: 'Title slide with an image',
+      preview: '🖼️',
+      features: addLegacyFeatureKeys(getLayoutFeatures('title-image')),
+    },
+    {
+      layout: 'title-body',
+      title: 'Title and Body',
+      description: 'Classic layout with a title and text content',
+      preview: '📝',
+      features: addLegacyFeatureKeys(getLayoutFeatures('title-body')),
+    },
+    {
+      layout: 'title-body-image',
+      title: 'Title, Body, and Image',
+      description: 'Layout with a title, text content, and an image',
+      preview: '📝🖼️',
+      features: addLegacyFeatureKeys(getLayoutFeatures('title-body-image')),
+    },
+    {
+      layout: 'title-bullets',
+      title: 'Title and Bullets',
+      description: 'Title slide with bullet points',
+      preview: '📝•••',
+      features: addLegacyFeatureKeys(getLayoutFeatures('title-bullets')),
+    },
+    {
+      layout: 'title-bullets-image',
+      title: 'Title, Bullets, and Image',
+      description: 'Layout with a title, bullet points, and an image',
+      preview: '📝•••🖼️',
+      features: addLegacyFeatureKeys(getLayoutFeatures('title-bullets-image')),
+    },
+    {
+      layout: 'two-column',
+      title: 'Two Columns',
+      description: 'Title with two text columns',
+      preview: '🔲🔲',
+      features: addLegacyFeatureKeys(getLayoutFeatures('two-column')),
+    },
+    {
+      layout: 'two-column-image',
+      title: 'Two Columns with Image',
+      description: 'Two columns of text and an image',
+      preview: '🔲🔲🖼️',
+      features: addLegacyFeatureKeys(getLayoutFeatures('two-column-image')),
+    },
+  ];
 
   return (
     <Dialog
@@ -67,7 +134,7 @@ export const LayoutSelector: React.FC<LayoutSelectorProps> = ({
 
       <DialogContent dividers>
         <Grid container spacing={2}>
-          {layoutOptions.map((option) => {
+          {layoutOptionsList.map((option) => {
             const features = option.features;
             const isRecommended = (
               (topic.image_prompt && features.hasImage) ||

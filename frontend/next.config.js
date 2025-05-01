@@ -5,14 +5,10 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:8005/api/:path*',
+        destination: 'http://localhost:8000/:path*',
       },
-      {
-        source: '/generate/:path*',
-        destination: 'http://localhost:8005/generate/:path*',
-      }
-    ]
+    ];
   },
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;

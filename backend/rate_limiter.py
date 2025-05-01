@@ -2,6 +2,8 @@ import asyncio
 import time
 from typing import Dict, Optional
 import logging
+from contextlib import asynccontextmanager
+from models import ImageServiceProvider
 
 logger = logging.getLogger(__name__)
 
@@ -134,6 +136,19 @@ class RateLimiter:
                 await asyncio.sleep(5 * retry_count)
             else:
                 break
+
+    @asynccontextmanager
+    async def limit(self, operation_type: str = 'default'):
+        """Context manager for rate limiting operations."""
+        try:
+            await self.wait_if_needed(operation_type)
+            await self.add_request(operation_type)
+            yield
+        except Exception as e:
+            logger.error(f"Error during rate-limited operation {operation_type}: {str(e)}")
+            raise
+        finally:
+            logger.debug(f"Completed rate-limited operation: {operation_type}")
 
     def get_current_usage(self) -> Dict[str, Dict[str, float]]:
         """Get current usage statistics for all operation types."""

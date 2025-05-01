@@ -1,4 +1,4 @@
-#!/Users/josephkamil/marvelAI/marvelAI/backend/venv/bin/python3
+#!/Users/josephkamil/marvelAI/backend/venv/bin/python3.13
 
 ##############################################################################
 #
