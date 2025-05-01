@@ -1,7 +1,7 @@
 from typing import List, Optional
 from pptx import Presentation as PPTXPresentation
 from pptx.util import Inches, Pt
-from models import SlideContent, ExportFormat, Presentation, ExportRequest
+from backend.models import SlideContent, ExportFormat, Presentation, ExportRequest
 import os
 import requests
 from io import BytesIO
