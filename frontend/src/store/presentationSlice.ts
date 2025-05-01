@@ -60,7 +60,6 @@ export const generateOutline = createAsyncThunk(
       console.log("🌍 API URL:", `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://ai-powerpoint-f44a1d57b590.herokuapp.com'}/api/generate/outline`);
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://ai-powerpoint-f44a1d57b590.herokuapp.com'}/api/generate/outline`, {
-
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -121,9 +120,10 @@ export const generateSlides = createAsyncThunk(
 
          
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://ai-powerpoint-f44a1d57b590.herokuapp.com'}/api/generate/slides`, {
-
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify(requestBody),
         });
 
