@@ -1,1 +1,1 @@
-{"/_app":"pages/_app.js","/_error":"pages/_error.js","/":"pages/index.html","/api/generate-image":"pages/api/generate-image.js","/api/[...path]":"pages/api/[...path].js","/_document":"pages/_document.js","/404":"pages/404.html"}
+{"/_error":"pages/_error.js","/api/generate-image":"pages/api/generate-image.js","/":"pages/index.html","/_app":"pages/_app.js","/api/[...path]":"pages/api/[...path].js","/_document":"pages/_document.js","/404":"pages/404.html"}
