@@ -18,6 +18,8 @@ const InputSection: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('handleSubmit fired!');
+    debugger;
     if (!topic.trim() || !numSlides) {
       dispatch(setError({
         message: 'Please fill in all required fields',
