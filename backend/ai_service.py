@@ -30,7 +30,7 @@ from backend.models import (
     SlideLayout
 )
 from backend.rate_limiter import RateLimiter
-from exceptions import (
+from backend.exceptions import (
     ImageGenerationError,
     ImageServiceProvider,
     ErrorType,
