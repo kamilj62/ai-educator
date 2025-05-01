@@ -49,3 +49,4 @@ yarn-error.log*
 # Static files
 /static/images/*
 !/static/images/.gitkeep
+backend/credentials/marvelai-imagen-sa-key.json
