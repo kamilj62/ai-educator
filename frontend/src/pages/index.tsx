@@ -1,12 +1,16 @@
 import React from 'react';
-import { Container, Paper, Typography, Box, Alert } from '@mui/material';
+import { Container, Paper, Typography, Box, Grid } from '@mui/material';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
+import { selectOutline } from '../store/presentationSlice';
 import InputSection from '../components/InputSection';
 import OutlineEditor from '../components/OutlineEditor';
+import OutlineDisplay from '../components/OutlineDisplay';
+import ErrorDisplay from '../components/ErrorDisplay';
 
 const Home: React.FC = () => {
-  const { error, presentation } = useSelector((state: RootState) => state.presentation);
+  const error = useSelector((state: RootState) => state.presentation.error);
+  const outline = useSelector(selectOutline);
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -14,25 +18,35 @@ const Home: React.FC = () => {
         MarvelAI Presentation Generator
       </Typography>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <Paper elevation={1}>
-          <InputSection />
-        </Paper>
-
-        {presentation?.topics && presentation.topics.length > 0 && (
-          <Box sx={{ flex: 1 }}>
-            <Paper elevation={1}>
-              <OutlineEditor />
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          {error && (
+            <Paper elevation={1} sx={{ p: 2, mb: 2 }}>
+              <ErrorDisplay error={error} />
             </Paper>
-          </Box>
+          )}
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Paper elevation={1} sx={{ p: 2, height: '100%' }}>
+            <InputSection />
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Paper elevation={1} sx={{ p: 2, height: '100%' }}>
+            <OutlineEditor />
+          </Paper>
+        </Grid>
+
+        {outline?.length > 0 && (
+          <Grid item xs={12}>
+            <Paper elevation={1} sx={{ p: 2, mt: 2 }}>
+              <OutlineDisplay />
+            </Paper>
+          </Grid>
         )}
-      </Box>
+      </Grid>
     </Container>
   );
 };

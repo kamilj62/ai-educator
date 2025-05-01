@@ -13,7 +13,8 @@ import {
   AlertTitle,
 } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { generateOutline, selectError, clearError, InstructionalLevel, APIError } from '../store/presentationSlice';
+import { generateOutline, setError, APIError } from '../store/presentationSlice';
+import { InstructionalLevel } from './SlideEditor/types';
 import { LayoutSelector } from './SlideEditor/components/LayoutSelector';
 import { BackendSlideLayout } from './SlideEditor/types';
 
@@ -23,7 +24,7 @@ interface OutlineEditorProps {
 
 const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => {
   const dispatch = useAppDispatch();
-  const error = useAppSelector(selectError) as APIError | null;
+  const error = useAppSelector(state => state.presentation.error) as APIError | null;
   const [topic, setTopic] = useState('');
   const [numSlides, setNumSlides] = useState(5);
   const [level, setLevel] = useState<InstructionalLevel>('high_school');
@@ -37,7 +38,7 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
       if (retryTimeout) {
         clearTimeout(retryTimeout);
       }
-      dispatch(clearError());
+      dispatch(setError(null));
     };
   }, [retryTimeout, dispatch]);
 
@@ -48,7 +49,7 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
     }
 
     setIsLoading(true);
-    dispatch(clearError());
+    dispatch(setError(null));
 
     try {
       await dispatch(generateOutline({
@@ -62,7 +63,7 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
       if (apiError?.type === 'RATE_LIMIT' && apiError?.retryAfter) {
         const timeout = setTimeout(() => {
           setRetryTimeout(null);
-          dispatch(clearError());
+          dispatch(setError(null));
         }, apiError.retryAfter * 1000);
         setRetryTimeout(timeout);
       }
@@ -128,7 +129,7 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
       {error && (
         <Alert 
           severity={getErrorSeverity(error.type)}
-          onClose={() => dispatch(clearError())}
+          onClose={() => dispatch(setError(null))}
           sx={{ mb: 2, whiteSpace: 'pre-wrap' }}
         >
           <AlertTitle>{getErrorTitle(error.type)}</AlertTitle>
@@ -196,6 +197,7 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
         onClose={() => setIsLayoutSelectorOpen(false)}
         onSelect={handleLayoutSelect}
         topic={{
+          id: 'preview-topic',
           title: topic || 'Untitled',
           key_points: [],
           image_prompt: topic ? `Generate an educational image for ${topic}` : undefined,
