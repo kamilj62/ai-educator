@@ -24,7 +24,7 @@ from backend.models import (
     SlideContentNew,
     SlideNew as Slide
 )
-from ai_service import AIService
+from backend.ai_service import AIService
 from rate_limiter import RateLimiter
 from exceptions import (
     ImageGenerationError,
