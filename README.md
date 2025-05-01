@@ -1,75 +1,106 @@
-# AI-Educator - AI-Powered Presentation Generator
+# Marvel AI - Educational Presentation Generator
 
-AI-Educator is an innovative educational tool that uses AI to generate engaging, informative presentations. Built with FastAPI and Next.js, it helps educators create well-structured slides with accurate historical content.
+An AI-powered tool that generates educational presentations with visually engaging slides.
 
 ## Features
 
-- **Smart Outline Generation**: Creates structured outlines based on your topic
-- **Dynamic Slide Creation**: Generates detailed slides with bullet points, examples, and discussion questions
-- **Educational Level Adaptation**: Adjusts content complexity based on instructional level
-- **Multiple Export Options**: Export to PDF, PowerPoint, or Google Slides
-- **Real-time Preview**: See your slides as they're generated
+- Generate comprehensive educational outlines
+- Create visually engaging slides with AI-generated images
+- Support for multiple educational levels
+- Fullscreen presentation mode with cross-browser support
+- Robust error handling and fallback mechanisms
 
-## Tech Stack
-
-### Frontend
-- Next.js
-- Redux Toolkit
-- Material-UI (MUI)
-
-### Backend
-- FastAPI
-- Pydantic
-- OpenAI GPT-4
-
-## Getting Started
+## Setup
 
 1. Clone the repository:
 ```bash
 git clone https://github.com/kamilj62/ai-educator.git
-cd ai-educator
+cd marvelAI
 ```
 
-2. Install frontend dependencies:
+2. Set up environment variables:
 ```bash
+# Copy the environment template
+cp env.template .env
+
+# Edit .env with your credentials
+nano .env
+```
+
+3. Install dependencies:
+```bash
+# Backend
+python -m venv venv
+source venv/bin/activate  # On Windows: .\venv\Scripts\activate
+pip install -r requirements.txt
+
+# Frontend
 cd frontend
 npm install
 ```
 
-3. Install backend dependencies:
+## API Credentials
+
+### Google Cloud Setup (Imagen)
+1. Create a project in Google Cloud Console
+2. Enable the Vertex AI API
+3. Create a service account with the following roles:
+   - `roles/aiplatform.user`
+   - `roles/serviceusage.serviceUsageViewer`
+4. Download the service account key JSON file
+5. Update `.env` with:
+   - `GOOGLE_CLOUD_PROJECT`: Your project ID
+   - `GOOGLE_APPLICATION_CREDENTIALS`: Path to your service account key file
+
+### OpenAI Setup (DALL-E Fallback)
+1. Create an account at [OpenAI](https://platform.openai.com)
+2. Generate an API key
+3. Add the key to `.env`: `OPENAI_API_KEY=your_key_here`
+
+## Running the Application
+
+1. Start the backend server:
 ```bash
-cd ../backend
-pip install -r requirements.txt
-```
-
-4. Set up environment variables:
-Create `.env` files in both frontend and backend directories with the required configuration.
-
-5. Start the development servers:
-
-Backend:
-```bash
+# From the project root
+source venv/bin/activate
 cd backend
-uvicorn main:app --reload
+python3 main.py
 ```
 
-Frontend:
+2. Start the frontend development server:
 ```bash
+# In a new terminal, from the project root
 cd frontend
-npm run dev
+npm start
 ```
 
-## Recent Updates
+The application will be available at:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
 
-- Fixed slide generation to consistently produce the requested number of slides
-- Improved content specificity with better prompts
-- Enhanced error handling for partial slide generation
-- Added support for multiple educational levels
+## Error Handling
+
+The application includes robust error handling:
+- Automatic fallback from Imagen to DALL-E
+- Rate limit handling with exponential backoff
+- Comprehensive logging for debugging
+- Clear error messages in the UI
 
 ## Contributing
 
-We welcome contributions! Please feel free to submit a Pull Request.
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## Security Notes
+
+- Never commit API keys or credentials to the repository
+- Always use environment variables for sensitive data
+- Keep your `.env` file secure and never share it
+- Regularly rotate your API keys
 
 ## License
 
-MIT License - See LICENSE file for details
+This project is licensed under the MIT License - see the LICENSE file for details.
