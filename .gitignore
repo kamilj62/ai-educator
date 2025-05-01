@@ -71,3 +71,9 @@ yarn-error.log*
 backend/credentials/marvelai-imagen-sa-key.json
 
 backend/venv/
+
+venv/
+venv311/
+backend/venv/
+*.pyc
+__pycache__/

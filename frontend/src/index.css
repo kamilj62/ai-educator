@@ -18,6 +18,7 @@
   -webkit-text-size-adjust: 100%;
 }
 
+<<<<<<< HEAD
 html, body, #root {
   height: 100%;
   margin: 0;
@@ -27,6 +28,10 @@ html, body, #root {
 }
 
 body {
+=======
+body {
+  margin: 0;
+>>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
   min-width: 320px;
   min-height: 100vh;
 }

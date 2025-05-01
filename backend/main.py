@@ -1,4 +1,9 @@
+<<<<<<< HEAD
 from fastapi import FastAPI
+=======
+from fastapi import FastAPI, HTTPException, Body, Request
+from fastapi.responses import JSONResponse, FileResponse
+>>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -36,8 +41,12 @@ import logging
 import traceback
 import json
 import time
+<<<<<<< HEAD
 import pathlib
 from backend.models import (
+=======
+from models import (
+>>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
     PresentationInput, 
     OutlineResponse, 
     Presentation, 
@@ -46,10 +55,21 @@ from backend.models import (
     InstructionalLevel,
     SlideContent,
     SlideGenerationRequest,
+<<<<<<< HEAD
 )
 from backend.ai_service import AIService
 from backend.rate_limiter import RateLimiter
 from backend.exceptions import (
+=======
+    ImageGenerationRequest,
+    SlideLayout,
+    SlideContentNew,
+    SlideNew as Slide
+)
+from ai_service import AIService
+from rate_limiter import RateLimiter
+from exceptions import (
+>>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
     ImageGenerationError,
     ContentSafetyError,
     ErrorType,
@@ -58,8 +78,11 @@ from backend.exceptions import (
 from datetime import datetime
 from pptx import Presentation as pptx_Presentation
 from pptx.util import Inches
+<<<<<<< HEAD
 from contextlib import asynccontextmanager
 import asyncio
+=======
+>>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
 
 # Configure logging with more detail
 logging.basicConfig(
@@ -68,6 +91,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+<<<<<<< HEAD
 # Load environment variables
 load_dotenv()
 
@@ -136,12 +160,42 @@ if ("pytest" in sys.modules or "PYTEST_CURRENT_TEST" in os.environ) and ai_servi
         logger.error(f"Failed to initialize AI service for testing: {e}")
         logger.error(traceback.format_exc())
 
+=======
+# Load OpenAI API key from credentials
+try:
+    with open('credentials/marvelai-imagen-sa-key.json', 'r') as f:
+        credentials = json.load(f)
+        api_key = credentials.get('openai_api_key')
+        if not api_key:
+            raise ValueError("OpenAI API key not found in credentials")
+        client = OpenAI(api_key=api_key)
+        logger.info(f"✅ OpenAI API Key Loaded: {api_key[:5]}...{api_key[-5:]}")
+except Exception as e:
+    logger.error(f"Error loading credentials: {str(e)}")
+    raise
+
+app = FastAPI()
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+>>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
 # Mount static files directory
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Basic error handling middleware
 @app.middleware("http")
+<<<<<<< HEAD
 async def log_requests(request, call_next):
+=======
+async def log_requests(request: Request, call_next):
+>>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
     try:
         start_time = time.time()
         response = await call_next(request)
@@ -163,9 +217,16 @@ async def root():
 
 @app.post("/api/generate/outline")
 async def generate_outline(input_data: PresentationInput) -> OutlineResponse:
+<<<<<<< HEAD
     """Generate presentation outline with enhanced error handling and explicit logging."""
     try:
         logging.info(f"[DEBUG] Received outline generation request: {input_data}")
+=======
+    """Generate presentation outline with enhanced error handling."""
+    try:
+        logger.info(f"Received outline generation request: {input_data}")
+        
+>>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
         # Validate input
         if not input_data.context.strip():
             logging.warning("[DEBUG] Context is empty!")
@@ -173,6 +234,7 @@ async def generate_outline(input_data: PresentationInput) -> OutlineResponse:
         if not 1 <= input_data.num_slides <= 20:
             logging.warning(f"[DEBUG] Invalid num_slides: {input_data.num_slides}")
             raise HTTPException(status_code=400, detail="Number of slides must be between 1 and 20")
+<<<<<<< HEAD
         # Check for sensitive topics
         logging.info("[DEBUG] Calling ai_service.generate_outline...")
         try:
@@ -196,11 +258,62 @@ async def generate_outline(input_data: PresentationInput) -> OutlineResponse:
     except Exception as e:
         logging.error(f"[DEBUG] Unexpected error in generate_outline endpoint: {str(e)}")
         logging.error(traceback.format_exc())
+=======
+            
+        # Check for sensitive topics
+        sensitive = is_sensitive_topic(input_data.context)
+        if sensitive:
+            logger.info(f"Detected sensitive topic in context: {input_data.context}")
+            
+        try:
+            # Generate outline with safety checks if needed
+            response = await ai_service.generate_outline(
+                context=input_data.context,
+                num_slides=input_data.num_slides,
+                level=input_data.instructional_level,
+                sensitive=sensitive
+            )
+            
+            logger.info(f"Generated outline with {len(response['topics'])} topics")
+            logger.debug(f"Response: {response}")
+            
+            # Convert to OutlineResponse model
+            return OutlineResponse(
+                topics=[SlideTopic(**topic) for topic in response["topics"]],
+                warnings=response.get("warnings", [])
+            )
+            
+        except ContentSafetyError as cse:
+            logger.error(f"Content safety error: {str(cse)}")
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "type": "SAFETY_VIOLATION",
+                    "message": str(cse),
+                    "context": {"topic": input_data.context},
+                    "recommendations": [
+                        "Consider focusing on factual, educational content",
+                        "Use balanced and objective language",
+                        "Include multiple perspectives when appropriate"
+                    ]
+                }
+            )
+            
+    except ValueError as ve:
+        logger.error(f"Value error in generate_outline: {str(ve)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=400, detail=str(ve))
+            
+    except Exception as e:
+        logger.error(f"Error in generate_outline: {str(e)}")
+        logger.error(traceback.format_exc())
+>>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
         raise HTTPException(
             status_code=500,
-            detail=f"Unexpected error: {str(e)}"
+            detail=f"Error generating outline: {str(e)}"
         )
 
+<<<<<<< HEAD
 @app.post("/api/generate/slide")
 async def generate_slide_content(request: SlideGenerationRequest):
     try:
@@ -252,7 +365,89 @@ async def generate_slide_content(request: SlideGenerationRequest):
         raise HTTPException(
             status_code=500,
             detail=f"Unexpected error: {str(e)}"
+=======
+@app.post("/api/generate/slides", response_model=SlideContentNew)
+async def generate_slide_content(request: SlideGenerationRequest) -> SlideContentNew:
+    try:
+        slide_content = await ai_service.generate_slide_content(
+            topic=request.topic,
+            instructional_level=request.instructional_level,
+            layout=request.layout
+>>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
         )
+        return slide_content
+    except ImageGenerationError as e:
+        error_response = {
+            "type": e.error_type,
+            "message": str(e),
+            "service": e.service,
+            "retry_after": e.retry_after,
+            "context": {
+                "topic": request.topic.title,
+                "level": request.instructional_level,
+                "layout": request.layout
+            },
+            "recommendations": e.recommendations or [
+                "Try again with simpler content",
+                "Check your connection and try again",
+                "Contact support if the issue persists"
+            ]
+        }
+        raise HTTPException(status_code=400, detail=error_response)
+    except ContentSafetyError as e:
+        error_response = {
+            "type": ErrorType.SAFETY_VIOLATION,
+            "message": str(e),
+            "context": {
+                "topic": request.topic.title,
+                "level": request.instructional_level,
+                "layout": request.layout
+            },
+            "recommendations": [
+                "Review content guidelines",
+                "Modify content to comply with safety policies",
+                "Contact support for clarification"
+            ]
+        }
+        raise HTTPException(status_code=400, detail=error_response)
+    except Exception as e:
+        error_info = {
+            "type": ErrorType.API_ERROR,
+            "message": f"Error generating slide content: {str(e)}",
+            "context": {
+                "topic": request.topic.title,
+                "level": request.instructional_level,
+                "layout": request.layout,
+                "error_details": traceback.format_exc()
+            },
+            "recommendations": [
+                "Try again with simpler content",
+                "Check your connection and try again",
+                "Contact support if the issue persists"
+            ]
+        }
+        logging.error(f"Error in generate_slide_content: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=error_info)
+
+@app.post("/api/generate-image")
+async def generate_image(request: ImageGenerationRequest):
+    try:
+        if not request.prompt:
+            raise HTTPException(status_code=400, detail="Prompt is required")
+            
+        logger.info(f"Generating image with prompt: {request.prompt}")
+        response = client.images.generate(
+            model="dall-e-3",
+            prompt=request.prompt,
+            n=1,
+            size="1024x1024"
+        )
+        image_url = response.data[0].url
+        logger.info(f"Generated image URL: {image_url}")
+        return {"imageUrl": image_url}
+    except Exception as e:
+        logger.error(f"Error generating image: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/generate/slides")
 async def generate_slides(request: SlideGenerationRequest):
@@ -356,27 +551,54 @@ async def quick_export(presentation: Presentation):
         # Create exports directory if it doesn't exist
         export_dir = os.path.join("static", "exports")
         os.makedirs(export_dir, exist_ok=True)
+<<<<<<< HEAD
+=======
+        
+>>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
         # Generate filename with timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"renewable_energy_{timestamp}.pptx"
         output_path = os.path.join(export_dir, filename)
+<<<<<<< HEAD
         # Create basic presentation
         prs = pptx_Presentation()
+=======
+        
+        # Create basic presentation
+        prs = pptx_Presentation()
+        
+>>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
         # Add title slide
         title_slide = prs.slides.add_slide(prs.slide_layouts[0])
         title_slide.shapes.title.text = "Renewable Energy"
         subtitle = title_slide.placeholders[1]
         subtitle.text = f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+<<<<<<< HEAD
+=======
+        
+>>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
         # Add content slides
         for slide in presentation.slides:
             content_slide = prs.slides.add_slide(prs.slide_layouts[1])
             content_slide.shapes.title.text = slide.title
+<<<<<<< HEAD
             # Add content
             body_shape = content_slide.shapes.placeholders[1]
             tf = body_shape.text_frame
             for point in slide.bullet_points:
                 p = tf.add_paragraph()
                 p.text = point.text
+=======
+            
+            # Add content
+            body_shape = content_slide.shapes.placeholders[1]
+            tf = body_shape.text_frame
+            
+            for point in slide.bullet_points:
+                p = tf.add_paragraph()
+                p.text = point.text
+            
+>>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
             # Save image if present
             if slide.image_url:
                 img_path = os.path.join("marvelAI", slide.image_url)
@@ -387,9 +609,18 @@ async def quick_export(presentation: Presentation):
                         Inches(2),
                         width=Inches(8)
                     )
+<<<<<<< HEAD
         # Save presentation
         prs.save(output_path)
         return {"file_path": f"exports/{filename}"}
+=======
+        
+        # Save presentation
+        prs.save(output_path)
+        
+        return {"file_path": f"exports/{filename}"}
+        
+>>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
     except Exception as e:
         logger.error(f"Export error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
@@ -406,8 +637,34 @@ def is_sensitive_topic(context: str) -> bool:
     ]
     return any(topic in context_lower for topic in SENSITIVE_TOPICS)
 
+<<<<<<< HEAD
 if __name__ == "__main__":
     import os
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("backend.main:app", host="0.0.0.0", port=port, reload=False)
+=======
+# Initialize services
+ai_service = None
+rate_limiter = RateLimiter()
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services on startup."""
+    global ai_service
+    try:
+        ai_service = AIService(rate_limiter)
+        await ai_service.initialize()  # Initialize async components
+        # Test OpenAI connection
+        await ai_service.test_openai_connection()
+        logger.info("AI service initialized")
+    except Exception as e:
+        logger.error(f"Failed to initialize AI service: {e}")
+        logger.error(traceback.format_exc())
+        raise
+
+if __name__ == "__main__":
+    import uvicorn
+    print("Starting server on port 8000...")
+    uvicorn.run("main:app", host="127.0.0.1", port=8000)
+>>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
