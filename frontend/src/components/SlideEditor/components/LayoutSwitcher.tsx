@@ -8,7 +8,7 @@ import ViewQuiltIcon from '@mui/icons-material/ViewQuilt';
 import CloseIcon from '@mui/icons-material/Close';
 
 interface LayoutSwitcherProps {
-  currentLayout: SlideLayout;
+  layout: SlideLayout;
   onLayoutChange: (layout: SlideLayout) => void;
 }
 
@@ -23,9 +23,9 @@ const layoutTitles: Record<SlideLayout, string> = {
   'two-column-image': 'Two Columns with Image'
 };
 
-const LayoutSwitcher: React.FC<LayoutSwitcherProps> = ({ currentLayout, onLayoutChange }) => {
+const LayoutSwitcher: React.FC<LayoutSwitcherProps> = ({ layout, onLayoutChange }) => {
   const [open, setOpen] = useState(false);
-  const [selectedLayout, setSelectedLayout] = useState<SlideLayout>(currentLayout);
+  const [selectedLayout, setSelectedLayout] = useState<SlideLayout>(layout);
   const dispatch = useDispatch();
   const slides = useSelector((state: RootState) => state.presentation.slides);
   const activeSlideId = useSelector((state: RootState) => state.presentation.activeSlideId);
