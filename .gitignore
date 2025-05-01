@@ -11,6 +11,10 @@ venv/
 # Node
 node_modules/
 .npm
+
+
+.env
+
 .env.local
 .env.development.local
 .env.test.local
@@ -26,6 +30,7 @@ node_modules/
 .DS_Store
 Thumbs.db
 
+
 # API Credentials and Secrets
 **/credentials/*
 !**/credentials/.gitkeep
@@ -37,6 +42,12 @@ Thumbs.db
 **/*.keystore
 **/*.p12
 **/*.pfx
+
+# Google Cloud
+**/service-account-key.json
+**/google-credentials.json
+**/google_credentials.json
+
 
 # Build
 /build
@@ -55,3 +66,7 @@ yarn-error.log*
 # Static files
 /static/images/*
 !/static/images/.gitkeep
+
+
+backend/credentials/marvelai-imagen-sa-key.json
+

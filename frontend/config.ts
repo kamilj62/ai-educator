@@ -1,8 +1,8 @@
 // API Configuration
-export const API_BASE_URL = 'http://localhost:8004';
+export const API_BASE_URL = 'http://127.0.0.1:8000'; // Ensure this matches your backend
 export const API_ENDPOINTS = {
-    generateOutline: '/api/generate-outline',
-    generateSlides: '/api/generate-slides',
-    export: '/api/export',
+    generateOutline: '/generate/outline',
+    generateSlide: '/generate/slide', // Corrected from `generateSlides`
+    export: '/export',
     static: '/static'
 };
