@@ -1,336 +1,301 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
+import { v4 as uuidv4 } from 'uuid';
+import { Slide, SlideContent, SlideLayout, SlideImage, SlideTopic, BulletPoint, InstructionalLevel } from '../components/SlideEditor/types';
 import { RootState } from './store';
 
-// API Configuration
-const API_BASE_URL = 'http://localhost:8005';
-const API_ENDPOINTS = {
-  generateOutline: '/generate/outline',
-  generateSlides: '/generate/slide',
-  generateImage: '/api/test-image-generation',
-  export: '/export'
-};
-
-export type ExportFormat = 'pdf' | 'google_slides' | 'pptx';
-export type InstructionalLevel = 
-  | "elementary"
-  | "middle_school"
-  | "high_school"
-  | "university"
-  | "professional";
-
-export interface SlideTopic {
-  title: string;
-  description: string;
+// Types
+export interface APIError {
+  message: string;
+  type?: 'SAFETY_VIOLATION' | 'RATE_LIMIT' | 'QUOTA_EXCEEDED' | 'NETWORK_ERROR';
+  service?: string;
+  retryAfter?: number;
+  context?: { topic: string };
 }
 
-export interface BulletPoint {
-  text: string;
-  sub_points?: string[];
-  emphasis?: boolean;
-}
-
-export interface Example {
-  text: string;
-  details?: string[];
-}
-
-export interface SlideContent {
-  title: string;
-  subtitle?: string;
-  introduction?: string;
-  bullet_points: BulletPoint[];
-  examples: Example[];
-  key_takeaway?: string;
-  discussion_questions: string[];
-  image_url?: string;
-  image_caption?: string;
-}
-
-export interface Presentation {
-  topics: SlideTopic[];
-  slides?: SlideContent[];
-  instructional_level: InstructionalLevel;
-  num_slides: number;
+export interface ErrorData {
+  message: string;
+  context?: { topic: string };
 }
 
 interface PresentationState {
-  presentation: Presentation | null;
-  loading: boolean;
-  error: string | null;
-  exportFormat: ExportFormat;
-  exportStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
-  exportError: string | null;
+  outline: SlideTopic[];
+  slides: Slide[];
+  activeSlideId: string | null;
+  isGeneratingSlides: boolean;
+  isGeneratingOutline: boolean;
+  error: APIError | null;
+  instructionalLevel: InstructionalLevel;
+  defaultLayout: SlideLayout;
 }
 
 const initialState: PresentationState = {
-  presentation: null,
-  loading: false,
+  outline: [],
+  slides: [],
+  activeSlideId: null,
+  isGeneratingSlides: false,
+  isGeneratingOutline: false,
   error: null,
-  exportFormat: 'pdf',
-  exportStatus: 'idle',
-  exportError: null
+  instructionalLevel: 'high_school',
+  defaultLayout: 'title-bullets',
 };
 
+// Async thunks
 export const generateOutline = createAsyncThunk(
   'presentation/generateOutline',
-  async (input: { context: string; num_slides: number; instructional_level: InstructionalLevel }, { rejectWithValue }) => {
+  async (params: {
+    topic: string;
+    numSlides: number;
+    instructionalLevel: InstructionalLevel;
+  }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.generateOutline}`, {
+      const requestBody = {
+        context: params.topic,
+        num_slides: params.numSlides,
+        instructional_level: params.instructionalLevel,
+      };
+
+      console.log("🚀 Sending outline request:", requestBody);
+
+      const response = await fetch('http://localhost:8000/api/generate/outline', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
         },
-        credentials: 'include',  // Include credentials for CORS
-        body: JSON.stringify({
-          context: input.context,
-          num_slides: input.num_slides,
-          instructional_level: input.instructional_level
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Server error response:', errorData);
-        
-        // Map to our custom error types from memory
-        let errorMessage = 'An unexpected error occurred';
-        if (errorData.error_type) {
-          switch (errorData.error_type) {
-            case 'RATE_LIMIT':
-              errorMessage = `Rate limit exceeded. Please try again in ${errorData.retry_after} seconds.`;
-              break;
-            case 'QUOTA_EXCEEDED':
-              errorMessage = 'API quota exceeded. Please try again later.';
-              break;
-            case 'SAFETY_VIOLATION':
-              errorMessage = 'Content safety violation detected. Please modify your request.';
-              break;
-            case 'INVALID_REQUEST':
-              errorMessage = errorData.detail || 'Invalid request parameters.';
-              break;
-            case 'API_ERROR':
-              errorMessage = 'API service error. Please try again later.';
-              break;
-            case 'NETWORK_ERROR':
-              errorMessage = 'Network connection error. Please check your connection.';
-              break;
-            default:
-              errorMessage = errorData.detail || 'Server error occurred.';
-          }
-        }
-        return rejectWithValue(errorMessage);
+        const errorText = await response.text();
+        console.error("❌ Server error:", errorText);
+        throw new Error(`API Error: ${response.statusText}`);
       }
 
       const data = await response.json();
-      if (!data.topics) {
-        return rejectWithValue('Invalid response format from server');
-      }
+      console.log("✅ API Response:", data);
 
-      return {
-        topics: data.topics,
-        instructional_level: input.instructional_level,
-        num_slides: input.num_slides,
-        slides: []
-      };
+      // Convert topics to SlideTopic format with IDs
+      const outline = (Array.isArray(data.topics) ? data.topics : [data.topics]).map((topic: any) => ({
+        id: uuidv4(),
+        title: typeof topic === 'string' ? topic : topic.title,
+        key_points: Array.isArray(topic.key_points) ? topic.key_points : [],
+        image_prompt: topic.image_prompt || '',
+        description: topic.description || ''
+      }));
+
+      return outline;
     } catch (error) {
-      console.error('Network error:', error);
-      return rejectWithValue('Failed to connect to server. Please ensure the backend is running.');
+      console.error("❌ Failed to generate outline:", error);
+      throw error;
     }
   }
 );
 
 export const generateSlides = createAsyncThunk(
   'presentation/generateSlides',
-  async (input: { topic: SlideTopic; instructional_level: InstructionalLevel }, { rejectWithValue }) => {
-    try {
-      console.log('Generating slides with input:', input);
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minute timeout
-
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.generateSlides}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        mode: 'cors',
-        credentials: 'omit',
-        body: JSON.stringify(input),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-      console.log('Server response:', response.status);
-
-      if (!response.ok) {
-        const text = await response.text();
-        console.error('Server error response:', text);
-        let errorMessage;
-        try {
-          const errorData = JSON.parse(text);
-          errorMessage = errorData.detail || errorData.error || `Server error: ${response.status}`;
-        } catch (e) {
-          errorMessage = `Server error: ${text.slice(0, 100)}${text.length > 100 ? '...' : ''}`;
-        }
-        return rejectWithValue(errorMessage);
-      }
-
-      const data = await response.json();
-      console.log('Received slide data:', data);
-      
-      // Return the slide content directly since it's already in the correct format
-      return data;
-    } catch (error) {
-      console.error('Network error:', error);
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          return rejectWithValue('Request timed out. Please try with fewer slides or a simpler topic.');
-        }
-        return rejectWithValue(error.message);
-      }
-      return rejectWithValue('Network error occurred');
-    }
-  }
-);
-
-export const exportPresentation = createAsyncThunk(
-  'presentation/exportPresentation',
-  async (_, { getState, rejectWithValue }) => {
+  async (topics: SlideTopic[], { getState }) => {
     try {
       const state = getState() as RootState;
-      const { presentation, exportFormat } = state.presentation;
+      const slides: Slide[] = [];
 
-      if (!presentation) {
-        return rejectWithValue('No presentation to export');
-      }
+      // Generate a slide for each topic
+      for (const topic of topics) {
+        // Clean up topic object to match API expectations
+        const cleanTopic = {
+          title: topic.title,
+          key_points: topic.key_points,
+          image_prompt: topic.image_prompt,
+          description: topic.description
+        };
 
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.export}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        mode: 'cors',
-        credentials: 'omit',
-        body: JSON.stringify({
-          presentation,
-          format: exportFormat,
-        }),
-      });
+        const requestBody = { 
+          topic: cleanTopic,
+          instructional_level: state.presentation.instructionalLevel,
+          layout: state.presentation.defaultLayout
+        };      
 
-      if (!response.ok) {
-        const text = await response.text();
-        let errorMessage;
-        try {
-          const errorData = JSON.parse(text);
-          errorMessage = errorData.detail || `Server error: ${response.status}`;
-        } catch (e) {
-          errorMessage = `Server error: ${text.slice(0, 100)}${text.length > 100 ? '...' : ''}`;
+        console.log("🚀 Sending slide generation request:", JSON.stringify(requestBody, null, 2));
+
+        const response = await fetch('http://localhost:8000/api/generate/slides', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("❌ Server error:", errorText);
+          throw new Error(`API Error: ${response.statusText}`);
         }
-        return rejectWithValue(errorMessage);
+
+        const data = await response.json();
+        console.log("✅ API Response:", data);
+
+        // Create a slide from the response
+        const slide: Slide = {
+          id: topic.id || String(Date.now()),
+          layout: requestBody.layout,
+          content: {
+            title: data.title || topic.title,
+            subtitle: data.subtitle || '',
+            body: data.body || '',
+            bullets: data.bullet_points || topic.key_points.map(point => ({ text: point })),
+            image: data.image_url ? {
+              url: data.image_url,
+              alt: data.image_alt || topic.image_prompt || '',
+              caption: data.image_caption || topic.image_prompt || '',
+              service: 'generated',
+              prompt: topic.image_prompt || ''
+            } : undefined,
+            image_prompt: topic.image_prompt || '',
+            instructionalLevel: state.presentation.instructionalLevel
+          }
+        };
+
+        console.log("Generated Slide:", slide);
+        slides.push(slide);
       }
 
-      const data = await response.json();
-      return data;
+      return slides;
     } catch (error) {
-      console.error('Network error:', error);
-      return rejectWithValue(error instanceof Error ? error.message : 'Network error occurred');
+      console.error("❌ Failed to generate slides:", error);
+      throw error;
     }
   }
 );
 
+export const updateTopicPoint = createAsyncThunk(
+  'presentation/updateTopicPoint',
+  async (params: { topicId: string; pointIndex: number; newText: string }) => {
+    return params;
+  }
+);
+
+export const deleteTopicPoint = createAsyncThunk(
+  'presentation/deleteTopicPoint',
+  async (params: { topicId: string; pointIndex: number }) => {
+    return params;
+  }
+);
+
+export const addTopicPoint = createAsyncThunk(
+  'presentation/addTopicPoint',
+  async (params: { topicId: string; text: string }) => {
+    return params;
+  }
+);
+
+// Slice
 const presentationSlice = createSlice({
   name: 'presentation',
   initialState,
   reducers: {
-    setExportFormat(state, action: PayloadAction<ExportFormat>) {
-      state.exportFormat = action.payload;
+    setSlides: (state, action: PayloadAction<Slide[]>) => {
+      state.slides = action.payload;
     },
-    resetExportStatus(state) {
-      state.exportStatus = 'idle';
-      state.exportError = null;
+    updateOutline: (state, action: PayloadAction<SlideTopic[]>) => {
+      console.log('Updating outline with:', action.payload);
+      state.outline = action.payload;
     },
-    clearPresentation(state) {
-      state.presentation = null;
-      state.loading = false;
-      state.error = null;
-      state.exportStatus = 'idle';
-      state.exportError = null;
+    setActiveSlide: (state, action: PayloadAction<string>) => {
+      console.log('Setting active slide to:', action.payload);
+      state.activeSlideId = action.payload;
     },
-    updateTopics(state, action: PayloadAction<SlideTopic[]>) {
-      console.log('Updating topics:', action.payload);
-      if (state.presentation) {
-        state.presentation.topics = action.payload;
-      }
+    setError: (state, action: PayloadAction<APIError | null>) => {
+      state.error = action.payload;
     },
-    updateSlides(state, action: PayloadAction<SlideContent[]>) {
-      console.log('Updating slides:', action.payload);
-      if (state.presentation) {
-        state.presentation.slides = action.payload;
-      }
+    setInstructionalLevel: (state, action: PayloadAction<InstructionalLevel>) => {
+      state.instructionalLevel = action.payload;
+    },
+    setDefaultLayout: (state, action: PayloadAction<SlideLayout>) => {
+      state.defaultLayout = action.payload;
+    },
+
+    // ✅ Fixed: Move `reorderSlides` inside reducers
+    reorderSlides: (
+      state,
+      action: PayloadAction<{ startIndex: number; endIndex: number }>
+    ) => {
+      const { startIndex, endIndex } = action.payload;
+      const [movedSlide] = state.slides.splice(startIndex, 1);
+      state.slides.splice(endIndex, 0, movedSlide);
     },
   },
   extraReducers: (builder) => {
     builder
       .addCase(generateOutline.pending, (state) => {
-        state.loading = true;
+        state.isGeneratingOutline = true;
         state.error = null;
       })
       .addCase(generateOutline.fulfilled, (state, action) => {
-        state.loading = false;
+        state.isGeneratingOutline = false;
+        state.outline = action.payload;
         state.error = null;
-        state.presentation = action.payload;
       })
       .addCase(generateOutline.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
+        state.isGeneratingOutline = false;
+        state.error = {
+          message: action.error.message || 'Failed to generate outline',
+          context: { topic: '' },
+        };
       })
       .addCase(generateSlides.pending, (state) => {
-        state.loading = true;
+        state.isGeneratingSlides = true;
         state.error = null;
-        console.log('Generate slides pending...');
       })
       .addCase(generateSlides.fulfilled, (state, action) => {
-        state.loading = false;
-        state.error = null;
-        console.log('Generate slides fulfilled:', action.payload);
-        if (state.presentation && action.payload) {
-          state.presentation.slides = action.payload;
-        }
+        state.slides = [...state.slides, ...action.payload];
+        state.isGeneratingSlides = false;
       })
       .addCase(generateSlides.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-        console.error('Generate slides rejected:', action.payload);
+        state.isGeneratingSlides = false;
+        state.error = {
+          message: action.error.message || 'Failed to generate slides',
+          context: action.meta.arg[0] ? { topic: action.meta.arg[0].title } : undefined,
+        };
       })
-      .addCase(exportPresentation.pending, (state) => {
-        state.exportStatus = 'loading';
-        state.exportError = null;
+      .addCase(updateTopicPoint.fulfilled, (state, action) => {
+        const { topicId, pointIndex, newText } = action.payload;
+        const topic = state.outline.find((t) => t.id === topicId);
+        if (topic) {
+          topic.key_points[pointIndex] = newText;
+        }
       })
-      .addCase(exportPresentation.fulfilled, (state) => {
-        state.exportStatus = 'succeeded';
+      .addCase(deleteTopicPoint.fulfilled, (state, action) => {
+        const { topicId, pointIndex } = action.payload;
+        const topic = state.outline.find((t) => t.id === topicId);
+        if (topic) {
+          topic.key_points.splice(pointIndex, 1);
+        }
       })
-      .addCase(exportPresentation.rejected, (state, action) => {
-        state.exportStatus = 'failed';
-        state.exportError = action.payload as string;
+      .addCase(addTopicPoint.fulfilled, (state, action) => {
+        const { topicId, text } = action.payload;
+        const topic = state.outline.find((t) => t.id === topicId);
+        if (topic) {
+          topic.key_points.push(text);
+        }
       });
   },
 });
 
-export const { 
-  setExportFormat, 
-  resetExportStatus, 
-  clearPresentation, 
-  updateTopics,
-  updateSlides 
+
+export const {
+  setSlides,
+  updateOutline,
+  setActiveSlide,
+  setError,
+  setInstructionalLevel,
+  setDefaultLayout,
+  reorderSlides,
 } = presentationSlice.actions;
 
-export default presentationSlice.reducer;
+// Selectors
+export const selectOutline = (state: RootState) => state.presentation.outline;
+export const selectSlides = (state: RootState) => state.presentation.slides;
+export const selectActiveSlideId = (state: RootState) => state.presentation.activeSlideId;
+export const selectActiveSlide = (state: RootState) => {
+  const activeId = state.presentation.activeSlideId;
+  return activeId ? state.presentation.slides.find(s => s.id === activeId) : null;
+};
+export const selectDefaultLayout = (state: RootState) => state.presentation.defaultLayout;
 
-export const selectPresentation = (state: RootState) => state.presentation.presentation;
-export const selectLoading = (state: RootState) => state.presentation.loading;
-export const selectError = (state: RootState) => state.presentation.error;
-export const selectExportFormat = (state: RootState) => state.presentation.exportFormat;
-export const selectExportStatus = (state: RootState) => state.presentation.exportStatus;
-export const selectExportError = (state: RootState) => state.presentation.exportError;
+export default presentationSlice.reducer;

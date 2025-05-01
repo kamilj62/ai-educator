@@ -1,38 +1,75 @@
-from enum import Enum
-from typing import List, Optional, Tuple, Dict, Any
-import os
 import asyncio
-import traceback
+import os
+import time
+from typing import List, Optional, Tuple, Dict, Any
 import logging
 import tempfile
 import base64
 import json
+import traceback
 from datetime import datetime
 from pathlib import Path
 import re
 import hashlib
 import vertexai
-from vertexai.preview import generative_models
+from openai import AsyncOpenAI
 from google.cloud import aiplatform
 from google.oauth2 import service_account
 from google.api_core import retry, exceptions
-from fastapi import HTTPException
-from models import InstructionalLevel, SlideContent, SlideTopic, BulletPoint, Example
+from fastapi import FastAPI, HTTPException
+import httpx
+from models import (
+    InstructionalLevel,
+    SlideContent,
+    SlideTopic,
+    BulletPoint,
+    Example,
+    Presentation,
+    SlideNew,
+    SlideContentNew,
+    SlideLayout
+)
 from rate_limiter import RateLimiter
 from exceptions import (
     ImageGenerationError,
     ImageServiceProvider,
-    ImageGenerationErrorType
+    ErrorType,
+    ContentSafetyError
 )
 import openai
-from openai import AsyncOpenAI, APIError, RateLimitError, APIConnectionError, APITimeoutError, AuthenticationError
-import time
+from openai import APIError, RateLimitError, APIConnectionError, APITimeoutError, AuthenticationError
 from dotenv import load_dotenv
+from utils.export_utils import create_presentation
+
+import httpx
 
 # Load environment variables from .env file
 load_dotenv()
 
 logger = logging.getLogger(__name__)
+
+# Try to import Imagen, but don't fail if not available
+try:
+    from vertexai.preview import generative_models
+    IMAGEN_AVAILABLE = True
+    logger.info("Successfully imported Vertex AI Imagen")
+except ImportError:
+    IMAGEN_AVAILABLE = False
+    logger.warning("Vertex AI Imagen not available, falling back to DALL-E")
+
+# List of sensitive topics requiring special handling
+SENSITIVE_TOPICS = [
+    "israeli palestinian conflict",
+    "israel palestine",
+    "gaza",
+    "west bank",
+    "middle east conflict"
+]
+
+def is_sensitive_topic(context: str) -> bool:
+    """Check if the given context contains sensitive topics."""
+    context_lower = context.lower()
+    return any(topic in context_lower for topic in SENSITIVE_TOPICS)
 
 class AIService:
     def __init__(self, rate_limiter: RateLimiter):
@@ -47,56 +84,77 @@ class AIService:
             raise ValueError("OPENAI_API_KEY environment variable is not set")
             
         # Initialize OpenAI client with API key
-        self.client = AsyncOpenAI(api_key=openai_key)
+        self.client = AsyncOpenAI(
+            api_key=openai_key,
+            default_headers={"User-Agent": "marvelAI/1.0"},
+            http_client=httpx.AsyncClient(
+                timeout=60.0,
+                limits=httpx.Limits(max_keepalive_connections=5, max_connections=10)
+            )
+        )
         
         # Log API key validation (safely)
         logger.info(f"OpenAI API Key loaded and starts with: {openai_key[:4]}...")
             
-        # Initialize Vertex AI with Google Cloud credentials
-        project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
-        if not project_id:
-            raise ValueError("GOOGLE_CLOUD_PROJECT environment variable not set")
+        # Initialize Vertex AI with Google Cloud credentials if Imagen is available
+        if IMAGEN_AVAILABLE:
+            try:
+                project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+                if not project_id:
+                    raise ValueError("GOOGLE_CLOUD_PROJECT environment variable not set")
+                    
+                credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+                if not credentials_path:
+                    raise ValueError("GOOGLE_APPLICATION_CREDENTIALS environment variable not set")
+                    
+                if not os.path.exists(credentials_path):
+                    raise ValueError(f"Credentials file not found at: {credentials_path}")
+                
+                # Initialize credentials from service account file
+                try:
+                    credentials = service_account.Credentials.from_service_account_file(
+                        credentials_path,
+                        scopes=["https://www.googleapis.com/auth/cloud-platform"]
+                    )
+                    
+                    # Verify required roles are present
+                    required_roles = [
+                        "roles/aiplatform.user",
+                        "roles/serviceusage.serviceUsageViewer"
+                    ]
+                    
+                    if hasattr(credentials, 'roles'):
+                        missing_roles = [role for role in required_roles if role not in credentials.roles]
+                        if missing_roles:
+                            logger.warning(f"Missing required roles: {', '.join(missing_roles)}")
+                            self.imagen_available = False
+                        else:
+                            self.imagen_available = True
+                    
+                except Exception as e:
+                    logger.error(f"Failed to initialize Google Cloud credentials: {str(e)}")
+                    self.imagen_available = False
+                
+                # Initialize Vertex AI with the correct project and region
+                if self.imagen_available:
+                    try:
+                        vertexai.init(
+                            project=project_id,
+                            location="us-central1",  # Imagen is available in us-central1
+                            credentials=credentials
+                        )
+                        logger.info(f"Initialized Vertex AI with project: {project_id}")
+                    except Exception as e:
+                        logger.error(f"Failed to initialize Vertex AI: {str(e)}")
+                        self.imagen_available = False
+            except Exception as e:
+                logger.error(f"Failed to setup Imagen: {str(e)}")
+                self.imagen_available = False
+        else:
+            self.imagen_available = False
             
-        credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-        if not credentials_path:
-            raise ValueError("GOOGLE_APPLICATION_CREDENTIALS environment variable not set")
-            
-        if not os.path.exists(credentials_path):
-            raise ValueError(f"Credentials file not found at: {credentials_path}")
-        
-        # Initialize credentials from service account file
-        try:
-            credentials = service_account.Credentials.from_service_account_file(
-                credentials_path,
-                scopes=["https://www.googleapis.com/auth/cloud-platform"]
-            )
-            
-            # Verify required roles are present
-            required_roles = [
-                "roles/aiplatform.user",
-                "roles/serviceusage.serviceUsageViewer"
-            ]
-            
-            if hasattr(credentials, 'roles'):
-                missing_roles = [role for role in required_roles if role not in credentials.roles]
-                if missing_roles:
-                    logger.warning(f"Missing required roles: {', '.join(missing_roles)}")
-            
-        except Exception as e:
-            logger.error(f"Failed to initialize Google Cloud credentials: {str(e)}")
-            raise ValueError(f"Invalid Google Cloud credentials: {str(e)}")
-        
-        # Initialize Vertex AI with the correct project and region
-        try:
-            vertexai.init(
-                project=project_id,
-                location="us-central1",  # Imagen is available in us-central1
-                credentials=credentials
-            )
-            logger.info(f"Initialized AIService with project: {project_id}")
-        except Exception as e:
-            logger.error(f"Failed to initialize Vertex AI: {str(e)}")
-            raise ValueError(f"Failed to initialize Vertex AI: {str(e)}")
+        if not self.imagen_available:
+            logger.info("Imagen not available, using DALL-E as fallback")
         
         # Create images directory if it doesn't exist
         self.images_dir = Path("static/images")
@@ -107,7 +165,7 @@ class AIService:
         """Initialize async components."""
         try:
             # Test API connection
-            await self.test_connection()
+            await self.test_openai_connection()
             logger.info("OpenAI API connection test successful")
         except AuthenticationError as e:
             logger.error(f"OpenAI API key is invalid: {str(e)}")
@@ -120,45 +178,46 @@ class AIService:
             logger.error(traceback.format_exc())
             raise ValueError(f"Failed to test OpenAI connection: {str(e)}")
 
-    async def test_connection(self):
+    async def test_openai_connection(self):
         """Test the OpenAI API connection."""
         try:
-            await self.client.models.list()
-        except AuthenticationError as e:
-            logger.error(f"OpenAI API key is invalid: {str(e)}")
+            # Simple API call to test connection
+            response = await self.client.models.list()
+            logger.info("OpenAI API connection test successful")
+        except AuthenticationError:
+            logger.error("OpenAI API key is invalid")
             raise
-        except RateLimitError as e:
-            logger.error(f"OpenAI API rate limit exceeded: {str(e)}")
+        except APIConnectionError:
+            logger.error("Failed to connect to OpenAI API")
             raise
         except Exception as e:
-            logger.error(f"OpenAI API connection test failed: {str(e)}")
+            logger.error(f"OpenAI API test failed: {str(e)}")
             raise
 
     async def _make_openai_request(self, operation_type: str, func, *args, **kwargs):
         """Make an OpenAI API request with rate limiting."""
-        try:
-            # Wait if we're at the rate limit
-            await self.rate_limiter.wait_if_needed(operation_type)
-            
-            # Make the API call
-            return await func(*args, **kwargs)
-            
-        except AuthenticationError as e:
-            logger.error(f"OpenAI API key is invalid: {str(e)}")
-            raise ValueError("Invalid OpenAI API key. Please check your API key and try again.")
-        except RateLimitError as e:
-            logger.error(f"OpenAI API rate limit exceeded: {str(e)}")
-            raise ValueError("Rate limit exceeded. Please try again in a few minutes.")
-        except APIError as e:
-            if "insufficient_quota" in str(e):
-                logger.error(f"OpenAI API quota exceeded: {str(e)}")
-                raise ValueError("OpenAI API quota exceeded. Please check your billing status or upgrade your plan.")
-            else:
-                logger.error(f"OpenAI API error: {str(e)}")
-                raise ValueError(f"OpenAI API error: {str(e)}")
-        except Exception as e:
-            logger.error(f"OpenAI API error: {str(e)}")
-            raise ValueError(f"OpenAI API error: {str(e)}")
+        async with self.rate_limiter.limit(operation_type):
+            try:
+                return await func(*args, **kwargs)
+            except RateLimitError as e:
+                raise ImageGenerationError(
+                    message="Rate limit exceeded",
+                    error_type=ErrorType.RATE_LIMIT,
+                    service=ImageServiceProvider.DALLE,
+                    retry_after=e.retry_after if hasattr(e, 'retry_after') else None
+                )
+            except APIError as e:
+                raise ImageGenerationError(
+                    message=str(e),
+                    error_type=ErrorType.API_ERROR,
+                    service=ImageServiceProvider.DALLE
+                )
+            except (APIConnectionError, APITimeoutError) as e:
+                raise ImageGenerationError(
+                    message="Failed to connect to OpenAI API",
+                    error_type=ErrorType.NETWORK_ERROR,
+                    service=ImageServiceProvider.DALLE
+                )
 
     async def _validate_json_response(self, response_text: str) -> dict:
         """Validate and parse JSON response from OpenAI."""
@@ -243,7 +302,7 @@ class AIService:
                 return str(filepath)
             
             # Download and save the image
-            async with aiohttp.ClientSession() as session:
+            async with httpx.AsyncClient() as session:
                 async with session.get(image_url) as response:
                     response.raise_for_status()
                     image_data = await response.read()
@@ -338,168 +397,134 @@ class AIService:
             logger.error(f"Failed to verify Imagen access: {str(e)}")
             return False
 
-    async def generate_image(self, prompt: str, context: Optional[Dict[str, Any]] = None, retry_count: int = 0, max_retries: int = 3) -> str:
-        """Generate image with Imagen, falling back to DALL-E if needed.
-        
-        Args:
-            prompt: The image generation prompt
-            context: Optional dictionary containing request context (e.g., topic, level)
-            retry_count: Current retry attempt number
-            max_retries: Maximum number of retries allowed
-            
-        Returns:
-            str: Base64 encoded image data
-        """
+    async def generate_image(self, prompt: str) -> Dict[str, str]:
+        """Generate an image using available image service."""
         try:
-            # First try Imagen
-            try:
-                return await self._generate_image_imagen(prompt, context)
-            except ImageGenerationError as e:
-                logger.warning(f"Imagen generation failed: {e.message}")
-                if retry_count < max_retries:
-                    # Exponential backoff
-                    wait_time = 2 ** retry_count
-                    logger.info(f"Retrying Imagen in {wait_time} seconds...")
-                    await asyncio.sleep(wait_time)
-                    return await self.generate_image(prompt, context, retry_count + 1, max_retries)
-                else:
-                    logger.warning(f"Imagen failed after {max_retries} attempts, falling back to DALL-E")
-                    return await self._generate_image_dalle(prompt, context)
-            except Exception as e:
-                logger.error(f"Unexpected error in Imagen generation: {str(e)}")
-                raise ImageGenerationError(
-                    message=str(e),
-                    error_type=ImageGenerationErrorType.API_ERROR,
-                    service=ImageServiceProvider.IMAGEN
-                )
-
+            if self.imagen_available:
+                try:
+                    return await self._generate_image_imagen(prompt)
+                except Exception as e:
+                    logging.error(f"Imagen generation failed: {str(e)}")
+                    # Fall back to DALL-E
+                    return await self._generate_image_dalle(prompt)
+            else:
+                return await self._generate_image_dalle(prompt)
         except Exception as e:
-            logger.error(f"Failed to generate image: {str(e)}")
-            raise ImageGenerationError(
-                message=str(e),
-                error_type=ImageGenerationErrorType.API_ERROR,
-                service=ImageServiceProvider.IMAGEN
-            )
-
-    async def _generate_image_imagen(self, prompt: str, context: Optional[Dict[str, Any]] = None) -> str:
-        """Generate image using Google Cloud Imagen.
-        
-        Args:
-            prompt: The image generation prompt
-            context: Optional dictionary containing request context (e.g., topic, level)
+            error_type = ErrorType.API_ERROR
+            service = ImageServiceProvider.IMAGEN if self.imagen_available else ImageServiceProvider.DALLE
             
-        Returns:
-            str: Base64 encoded image data
-        """
-        try:
-            # Wait if we're at the rate limit
-            await self.rate_limiter.wait_if_needed('imagen')
-
-            # Initialize Vertex AI
-            model = generative_models.GenerativeModel("imagegeneration@002")
-
-            # Generate the image
-            response = await model.generate_images(
-                prompt=prompt,
-                number_of_images=1,
-                image_size="1024x1024"
-            )
-
-            # Get the base64 encoded image
-            if response and response.images:
-                return response.images[0].base64
-            else:
-                raise ImageGenerationError(
-                    message="No image generated by Imagen",
-                    error_type=ImageGenerationErrorType.API_ERROR,
-                    service=ImageServiceProvider.IMAGEN
-                )
-
-        except exceptions.PermissionDenied as e:
-            raise ImageGenerationError(
-                message=str(e),
-                error_type=ImageGenerationErrorType.API_ERROR,
-                service=ImageServiceProvider.IMAGEN
-            )
-        except exceptions.ResourceExhausted as e:
-            if "quota" in str(e).lower():
-                raise ImageGenerationError(
-                    message=str(e),
-                    error_type=ImageGenerationErrorType.QUOTA_EXCEEDED,
-                    service=ImageServiceProvider.IMAGEN,
-                    retry_after=3600  # 1 hour
-                )
-            else:
-                raise ImageGenerationError(
-                    message=str(e),
-                    error_type=ImageGenerationErrorType.RATE_LIMIT,
-                    service=ImageServiceProvider.IMAGEN,
-                    retry_after=60  # 1 minute
-                )
-        except exceptions.InvalidArgument as e:
-            if "safety" in str(e).lower():
-                raise ImageGenerationError(
-                    message=str(e),
-                    error_type=ImageGenerationErrorType.SAFETY_VIOLATION,
-                    service=ImageServiceProvider.IMAGEN
-                )
-            else:
-                raise ImageGenerationError(
-                    message=str(e),
-                    error_type=ImageGenerationErrorType.INVALID_REQUEST,
-                    service=ImageServiceProvider.IMAGEN
-                )
-        except exceptions.ServiceUnavailable as e:
-            raise ImageGenerationError(
-                message=str(e),
-                error_type=ImageGenerationErrorType.NETWORK_ERROR,
-                service=ImageServiceProvider.IMAGEN,
-                retry_after=30  # 30 seconds
-            )
-        except Exception as e:
-            raise ImageGenerationError(
-                message=str(e),
-                error_type=ImageGenerationErrorType.API_ERROR,
-                service=ImageServiceProvider.IMAGEN
-            )
-
-    async def _generate_image_dalle(self, prompt: str, context: Optional[Dict[str, Any]] = None) -> str:
-        """Generate image using DALL-E as fallback.
-        
-        Args:
-            prompt: The image generation prompt
-            context: Optional dictionary containing request context (e.g., topic, level)
+            if isinstance(e, RateLimitError):
+                error_type = ErrorType.RATE_LIMIT
+            elif isinstance(e, APITimeoutError):
+                error_type = ErrorType.API_ERROR
+            elif isinstance(e, APIConnectionError):
+                error_type = ErrorType.NETWORK_ERROR
+            elif isinstance(e, AuthenticationError):
+                error_type = ErrorType.API_ERROR
             
-        Returns:
-            str: Base64 encoded image data
-        """
-        try:
-            # Wait if we're at the rate limit
-            await self.rate_limiter.wait_if_needed('dalle')
+            raise ImageGenerationError(
+                message=str(e),
+                error_type=error_type,
+                service=service,
+                retry_after=getattr(e, 'retry_after', None),
+                recommendations=[
+                    "Try a simpler image prompt",
+                    "Check if the image service is available",
+                    "Wait and try again later"
+                ]
+            )
 
-            # Generate the image
-            response = await self._make_openai_request(
-                'dalle',
-                self.client.images.generate,
+    async def _generate_image_dalle(self, prompt: str) -> Dict[str, str]:
+        """Generate an image using DALL-E."""
+        try:
+            response = await self.client.images.generate(
                 model="dall-e-3",
                 prompt=prompt,
                 n=1,
-                size="1024x1024",
-                response_format="b64_json"
+                size="1024x1024"
+            )
+            
+            if not response.data:
+                raise ImageGenerationError(
+                    message="No image data received from DALL-E",
+                    error_type=ErrorType.API_ERROR,
+                    service=ImageServiceProvider.DALLE,
+                    recommendations=[
+                        "Try a different image prompt",
+                        "Check if DALL-E service is available",
+                        "Try again later"
+                    ]
+                )
+            
+            return {"url": response.data[0].url}
+            
+        except Exception as e:
+            error_type = ErrorType.API_ERROR
+            if isinstance(e, RateLimitError):
+                error_type = ErrorType.RATE_LIMIT
+            elif isinstance(e, APITimeoutError):
+                error_type = ErrorType.API_ERROR
+            elif isinstance(e, APIConnectionError):
+                error_type = ErrorType.NETWORK_ERROR
+            elif isinstance(e, AuthenticationError):
+                error_type = ErrorType.API_ERROR
+            
+            raise ImageGenerationError(
+                message=str(e),
+                error_type=error_type,
+                service=ImageServiceProvider.DALLE,
+                retry_after=getattr(e, 'retry_after', None),
+                recommendations=[
+                    "Try a simpler image prompt",
+                    "Check your API key and permissions",
+                    "Wait and try again later"
+                ]
             )
 
-            if response and response.data:
-                return response.data[0].b64_json
-            else:
+    async def _generate_image_imagen(self, prompt: str) -> Dict[str, str]:
+        """Generate an image using Imagen."""
+        try:
+            model = aiplatform.GenerativeModel("imagegeneration@002")
+            response = await model.generate_images(
+                prompt=prompt,
+                number_of_images=1,
+                image_parameters={"size": "1024x1024"}
+            )
+            
+            if not response.images:
                 raise ImageGenerationError(
-                    message="No image generated by DALL-E",
-                    error_type=ImageGenerationErrorType.API_ERROR,
-                    service=ImageServiceProvider.DALLE
+                    message="No image data received from Imagen",
+                    error_type=ErrorType.API_ERROR,
+                    service=ImageServiceProvider.IMAGEN,
+                    recommendations=[
+                        "Try a different image prompt",
+                        "Check if Imagen service is available",
+                        "Try again later"
+                    ]
                 )
-
+            
+            return {"url": response.images[0].url}
+            
         except Exception as e:
-            # Convert to our custom error format
-            raise ImageGenerationError.from_dalle_error(e, context)
+            error_type = ErrorType.API_ERROR
+            if "quota" in str(e).lower():
+                error_type = ErrorType.QUOTA_EXCEEDED
+            elif "rate" in str(e).lower():
+                error_type = ErrorType.RATE_LIMIT
+            elif "safety" in str(e).lower():
+                error_type = ErrorType.SAFETY_VIOLATION
+            
+            raise ImageGenerationError(
+                message=str(e),
+                error_type=error_type,
+                service=ImageServiceProvider.IMAGEN,
+                retry_after=None,  # Imagen doesn't provide retry_after
+                recommendations=[
+                    "Try a simpler image prompt",
+                    "Check your project quota and permissions",
+                    "Wait and try again later"
+                ]
+            )
 
     async def _generate_image_url(self, topic: str, level: InstructionalLevel) -> Tuple[str, str]:
         """Generate an educational image using Imagen with DALL-E fallback."""
@@ -551,7 +576,7 @@ class AIService:
             logger.error(f"Failed to generate image: {str(e)}")
             raise ImageGenerationError(
                 message=str(e),
-                error_type=ImageGenerationErrorType.API_ERROR,
+                error_type=ErrorType.API_ERROR,
                 service=ImageServiceProvider.IMAGEN
             )
 
@@ -576,143 +601,246 @@ class AIService:
             logger.error(f"Error saving image: {str(e)}")
             raise ImageGenerationError(
                 message=f"Failed to save generated image: {str(e)}",
-                error_type=ImageGenerationErrorType.API_ERROR,
+                error_type=ErrorType.API_ERROR,
                 service=ImageServiceProvider.IMAGEN
             )
 
-    async def generate_outline(self, context: str, num_slides: int, level: InstructionalLevel) -> List[SlideTopic]:
-        """Generate a presentation outline based on context and parameters."""
+    async def generate_outline(
+        self, 
+        context: str, 
+        num_slides: int, 
+        level: InstructionalLevel,
+        sensitive: bool = False
+    ) -> List[SlideTopic]:
+        """Generate presentation outline with safety checks for sensitive topics."""
         try:
-            logger.info(f"Generating outline for context: {context}")
-            logger.debug(f"Parameters: num_slides={num_slides}, level={level}")
+            # Format the prompt for outline generation
+            system_prompt = """You are an expert educational content creator. Generate a presentation outline in JSON format.
+            For each slide, provide:
+            1. A clear, concise title
+            2. 3-5 key points that will be covered
+            3. An image prompt that will generate an educational, appropriate image
             
-            # Create the prompt
-            prompt = {
-                "context": context,
-                "num_slides": num_slides,
-                "level": level.value,
-                "instructions": "Create an educational presentation outline with detailed descriptions"
-            }
-            
-            completion = await self._make_openai_request(
-                'chat',
-                self.client.chat.completions.create,
-                model="gpt-4",
-                messages=[
+            Format the response as a JSON object with this structure:
+            {
+                "topics": [
                     {
-                        "role": "system",
-                        "content": f"""You are a JSON generator for educational presentation outlines. 
-                        Analyze the input and return a JSON object with a 'topics' array containing exactly {num_slides} topics.
-                        
-                        Each topic must have:
-                        - 'title': A clear, concise title (3-7 words)
-                        - 'description': A detailed 2-3 sentence description explaining the key points and importance of this topic
-                        
-                        Requirements:
-                        - Topics must be unique and non-overlapping
-                        - Descriptions must be specific and informative
-                        - Content must be appropriate for {level.value} level
-                        - No empty or one-word descriptions
-                        - Include specific examples or data points in descriptions"""
-                    },
-                    {"role": "user", "content": json.dumps(prompt, indent=2)}
-                ],
-                temperature=0.7
-            )
+                        "title": "Slide Title",
+                        "key_points": ["Point 1", "Point 2", "Point 3"],
+                        "image_prompt": "Educational image description"
+                    }
+                ]
+            }
+            """
             
-            # Get the response content
-            response_text = completion.choices[0].message.content
-            logger.debug(f"Raw response: {response_text}")
+            user_prompt = f"""Create a {level} level presentation about "{context}" with {num_slides} slides.
+            Focus on educational value and clear progression of ideas.
+            Ensure all content and image prompts are appropriate for {level} level.
+            Return only the JSON response, no additional text."""
+
+            logger.info(f"Generating outline for topic: {context}")
             
+            # Make the API request with rate limiting
+            async with self.rate_limiter.limit('chat'):
+                response = await self.client.chat.completions.create(
+                    model="gpt-4-turbo-preview",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.7,
+                    response_format={ "type": "json_object" }
+                )
+
             # Parse and validate the response
-            response_data = await self._validate_json_response(response_text)
-            topics = [SlideTopic(**topic) for topic in response_data["topics"]]
+            outline_data = await self._validate_outline_response(response.choices[0].message.content)
             
-            logger.info(f"Successfully generated {len(topics)} topics")
-            return topics
+            # Add any content advisories or warnings
+            warnings = []
+            if sensitive:
+                warnings.append("This topic may contain sensitive content. The presentation aims to provide balanced, factual information.")
+            
+            return {
+                "topics": outline_data["topics"],
+                "warnings": warnings
+            }
             
         except Exception as e:
             logger.error(f"Error in generate_outline: {str(e)}")
-            logger.error(traceback.format_exc())
-            raise
+            raise ValueError(f"Failed to generate outline: {str(e)}")
 
-    async def generate_slide_content(self, topic: SlideTopic, level: InstructionalLevel) -> SlideContent:
-        """Generate content for a single slide."""
+    async def _validate_outline_response(self, response_text: str) -> dict:
+        """Validate and parse the outline response."""
         try:
+            # Parse JSON response
+            response_data = json.loads(response_text)
+            
+            # Validate structure
+            if not isinstance(response_data, dict) or "topics" not in response_data:
+                raise ValueError("Response missing 'topics' array")
+            
+            if not isinstance(response_data["topics"], list):
+                raise ValueError("'topics' must be an array")
+            
+            # Validate each topic
+            for topic in response_data["topics"]:
+                if not isinstance(topic, dict):
+                    raise ValueError("Each topic must be an object")
+                
+                required_fields = ["title", "key_points", "image_prompt"]
+                for field in required_fields:
+                    if field not in topic:
+                        raise ValueError(f"Topic missing required field: {field}")
+                
+                if not isinstance(topic["title"], str):
+                    raise ValueError("Topic title must be a string")
+                
+                if not isinstance(topic["key_points"], list):
+                    raise ValueError("key_points must be an array")
+                
+                if not isinstance(topic["image_prompt"], str):
+                    raise ValueError("image_prompt must be a string")
+                
+                if not topic["key_points"]:
+                    raise ValueError("key_points array cannot be empty")
+                
+                if not all(isinstance(point, str) for point in topic["key_points"]):
+                    raise ValueError("All key points must be strings")
+            
+            return response_data
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse outline JSON: {str(e)}")
+            raise ValueError(f"Invalid JSON format: {str(e)}")
+        except Exception as e:
+            logger.error(f"Failed to validate outline: {str(e)}")
+            raise ValueError(f"Invalid outline format: {str(e)}")
+
+    async def generate_slide_content(
+        self,
+        topic: SlideTopic,
+        instructional_level: InstructionalLevel,
+        layout: str
+    ) -> SlideContentNew:
+        """Generate content for a slide based on topic, level, and layout."""
+        try:
+            # Layout-specific prompts based on our layout system
+            layout_prompts = {
+                'title': "Create a title slide with an engaging title.",
+                'title-image': "Create a title slide with a subtitle and an image that captures the main concept.",
+                'title-body': "Create a slide with a title and detailed paragraph text.",
+                'title-body-image': "Create a slide with a title, detailed paragraph text, and a relevant image.",
+                'title-bullets': "Create a slide with a title and key points as bullet points.",
+                'title-bullets-image': "Create a slide with a title, bullet points, and a supporting image.",
+                'two-column': "Create a slide with a title and content split into two columns.",
+                'two-column-image': "Create a slide with a title, two columns of content, and an image."
+            }
+
+            # Validate layout
+            if layout not in layout_prompts:
+                logger.error(f"Invalid layout requested: {layout}")
+                raise ValueError(f"Unsupported layout: {layout}")
+
+            # Build the prompt based on layout
+            system_prompt = """You are an expert presentation content creator.
+            Return content in JSON format with this structure:
+            {
+                "title": "Slide Title",
+                "subtitle": "Optional subtitle",
+                "body": "Main content if layout requires body text",
+                "bullet_points": ["Point 1", "Point 2", "Point 3"],
+                "column_left": "Left column content if two-column layout",
+                "column_right": "Right column content if two-column layout"
+            }
+            """
+
+            user_prompt = f"""
+            Generate content for a {layout} slide about {topic.title}.
+            The content should be suitable for {instructional_level} level.
+            {layout_prompts[layout]}
+            
+            Key points to cover:
+            {', '.join(topic.key_points)}
+            
+            Additional context:
+            {topic.description or 'No additional context provided.'}
+            """
+
             logger.info(f"Generating slide content for topic: {topic.title}")
-            
-            # First, generate the slide content
-            completion = await self._make_openai_request(
-                'chat',
-                self.client.chat.completions.create,
-                model="gpt-4",
+
+            # Generate slide content using OpenAI
+            completion = await self.client.chat.completions.create(
+                model="gpt-4-turbo-preview",
                 messages=[
-                    {
-                        "role": "system",
-                        "content": """You are a JSON generator for educational slide content.
-                        Create engaging, informative content suitable for the specified educational level.
-                        
-                        Required JSON structure:
-                        {
-                            "title": "string (3-7 words)",
-                            "bullet_points": ["string", "string", ...],
-                            "examples": ["string", "string", ...],
-                            "discussion_questions": ["string", "string", ...]
-                        }
-                        
-                        Guidelines:
-                        - Title should be clear and concise
-                        - Include 3-5 bullet points with key concepts
-                        - Provide 2-3 concrete examples
-                        - Add 2-3 thought-provoking discussion questions
-                        - Content must be accurate and educational
-                        - Return ONLY the JSON object, no other text"""
-                    },
-                    {
-                        "role": "user",
-                        "content": json.dumps({
-                            "topic": topic.dict(),
-                            "level": level.value,
-                            "instructions": "Generate educational slide content following the exact JSON structure specified."
-                        }, indent=2)
-                    }
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
                 ],
-                temperature=0.7
+                temperature=0.7,
+                max_tokens=500,
+                response_format={ "type": "json_object" }
             )
-            
+
             # Parse the response
-            response_text = completion.choices[0].message.content
-            content_data = await self._validate_json_response(response_text)
-            
-            # Generate an image for the slide
             try:
-                image_path, image_caption = await self._generate_image_url(topic.title, level)
-            except ImageGenerationError as e:
-                # Re-raise ImageGenerationError to be handled by the endpoint
-                raise
-            except Exception as e:
-                # Convert other errors to ImageGenerationError
-                raise ImageGenerationError(
-                    message=f"Failed to generate image: {str(e)}",
-                    error_type=ImageGenerationErrorType.API_ERROR,
-                    service=ImageServiceProvider.IMAGEN
-                )
-            
-            # Create the slide content
-            return SlideContent(
-                title=content_data["title"],
-                bullet_points=[BulletPoint(text=point) for point in content_data["bullet_points"]],
-                examples=[Example(text=example) for example in content_data["examples"]],
-                discussion_questions=content_data["discussion_questions"],
-                image_url=image_path,
-                image_caption=image_caption
+                content = json.loads(completion.choices[0].message.content)
+                logger.debug(f"Received content: {json.dumps(content, indent=2)}")
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse OpenAI response: {str(e)}")
+                logger.error(f"Raw response: {completion.choices[0].message.content}")
+                raise ValueError("Failed to parse slide content response")
+
+            # Generate image if layout requires it
+            image_url = None
+            image_caption = None
+            if '-image' in layout:
+                try:
+                    image_result = await self.generate_image(topic.image_prompt)
+                    image_url = image_result.get('url')
+                    image_caption = topic.image_prompt
+                except ImageGenerationError as e:
+                    # Log the error but continue - image is optional
+                    logger.error(f"Image generation failed: {str(e)}")
+
+            # Create slide content based on layout
+            bullet_points = []
+            if 'bullet_points' in content and isinstance(content['bullet_points'], list):
+                bullet_points = [{"text": point} for point in content['bullet_points'] if point and isinstance(point, str)]
+
+            slide_content = SlideContentNew(
+                title=content.get('title', topic.title),
+                subtitle=content.get('subtitle'),
+                body=content.get('body') if 'body' in layout else None,
+                bullet_points=bullet_points if 'bullets' in layout else None,
+                image_url=image_url,
+                image_caption=image_caption,
+                layout=layout,
+                column_left=content.get('column_left') if 'two-column' in layout else None,
+                column_right=content.get('column_right') if 'two-column' in layout else None
             )
+
+            return slide_content
+
+        except APIError as e:
+            error_type = ErrorType.API_ERROR
+            if isinstance(e, RateLimitError):
+                error_type = ErrorType.RATE_LIMIT
+            elif isinstance(e, APITimeoutError):
+                error_type = ErrorType.API_ERROR
+            elif isinstance(e, APIConnectionError):
+                error_type = ErrorType.NETWORK_ERROR
             
-        except ImageGenerationError:
-            # Re-raise ImageGenerationError to be handled by the endpoint
+            logger.error(f"OpenAI API error: {str(e)}")
+            raise ImageGenerationError(
+                message=str(e),
+                error_type=error_type,
+                service=ImageServiceProvider.OPENAI,
+                retry_after=getattr(e, 'retry_after', None)
+            )
+        except ValueError as e:
+            logger.error(f"Validation error: {str(e)}")
             raise
         except Exception as e:
-            logger.error(f"Error generating slide content: {str(e)}")
+            logger.error(f"Unexpected error in generate_slide_content: {str(e)}")
             logger.error(traceback.format_exc())
             raise ValueError(f"Failed to generate slide content: {str(e)}")
 
@@ -829,3 +957,36 @@ class AIService:
             if not any(w in question.lower() for w in ['how', 'what', 'why', 'when', 'where', 'which']):
                 raise ValueError(f"Discussion question {i+1} should start with a question word (how, what, why, etc.)")
             check_text(question, f"discussion question {i+1}", min_words=6)
+
+    def export_presentation(self, presentation: Presentation, format: str = "pptx") -> str:
+        """Export presentation with secure image handling."""
+        try:
+            # Create exports directory in static for easy access
+            export_dir = os.path.join("static", "exports")
+            
+            # Convert presentation to format needed by export utils
+            slides_data = []
+            for slide in presentation.slides:
+                slide_data = {
+                    "title": slide.title,
+                    "bullet_points": [{"text": point.text} for point in slide.bullet_points],
+                    "examples": [{"text": ex.text} for ex in slide.examples],
+                    "discussion_questions": slide.discussion_questions,
+                    "image_url": slide.image_url
+                }
+                slides_data.append(slide_data)
+            
+            # Export presentation
+            output_path = create_presentation(
+                title=presentation.topics[0].title,
+                slides=slides_data,
+                output_dir=export_dir
+            )
+            
+            # Return relative path for frontend
+            return os.path.relpath(output_path, "static")
+            
+        except Exception as e:
+            logger.error(f"Error exporting presentation: {str(e)}")
+            logger.error(traceback.format_exc())
+            raise ValueError(f"Failed to export presentation: {str(e)}")
