@@ -63,6 +63,7 @@ app.add_middleware(
     allow_origins=[
         "https://marvelai-frontend-62a80e741e41.herokuapp.com",
         "http://localhost:3000",
+        "https://ai-educator-jfpenqilf-kamilj62s-projects.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
