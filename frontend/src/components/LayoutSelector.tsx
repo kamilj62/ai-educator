@@ -21,37 +21,37 @@ interface LayoutOption {
 
 const layoutOptions: LayoutOption[] = [
   {
-    layout: 'TITLE_BODY',
+    layout: 'title-body',
     title: 'Title and Body',
     description: 'Classic layout with a title and text content',
     preview: '📝',
   },
   {
-    layout: 'TITLE_BULLETS',
+    layout: 'title-bullets',
     title: 'Title and Bullets',
     description: 'Title with bullet points for key information',
     preview: '🔍',
   },
   {
-    layout: 'TITLE_BODY_IMAGE',
+    layout: 'title-body-image',
     title: 'Title, Body, and Image',
     description: 'Title and text with a supporting image',
     preview: '📸',
   },
   {
-    layout: 'TITLE_BULLETS_IMAGE',
+    layout: 'title-bullets-image',
     title: 'Title, Bullets, and Image',
     description: 'Title with bullet points and an image',
     preview: '📊',
   },
   {
-    layout: 'TWO_COLUMN',
+    layout: 'two-column',
     title: 'Two Columns',
     description: 'Split content into two columns',
     preview: '⚡',
   },
   {
-    layout: 'TWO_COLUMN_IMAGE',
+    layout: 'two-column-image',
     title: 'Two Columns with Image',
     description: 'Two columns with an image',
     preview: '🎯',
