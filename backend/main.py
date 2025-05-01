@@ -40,15 +40,17 @@ from pptx.util import Inches
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load OpenAI API key from credentials
+# Load OpenAI API key from credentials or environment
 try:
-    with open('credentials/marvelai-imagen-sa-key.json', 'r') as f:
-        credentials = json.load(f)
-        api_key = credentials.get('openai_api_key')
-        if not api_key:
-            raise ValueError("OpenAI API key not found in credentials")
-        client = OpenAI(api_key=api_key)
-        logger.info(f"✅ OpenAI API Key Loaded: {api_key[:5]}...{api_key[-5:]}")
+    api_key = os.environ.get('OPENAI_API_KEY')
+    if not api_key:
+        with open('credentials/marvelai-imagen-sa-key.json', 'r') as f:
+            credentials = json.load(f)
+            api_key = credentials.get('openai_api_key')
+    if not api_key:
+        raise ValueError("OpenAI API key not found in environment or credentials file")
+    client = OpenAI(api_key=api_key)
+    logger.info(f"✅ OpenAI API Key Loaded: {api_key[:5]}...{api_key[-5:]}")
 except Exception as e:
     logger.error(f"Error loading credentials: {str(e)}")
     raise
