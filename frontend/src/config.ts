@@ -1,6 +1,6 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: '/api',  // Use relative path for API requests
+  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || '/api',  // Use relative path for API requests or NEXT_PUBLIC_API_BASE_URL if set
   ENDPOINTS: {
     GENERATE_OUTLINE: '/generate/outline',
     GENERATE_SLIDE: '/generate/slide',
