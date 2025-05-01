@@ -2,15 +2,15 @@
 export const API_CONFIG = {
   BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || '/api',  // Use relative path for API requests or NEXT_PUBLIC_API_BASE_URL if set
   ENDPOINTS: {
-    GENERATE_OUTLINE: '/generate/outline',
-    GENERATE_SLIDE: '/generate/slide',
-    GENERATE_SLIDES: '/generate/slides',
-    EXPORT: '/export',
-    LAYOUTS: '/layouts',
-    LAYOUT_VALIDATE: '/layout/validate',
-    LAYOUT_SWITCH: '/layout/switch',
-    UPLOAD_IMAGE: '/upload/image',
-    HEALTH: '/health'
+    GENERATE_OUTLINE: '/api/generate/outline',
+    GENERATE_SLIDE: '/api/generate/slide',
+    GENERATE_SLIDES: '/api/generate/slides',
+    EXPORT: '/api/export',
+    LAYOUTS: '/api/layouts',
+    LAYOUT_VALIDATE: '/api/layout/validate',
+    LAYOUT_SWITCH: '/api/layout/switch',
+    UPLOAD_IMAGE: '/api/upload/image',
+    HEALTH: '/api/health'
   }
 } as const;
 
