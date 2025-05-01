@@ -12,17 +12,23 @@ import logging
 import uuid
 from openai import OpenAI, OpenAIError
 from dotenv import load_dotenv
+<<<<<<< HEAD
 import traceback
 from collections import deque
 import openai
 import base64
+=======
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
 
 # Load environment variables
 load_dotenv()
 
+<<<<<<< HEAD
 # DEBUG: Log OpenAI API key presence at startup
 print('[server.py] OPENAI_API_KEY present:', bool(os.environ.get('OPENAI_API_KEY')))
 
+=======
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -37,6 +43,7 @@ client = OpenAI(api_key=api_key)
 
 app = FastAPI()
 
+<<<<<<< HEAD
 # --- CORS MIDDLEWARE SETUP ---
 app.add_middleware(
     CORSMiddleware,
@@ -46,6 +53,13 @@ app.add_middleware(
         "https://ai-powerpoint-f44a1d57b590.herokuapp.com"
     ],
     allow_credentials=True,
+=======
+# Configure CORS - Allow all origins in development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins in development
+    allow_credentials=False,  # Must be False when using allow_origins=["*"]
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -57,6 +71,7 @@ os.makedirs("static/images", exist_ok=True)
 # Mount static files directory
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+<<<<<<< HEAD
 # --- LOGGING STORAGE ---
 openai_log_buffer = deque(maxlen=10)
 
@@ -69,6 +84,8 @@ def add_openai_log(entry):
 async def get_openai_logs():
     return JSONResponse(content={"logs": list(openai_log_buffer)})
 
+=======
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
 @app.exception_handler(404)
 async def custom_404_handler(request: Request, exc: HTTPException):
     endpoint = request.url.path
@@ -108,6 +125,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         }
     )
 
+<<<<<<< HEAD
 # --- ERROR HANDLING FOR OPENAI API KEY ---
 @app.exception_handler(ValueError)
 async def value_error_handler(request: Request, exc: ValueError):
@@ -137,6 +155,8 @@ async def value_error_handler(request: Request, exc: ValueError):
         }
     )
 
+=======
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
 class Layout(BaseModel):
     name: str = Field(..., description="Name of the layout")
     type: str = Field(..., description="Type of the layout")
@@ -170,7 +190,11 @@ class OutlineRequest(BaseModel):
     )
     instructional_level: str = Field(
         ...,
+<<<<<<< HEAD
         pattern='^(elementary_school|middle_school|high_school|university|professional)$',
+=======
+        pattern='^(elementary|middle_school|high_school|university|professional)$',
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
         description="Target audience level"
     )
     layout: Optional[str] = Field(
@@ -189,7 +213,11 @@ class SlideRequest(BaseModel):
     topic: SlideTopic
     instructional_level: str = Field(
         ...,
+<<<<<<< HEAD
         pattern='^(elementary_school|middle_school|high_school|university|professional)$',
+=======
+        pattern='^(elementary|middle_school|high_school|university|professional)$',
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
         description="Target audience level"
     )
     layout: str = Field(
@@ -281,6 +309,7 @@ def determine_slide_layout(content):
 async def generate_outline_with_openai(context: str, num_slides: int, level: str) -> List[Dict]:
     """Generate an outline using OpenAI's GPT model."""
     try:
+<<<<<<< HEAD
         system_prompt = """
 You are an expert educational presentation designer.
 Your job is to generate a JSON array of slides for a presentation on a given topic, audience, and slide count.
@@ -384,25 +413,92 @@ Example output:
                 "context": {"error": "No valid slides after multiple attempts."}
             }
         )
+=======
+        system_prompt = """You are an expert presentation outline generator. 
+        Create detailed, well-structured presentation outlines based on the given topic, number of slides, and audience level.
+        Each slide should have a clear title and 3-4 key points.
+        For image-worthy slides, include an image prompt that describes what kind of image would enhance the content."""
+
+        user_prompt = f"""Generate a presentation outline for:
+        Topic: {context}
+        Number of slides: {num_slides}
+        Audience level: {level}
+        
+        Format each slide as:
+        {{
+            "id": "unique_id",
+            "title": "slide title",
+            "key_points": ["point 1", "point 2", "point 3"],
+            "image_prompt": "description for an image that would enhance this slide",
+            "description": "brief description of the slide's content"
+        }}"""
+
+        response = await client.chat.completions.create(
+            model="gpt-4-turbo-preview",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.7,
+            max_tokens=2000
+        )
+
+        # Parse and validate the response
+        content = response.choices[0].message.content
+        try:
+            import json
+            topics = json.loads(content)
+            if not isinstance(topics, list):
+                topics = [topics]
+            return topics
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse OpenAI response: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail={
+                    "type": "API_ERROR",
+                    "message": "Failed to parse AI response",
+                    "context": {"error": str(e)}
+                }
+            )
+
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
     except OpenAIError as e:
         logger.error(f"OpenAI API error: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail={
                 "type": "API_ERROR",
+<<<<<<< HEAD
                 "message": f"OpenAI API error: {str(e)}",
                 "context": {"error": str(e)}
+=======
+                "message": "OpenAI API error",
+                "context": {
+                    "error": str(e)
+                }
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
             }
         )
     except Exception as e:
         logger.error(f"Unexpected error in generate_outline_with_openai: {str(e)}")
+<<<<<<< HEAD
         logger.error(traceback.format_exc())
+=======
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
         raise HTTPException(
             status_code=500,
             detail={
                 "type": "API_ERROR",
+<<<<<<< HEAD
                 "message": f"Unexpected error: {str(e)}",
                 "context": {"error": str(e)}
+=======
+                "message": "Failed to generate outline",
+                "context": {
+                    "error": str(e)
+                }
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
             }
         )
 
@@ -432,10 +528,13 @@ async def generate_outline(request: OutlineRequest):
             }
         )
 
+<<<<<<< HEAD
 @app.get("/")
 def root():
     return {"status": "ok", "message": "AI PowerPoint backend is running"}
 
+=======
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
 @app.get("/api/")
 async def root():
     return {
@@ -586,6 +685,7 @@ async def upload_image(file: UploadFile = File(...)):
             }
         )
 
+<<<<<<< HEAD
 # --- IMAGE GENERATION ENDPOINT ---
 @app.post("/api/generate/image")
 async def generate_image(request: dict):
@@ -661,6 +761,8 @@ async def generate_image(request: dict):
             }
         )
 
+=======
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
 if __name__ == "__main__":
     import uvicorn
     print("Starting server on port 8000...")

@@ -8,9 +8,13 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
+<<<<<<< HEAD
         destination: process.env.NEXT_PUBLIC_API_BASE_URL
           ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/:path*`
           : 'http://localhost:8000/api/:path*',
+=======
+        destination: 'http://localhost:8000/:path*',
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
       },
     ];
   },

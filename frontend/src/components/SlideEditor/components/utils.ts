@@ -15,24 +15,53 @@
 //   }
 // };
 
+<<<<<<< HEAD
 // Converts from frontend SlideLayout (UPPERCASE) to backend dash-case string
 export const convertLayoutToBackend = (layout: string): string => {
   switch (layout) {
     case 'TITLE_ONLY':
+=======
+export const convertLayoutToFrontend = (layout: BackendSlideLayout): SlideLayout => {
+  switch (layout) {
+    case 'title-only':
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
       return 'title-only';
-    case 'TITLE_BODY':
+    case 'title-body':
       return 'title-body';
-    case 'TITLE_BULLETS':
+    case 'title-bullets':
       return 'title-bullets';
-    case 'TWO_COLUMN':
+    case 'two-column':
       return 'two-column';
-    case 'TITLE_IMAGE':
+    case 'title-image':
       return 'title-image';
-    case 'TITLE_BODY_IMAGE':
+    case 'title-body-image':
       return 'title-body-image';
-    case 'TITLE_BULLETS_IMAGE':
+    case 'title-bullets-image':
       return 'title-bullets-image';
-    case 'TWO_COLUMN_IMAGE':
+    case 'two-column-image':
+      return 'two-column-image';
+    default:
+      return 'title-only';
+  }
+};
+
+export const convertLayoutToBackend = (layout: SlideLayout): BackendSlideLayout => {
+  switch (layout) {
+    case 'title-only':
+      return 'title-only';
+    case 'title-body':
+      return 'title-body';
+    case 'title-bullets':
+      return 'title-bullets';
+    case 'two-column':
+      return 'two-column';
+    case 'title-image':
+      return 'title-image';
+    case 'title-body-image':
+      return 'title-body-image';
+    case 'title-bullets-image':
+      return 'title-bullets-image';
+    case 'two-column-image':
       return 'two-column-image';
     default:
       return 'title-only';

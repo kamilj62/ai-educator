@@ -3,7 +3,11 @@ import time
 from typing import Dict, Optional
 import logging
 from contextlib import asynccontextmanager
+<<<<<<< HEAD
 from backend.models import ImageServiceProvider
+=======
+from models import ImageServiceProvider
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
 
 logger = logging.getLogger(__name__)
 

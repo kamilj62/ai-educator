@@ -1,4 +1,8 @@
+<<<<<<< HEAD:venv311/bin/flask
 #!/Users/josephkamil/marvelAI/marvelAI/venv311/bin/python3.11
+=======
+#!/Users/josephkamil/marvelAI/backend/venv/bin/python3
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues):backend/venv/bin/fastapi
 # -*- coding: utf-8 -*-
 import re
 import sys

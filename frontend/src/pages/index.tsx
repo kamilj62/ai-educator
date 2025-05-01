@@ -3,7 +3,10 @@ import { Container, Paper, Typography, Box, Grid } from '@mui/material';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import { selectOutline } from '../store/presentationSlice';
+<<<<<<< HEAD
 import { Presentation } from '../components/types';
+=======
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
 import InputSection from '../components/InputSection';
 import OutlineEditor from '../components/OutlineEditor';
 import OutlineDisplay from '../components/OutlineDisplay';

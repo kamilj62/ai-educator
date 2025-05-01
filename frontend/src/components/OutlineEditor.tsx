@@ -13,8 +13,13 @@ import {
   AlertTitle,
 } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
+<<<<<<< HEAD
 import { generateOutline, setError } from '../store/presentationSlice';
 import type { InstructionalLevel, SlideTopic, SlideContent } from '../components/types';
+=======
+import { generateOutline, setError, APIError } from '../store/presentationSlice';
+import { InstructionalLevel } from './SlideEditor/types';
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
 import { LayoutSelector } from './SlideEditor/components/LayoutSelector';
 import { BackendSlideLayout } from './SlideEditor/types';
 import SlidePreview from './SlidePreview';
@@ -26,9 +31,13 @@ interface OutlineEditorProps {
 
 const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => {
   const dispatch = useAppDispatch();
+<<<<<<< HEAD
   const error = useAppSelector(state => state.presentation.error);
   const outline = useAppSelector(state => state.presentation.outline);
   const slides = useAppSelector(state => state.presentation.slides);
+=======
+  const error = useAppSelector(state => state.presentation.error) as APIError | null;
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
   const [topic, setTopic] = useState('');
   const [numSlides, setNumSlides] = useState(5);
   const [level, setLevel] = useState<InstructionalLevel>('high_school');
@@ -44,6 +53,10 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
       if (retryTimeout) {
         clearTimeout(retryTimeout);
       }
+<<<<<<< HEAD
+=======
+      dispatch(setError(null));
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
     };
   }, [retryTimeout, dispatch]);
 
@@ -69,7 +82,11 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
         const timeout = setTimeout(() => {
           setRetryTimeout(null);
           dispatch(setError(null));
+<<<<<<< HEAD
         }, errorObj.retryAfter * 1000);
+=======
+        }, apiError.retryAfter * 1000);
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
         setRetryTimeout(timeout);
       }
     } finally {
@@ -157,7 +174,11 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
 
       {error && (
         <Alert 
+<<<<<<< HEAD
           severity={getErrorSeverity(getErrorObject(error))}
+=======
+          severity={getErrorSeverity(error.type)}
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
           onClose={() => dispatch(setError(null))}
           sx={{ mb: 2, whiteSpace: 'pre-wrap' }}
         >

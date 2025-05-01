@@ -1,4 +1,8 @@
+<<<<<<< HEAD:venv311/bin/vba_extract.py
 #!/Users/josephkamil/marvelAI/marvelAI/venv311/bin/python3.11
+=======
+#!/Users/josephkamil/marvelAI/backend/venv/bin/python3.13
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues):backend/venv/bin/vba_extract.py
 
 ##############################################################################
 #

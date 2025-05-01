@@ -6,9 +6,15 @@ import { RootState } from '../../../store/store';
 import { setSlides } from '../../../store/presentationSlice';
 import { SlideLayout, layoutOptions } from '../types';
 
+<<<<<<< HEAD
 interface ColorOption {
   label: string;
   value: string;
+=======
+interface LayoutSwitcherProps {
+  layout: SlideLayout;
+  onLayoutChange: (layout: SlideLayout) => void;
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
 }
 
 const backgroundColors: ColorOption[] = [
@@ -19,6 +25,7 @@ const backgroundColors: ColorOption[] = [
   { label: 'Custom...', value: 'custom' },
 ];
 
+<<<<<<< HEAD
 const fontColors: ColorOption[] = [
   { label: 'Black', value: '#222' },
   { label: 'White', value: '#fff' },
@@ -26,6 +33,14 @@ const fontColors: ColorOption[] = [
   { label: 'Gray', value: '#888' },
   { label: 'Custom...', value: 'custom' },
 ];
+=======
+const LayoutSwitcher: React.FC<LayoutSwitcherProps> = ({ layout, onLayoutChange }) => {
+  const [open, setOpen] = useState(false);
+  const [selectedLayout, setSelectedLayout] = useState<SlideLayout>(layout);
+  const dispatch = useDispatch();
+  const slides = useSelector((state: RootState) => state.presentation.slides);
+  const activeSlideId = useSelector((state: RootState) => state.presentation.activeSlideId);
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
 
 interface LayoutSwitcherProps {
   backgroundColor: string;

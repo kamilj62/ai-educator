@@ -1,5 +1,5 @@
 # This file must be used with "source <venv>/bin/activate.fish" *from fish*
-# (https://fishshell.com/); you cannot run it directly.
+# (https://fishshell.com/). You cannot run it directly.
 
 function deactivate  -d "Exit virtual environment and return to normal shell environment"
     # reset old environment variables
@@ -33,10 +33,18 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
+<<<<<<< HEAD:venv311/bin/activate.fish
 set -gx VIRTUAL_ENV /Users/josephkamil/marvelAI/marvelAI/venv311
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"bin $PATH
+=======
+set -gx VIRTUAL_ENV /Users/josephkamil/marvelAI/backend/venv
+
+set -gx _OLD_VIRTUAL_PATH $PATH
+set -gx PATH "$VIRTUAL_ENV/"bin $PATH
+set -gx VIRTUAL_ENV_PROMPT venv
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues):backend/venv/bin/activate.fish
 
 # Unset PYTHONHOME if set.
 if set -q PYTHONHOME
@@ -56,7 +64,11 @@ if test -z "$VIRTUAL_ENV_DISABLE_PROMPT"
         set -l old_status $status
 
         # Output the venv prompt; color taken from the blue of the Python logo.
+<<<<<<< HEAD:venv311/bin/activate.fish
         printf "%s%s%s" (set_color 4B8BBE) '(venv311) ' (set_color normal)
+=======
+        printf "%s(%s)%s " (set_color 4B8BBE) venv (set_color normal)
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues):backend/venv/bin/activate.fish
 
         # Restore the return status of the previous command.
         echo "exit $old_status" | .

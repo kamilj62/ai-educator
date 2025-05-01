@@ -17,6 +17,32 @@ export const convertLayoutToFrontend = (layout: BackendSlideLayout): SlideLayout
     case 'title-bullets-image':
       return 'title-bullets-image';
     case 'two-column-image':
+<<<<<<< HEAD
+=======
+      return 'two-column-image';
+    default:
+      return 'title-only';
+  }
+};
+
+export const convertLayoutToBackend = (layout: SlideLayout): BackendSlideLayout => {
+  switch (layout) {
+    case 'title-only':
+      return 'title-only';
+    case 'title-body':
+      return 'title-body';
+    case 'title-bullets':
+      return 'title-bullets';
+    case 'two-column':
+      return 'two-column';
+    case 'title-image':
+      return 'title-image';
+    case 'title-body-image':
+      return 'title-body-image';
+    case 'title-bullets-image':
+      return 'title-bullets-image';
+    case 'two-column-image':
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
       return 'two-column-image';
     default:
       return 'title-only';

@@ -24,5 +24,9 @@ interface SaveFilePickerOptions {
 }
 
 interface Window {
+<<<<<<< HEAD
   showSaveFilePicker?: <T>(options?: SaveFilePickerOptions) => Promise<T>;
+=======
+  showSaveFilePicker(options?: SaveFilePickerOptions): Promise<FileSystemFileHandle>;
+>>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
 }
