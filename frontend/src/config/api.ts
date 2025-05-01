@@ -7,7 +7,7 @@ export const DEFAULT_LAYOUT: BackendSlideLayout = 'title-bullets';
 export const API_CONFIG: APIConfig = {
   BASE_URL: '/api',
   ENDPOINTS: {
-    GENERATE_OUTLINE: '/generate/outline',
-    GENERATE_SLIDE: '/generate/slide',
+    GENERATE_OUTLINE: '/api/generate/outline',
+    GENERATE_SLIDE: '/api/generate/slide',
   },
 } as const;
