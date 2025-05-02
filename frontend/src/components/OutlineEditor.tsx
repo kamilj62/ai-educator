@@ -14,9 +14,11 @@ import {
 } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { generateOutline, setError, APIError } from '../store/presentationSlice';
-import type { InstructionalLevel, SlideTopic } from '../components/types';
+import type { InstructionalLevel, SlideTopic, SlideContent } from '../components/types';
 import { LayoutSelector } from './SlideEditor/components/LayoutSelector';
 import { BackendSlideLayout } from './SlideEditor/types';
+import SlidePreview from './SlidePreview';
+import EditDialog from './EditDialog';
 
 interface OutlineEditorProps {
   onOutlineGenerated?: () => void;
@@ -25,6 +27,8 @@ interface OutlineEditorProps {
 const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => {
   const dispatch = useAppDispatch();
   const error = useAppSelector(state => state.presentation.error) as APIError | null;
+  const presentation = useAppSelector(state => state.presentation.presentation);
+  const slides = useAppSelector(state => state.presentation.slides);
   const [topic, setTopic] = useState('');
   const [numSlides, setNumSlides] = useState(5);
   const [level, setLevel] = useState<InstructionalLevel>('high_school');
@@ -32,6 +36,8 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
   const [isLayoutSelectorOpen, setIsLayoutSelectorOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [retryTimeout, setRetryTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [editingTopic, setEditingTopic] = useState<{ topic: string; index: number } | null>(null);
 
   useEffect(() => {
     return () => {
@@ -115,6 +121,13 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
     return error.message;
   };
 
+  const handleSaveTopic = (updatedTopic: SlideTopic, updatedSlide?: SlideContent) => {
+    if (editingTopic && slides) {
+      // Implement logic to update the slide/topic in Redux or local state
+      setEditingTopic(null);
+    }
+  };
+
   return (
     <Box
       component="form"
@@ -139,6 +152,34 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
             </Typography>
           )}
         </Alert>
+      )}
+
+      {/* Right side - Slide Preview */}
+      <Box sx={{ width: '50%' }}>
+        {slides && slides.length > 0 && (
+          <SlidePreview
+            slides={slides}
+            currentIndex={currentSlideIndex}
+            onPrevious={() => setCurrentSlideIndex(Math.max(0, currentSlideIndex - 1))}
+            onNext={() => setCurrentSlideIndex(Math.min((slides?.length ?? 1) - 1, currentSlideIndex + 1))}
+          />
+        )}
+      </Box>
+
+      {/* Edit Dialog */}
+      {editingTopic && slides && (
+        <EditDialog
+          open={true}
+          topic={{
+            id: slides[editingTopic.index]?.id || '',
+            title: slides[editingTopic.index]?.content?.title || '',
+            key_points: [],
+            description: slides[editingTopic.index]?.content?.body || '',
+          }}
+          slide={slides[editingTopic.index]?.content}
+          onClose={() => setEditingTopic(null)}
+          onSave={(topic, slideContent) => handleSaveTopic(topic, slideContent)}
+        />
       )}
 
       <TextField
