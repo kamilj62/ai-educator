@@ -264,34 +264,45 @@ Example output:
 ]
 """
 
-        user_prompt = f"""Generate a presentation outline for:\n        Topic: {context}\n        Number of slides: {num_slides}\n        Audience level: {level}\n        \n        Format each slide as:\n        {{\n            \"id\": \"unique_id\",\n            \"title\": \"slide title\",\n            \"key_points\": [\"point 1\", \"point 2\", \"point 3\"],\n            \"image_prompt\": \"description for an image that would enhance this slide\",\n            \"description\": \"brief description of the slide's content\"\n        }}\n        IMPORTANT: Only include slides with 3-5 key_points and a non-empty image_prompt. Do not include slides with fewer than 3 key_points.\n        If you are struggling to come up with 3-5 key points, try breaking the topic into smaller subtopics, using examples, or rephrasing points.\n        Output only valid JSON, no explanations. If you cannot generate valid slides, return an empty list ONLY."""
+        # Chain-of-thought + retry logic for more robust OpenAI outline generation
+        import json
+        from fastapi import HTTPException
 
-        response = await client.chat.completions.create(
-            model="gpt-4-turbo-preview",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            temperature=0.3,  # Lowered for more deterministic output
-            max_tokens=2000
-        )
-        
-        # Log the raw OpenAI response
-        content = response.choices[0].message.content
-        logger.info(f"Raw OpenAI response: {content}")
-        try:
-            import json
-            topics = json.loads(content)
-            logger.info(f"Parsed topics from OpenAI: {topics}")
-            if not isinstance(topics, list):
-                topics = [topics]
-            # Filter topics to only include those with 3-5 non-empty key_points and a non-empty image_prompt
+        def build_prompts(context, num_slides, level, attempt=1):
+            if attempt == 1:
+                system = system_prompt
+                user = f"""Generate a presentation outline for:\n        Topic: {context}\n        Number of slides: {num_slides}\n        Audience level: {level}\n        \n        Format each slide as:\n        {{\n            \"id\": \"unique_id\",\n            \"title\": \"slide title\",\n            \"key_points\": [\"point 1\", \"point 2\", \"point 3\"],\n            \"image_prompt\": \"description for an image that would enhance this slide\",\n            \"description\": \"brief description of the slide's content\"\n        }}\n        IMPORTANT: Only include slides with 3-5 key_points and a non-empty image_prompt. Do not include slides with fewer than 3 key_points.\n        If you are struggling to come up with 3-5 key points, try breaking the topic into smaller subtopics, using examples, or rephrasing points.\n        Output only valid JSON, no explanations. If you cannot generate valid slides, return an empty list ONLY."""
+            else:
+                # On retry, be even more forceful and explicit
+                system = system_prompt + "\n\nIMPORTANT: DO NOT return any slide unless it meets ALL requirements. If you cannot generate valid slides, return []. Do NOT return explanations. Think step by step: brainstorm subtopics and bullet points, then generate the JSON array."
+                user = f"""Generate a presentation outline for:\n        Topic: {context}\n        Number of slides: {num_slides}\n        Audience level: {level}\n        \n        Format each slide as:\n        {{\n            \"id\": \"unique_id\",\n            \"title\": \"slide title\",\n            \"key_points\": [\"point 1\", \"point 2\", \"point 3\"],\n            \"image_prompt\": \"description for an image that would enhance this slide\",\n            \"description\": \"brief description of the slide's content\"\n        }}\n        REMEMBER: If you cannot generate 3-5 key points for a slide, do NOT include it. If you cannot generate any valid slides, return []."""
+            return system, user
+
+        max_attempts = 2
+        for attempt in range(1, max_attempts + 1):
+            system, user = build_prompts(context, num_slides, level, attempt)
+            response = await client.chat.completions.create(
+                model="gpt-4-turbo-preview",
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user}
+                ],
+                temperature=0.2,  # Lower for more deterministic output
+                max_tokens=2000
+            )
+            content = response.choices[0].message.content
+            logger.info(f"[OpenAI Attempt {attempt}] Raw response: {content}")
+            try:
+                topics = json.loads(content)
+            except Exception as e:
+                logger.error(f"[OpenAI Attempt {attempt}] JSON decode error: {e}")
+                topics = []
+            # Filtering logic (same as before)
             filtered_topics = []
             for topic in topics:
                 key_points = topic.get("key_points", [])
                 image_prompt = topic.get("image_prompt", "")
                 valid_key_points = [kp for kp in key_points if isinstance(kp, str) and kp.strip()]
-                logger.info(f"Checking topic: title={topic.get('title')}, key_points={key_points}, image_prompt={image_prompt}")
                 if (
                     isinstance(key_points, list)
                     and 3 <= len(valid_key_points) <= 5
@@ -300,32 +311,19 @@ Example output:
                     and image_prompt.strip() != ""
                 ):
                     filtered_topics.append({**topic, "key_points": valid_key_points, "image_prompt": image_prompt.strip()})
-                else:
-                    logger.warning(f"Filtered out invalid topic: {topic}")
-            logger.info(f"Filtered topics: {filtered_topics}")
-            if not filtered_topics:
-                logger.error("No valid slides generated: All topics missing required fields. Raising error as intended.")
-                raise HTTPException(
-                    status_code=500,
-                    detail={
-                        "type": "GENERATION_ERROR",
-                        "message": "No valid slides could be generated. Please try a different topic or wording.",
-                        "context": {"error": "All slides missing key_points or image_prompt."}
-                    }
-                )
-            assert all(len(t['key_points']) >= 3 and len(t['key_points']) <= 5 and t['image_prompt'] for t in filtered_topics), "Returned topics must have 3-5 key_points and non-empty image_prompt"
-            logger.info("Returning only valid filtered topics.")
-            return filtered_topics
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse OpenAI response: {e}")
-            raise HTTPException(
-                status_code=500,
-                detail={
-                    "type": "API_ERROR",
-                    "message": "Failed to parse AI response",
-                    "context": {"error": str(e)}
-                }
-            )
+            logger.info(f"[OpenAI Attempt {attempt}] Filtered topics: {filtered_topics}")
+            if filtered_topics:
+                return filtered_topics
+        # If we reach here, all attempts failed
+        logger.error("OpenAI could not generate valid slides after all attempts.")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "type": "GENERATION_ERROR",
+                "message": "OpenAI could not generate valid slides for this topic. Please try rephrasing or choosing a different topic.",
+                "context": {"error": "No valid slides after multiple attempts."}
+            }
+        )
     except OpenAIError as e:
         logger.error(f"OpenAI API error: {str(e)}")
         raise HTTPException(
