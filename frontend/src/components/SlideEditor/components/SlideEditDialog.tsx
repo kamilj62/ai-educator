@@ -119,11 +119,11 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     });
   };
 
-  const handleBodyChange = (value: string) => {
-    setEditedSlide((prev) => ({
-      ...prev,
-      content: { ...prev.content, body: value },
-    }));
+  const handleBodyChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setEditedSlide({
+      ...editedSlide,
+      content: { ...editedSlide.content, body: event.target.value },
+    });
   };
 
   const handleBulletAdd = () => {
@@ -267,13 +267,6 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     onClose();
   };
 
-  // Helper to ensure HTML content for TiptapEditor
-  const getHtmlContent = (content: string | undefined): string => {
-    if (!content) return '';
-    if (content.startsWith('<')) return content;
-    return `<p>${content}</p>`;
-  };
-
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Edit Slide</DialogTitle>
@@ -309,18 +302,14 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
           />
 
           {(editedSlide.layout === 'title-body' || editedSlide.layout === 'title-body-image') && (
-            <Box>
-              <Typography variant="subtitle1" gutterBottom>Body</Typography>
-              <TiptapEditor
-                content={getHtmlContent(editedSlide.content.body || editedSlide.content.description)}
-                onChange={handleBodyChange}
-                placeholder="Enter body content..."
-                bulletList={false}
-              />
-              {bodyError && (
-                <Typography color="error" variant="body2" sx={{ mt: 1 }}>{bodyError}</Typography>
-              )}
-            </Box>
+            <TextField
+              fullWidth
+              label="Body"
+              multiline
+              rows={4}
+              value={editedSlide.content.body || ''}
+              onChange={handleBodyChange}
+            />
           )}
 
           {(editedSlide.layout === 'title-bullets' || editedSlide.layout === 'title-bullets-image') && (
