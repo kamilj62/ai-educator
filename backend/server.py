@@ -33,7 +33,10 @@ app = FastAPI()
 # Configure CORS - Allow all origins in development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For development, allow all. For production, specify allowed origins.
+    allow_origins=[
+        "http://localhost:3000",
+        "https://ai-powerpoint.herokuapp.com"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
