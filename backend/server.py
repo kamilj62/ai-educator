@@ -292,16 +292,21 @@ Example output:
             return system, user
 
         max_attempts = 2
+        import asyncio
         for attempt in range(1, max_attempts + 1):
             system, user = build_prompts(context, num_slides, level, attempt)
-            response = await client.chat.completions.create(
-                model="gpt-4-turbo-preview",
-                messages=[
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user}
-                ],
-                temperature=0.2,  # Lower for more deterministic output
-                max_tokens=2000
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: client.chat.completions.create(
+                    model="gpt-4-turbo-preview",
+                    messages=[
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user}
+                    ],
+                    temperature=0.2,  # Lower for more deterministic output
+                    max_tokens=2000
+                )
             )
             content = response.choices[0].message.content
             log_entry = {
