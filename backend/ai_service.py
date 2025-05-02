@@ -547,9 +547,13 @@ class AIService:
             response_data = await self._validate_json_response(response_text)
             fixed_topics = []
             for topic in response_data["topics"]:
-                # If topic is already a SlideTopic instance, convert to dict
-                if hasattr(topic, 'dict') and callable(getattr(topic, 'dict', None)):
-                    topic = topic.dict()
+                # If topic is a SlideTopic, convert to dict (handle both direct and nested cases)
+                if not isinstance(topic, dict):
+                    # Try to convert to dict if possible
+                    if hasattr(topic, 'dict') and callable(getattr(topic, 'dict', None)):
+                        topic = topic.dict()
+                    else:
+                        topic = dict(topic)
                 # Ensure key_points is present and is a list of strings
                 if "key_points" not in topic or not isinstance(topic["key_points"], list):
                     topic["key_points"] = []
