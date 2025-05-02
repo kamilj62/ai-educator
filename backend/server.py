@@ -231,8 +231,9 @@ async def generate_outline_with_openai(context: str, num_slides: int, level: str
     try:
         system_prompt = """You are an expert presentation outline generator. 
         Create detailed, well-structured presentation outlines based on the given topic, number of slides, and audience level.
-        Each slide should have a clear title and 3-4 key points.
-        For image-worthy slides, include an image prompt that describes what kind of image would enhance the content."""
+        Each slide should have a clear title and 3-5 key points.
+        For image-worthy slides, include an image prompt that describes what kind of image would enhance the content.
+        IMPORTANT: Each slide's 'key_points' must be a list with 3 to 5 non-empty strings. If you cannot generate 3 key points, do not include the slide."""
 
         user_prompt = f"""Generate a presentation outline for:
         Topic: {context}
@@ -246,7 +247,8 @@ async def generate_outline_with_openai(context: str, num_slides: int, level: str
             "key_points": ["point 1", "point 2", "point 3"],
             "image_prompt": "description for an image that would enhance this slide",
             "description": "brief description of the slide's content"
-        }}"""
+        }}
+        IMPORTANT: Only include slides with 3-5 key_points. Do not include slides with fewer than 3 key_points."""
 
         response = await client.chat.completions.create(
             model="gpt-4-turbo-preview",
@@ -265,7 +267,19 @@ async def generate_outline_with_openai(context: str, num_slides: int, level: str
             topics = json.loads(content)
             if not isinstance(topics, list):
                 topics = [topics]
-            return topics
+            # Filter topics to only include those with 3-5 non-empty key_points and a non-empty image_prompt
+            filtered_topics = []
+            for topic in topics:
+                key_points = topic.get("key_points", [])
+                image_prompt = topic.get("image_prompt", "")
+                if (
+                    isinstance(key_points, list)
+                    and 3 <= len([kp for kp in key_points if isinstance(kp, str) and kp.strip()]) <= 5
+                    and isinstance(image_prompt, str)
+                    and image_prompt.strip() != ""
+                ):
+                    filtered_topics.append(topic)
+            return filtered_topics
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse OpenAI response: {e}")
             raise HTTPException(
@@ -276,7 +290,6 @@ async def generate_outline_with_openai(context: str, num_slides: int, level: str
                     "context": {"error": str(e)}
                 }
             )
-
     except OpenAIError as e:
         logger.error(f"OpenAI API error: {str(e)}")
         raise HTTPException(
