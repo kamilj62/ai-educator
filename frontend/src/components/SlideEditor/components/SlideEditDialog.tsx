@@ -92,21 +92,13 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   });
 
   const handleLayoutChange = (newLayout: SlideLayout) => {
-    // Create a new content object based on the selected layout
-    const newContent = {
-      title: editedSlide.content.title || '',
-      subtitle: editedSlide.content.subtitle,
-      body: (newLayout === 'title-body' || newLayout === 'title-body-image') ? (editedSlide.content.body || '') : undefined,
-      bullets: (newLayout === 'title-bullets' || newLayout === 'title-bullets-image') ? (editedSlide.content.bullets || []) : undefined,
-      columnLeft: newLayout === 'two-column' ? (editedSlide.content.columnLeft || '') : undefined,
-      columnRight: newLayout === 'two-column' ? (editedSlide.content.columnRight || '') : undefined,
-      image: (newLayout === 'title-image' || newLayout === 'title-bullets-image' || newLayout === 'title-body-image') ? editedSlide.content.image : undefined,
-    };
-
+    // Preserve all content fields regardless of layout
     setEditedSlide({
       ...editedSlide,
       layout: newLayout,
-      content: newContent,
+      content: {
+        ...editedSlide.content,
+      },
     });
   };
 
