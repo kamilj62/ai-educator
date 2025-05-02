@@ -92,6 +92,9 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     },
   });
 
+  const [bodyError, setBodyError] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+
   const handleLayoutChange = (newLayout: SlideLayout) => {
     setEditedSlide((prev) => ({
       ...prev,
@@ -230,6 +233,32 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     }
   }, [slide, handleImageGenerate]);
 
+  useEffect(() => {
+    if ((editedSlide.layout === 'title-body' || editedSlide.layout === 'title-body-image')) {
+      if (!editedSlide.content.body || editedSlide.content.body.trim() === '') {
+        setBodyError('Body content is empty or missing.');
+      } else if (!editedSlide.content.body.startsWith('<')) {
+        setBodyError('Body content is not HTML.');
+      } else {
+        setBodyError(null);
+      }
+    } else {
+      setBodyError(null);
+    }
+  }, [editedSlide.layout, editedSlide.content.body]);
+
+  useEffect(() => {
+    if (editedSlide.layout.includes('image')) {
+      if (!editedSlide.content.image || !editedSlide.content.image.url) {
+        setImageError('Image is missing or not set.');
+      } else {
+        setImageError(null);
+      }
+    } else {
+      setImageError(null);
+    }
+  }, [editedSlide.layout, editedSlide.content.image]);
+
   const handleSave = () => {
     onSave({
       ...editedSlide,
@@ -288,6 +317,9 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
                 placeholder="Enter body content..."
                 bulletList={false}
               />
+              {bodyError && (
+                <Typography color="error" variant="body2" sx={{ mt: 1 }}>{bodyError}</Typography>
+              )}
             </Box>
           )}
 
@@ -359,6 +391,9 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
                 onImageUpload={onImageUpload}
                 onImageGenerate={onImageGenerate}
               />
+              {imageError && (
+                <Typography color="error" variant="body2" sx={{ mt: 1 }}>{imageError}</Typography>
+              )}
             </Box>
           )}
         </Stack>
