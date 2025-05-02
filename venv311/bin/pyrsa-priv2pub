@@ -1,4 +1,8 @@
+<<<<<<< HEAD:venv311/bin/pyrsa-priv2pub
 #!/Users/josephkamil/marvelAI/marvelAI/venv311/bin/python3.11
+=======
+#!/Users/josephkamil/marvelAI/marvelAI/backend/venv/bin/python3
+>>>>>>> dd7ecbd (added imagen images):backend/venv/bin/pyrsa-priv2pub
 # -*- coding: utf-8 -*-
 import re
 import sys

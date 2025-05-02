@@ -2,7 +2,15 @@ import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { v4 as uuidv4 } from 'uuid';
 import type { Slide, SlideTopic, SlideLayout, InstructionalLevel } from '../components/types';
 import { RootState } from './store';
-import { API_BASE_URL, API_ENDPOINTS } from '../../config';
+
+// API Configuration
+const API_BASE_URL = 'http://localhost:8005';
+const API_ENDPOINTS = {
+  generateOutline: '/generate/outline',
+  generateSlides: '/generate/slide',
+  generateImage: '/api/test-image-generation',
+  export: '/export'
+};
 
 export type ExportFormat = 'pdf' | 'google_slides' | 'pptx';
 
@@ -38,6 +46,7 @@ export const generateOutline = createAsyncThunk(
     instructionalLevel: InstructionalLevel;
   }) => {
     try {
+<<<<<<< HEAD
       const requestBody = {
         context: params.topic,
         num_slides: params.numSlides,
@@ -45,10 +54,14 @@ export const generateOutline = createAsyncThunk(
       };
 
       const response = await fetch(`${API_BASE_URL}/generate/outline`, {
+=======
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.generateOutline}`, {
+>>>>>>> dd7ecbd (added imagen images)
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+<<<<<<< HEAD
         body: JSON.stringify(requestBody),
       });
 
@@ -65,6 +78,60 @@ export const generateOutline = createAsyncThunk(
         image_prompt: topic.image_prompt || '',
         description: topic.description || ''
       }));
+=======
+        credentials: 'include',  // Include credentials for CORS
+        body: JSON.stringify({
+          context: input.context,
+          num_slides: input.num_slides,
+          instructional_level: input.instructional_level
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Server error response:', errorData);
+        
+        // Map to our custom error types from memory
+        let errorMessage = 'An unexpected error occurred';
+        if (errorData.error_type) {
+          switch (errorData.error_type) {
+            case 'RATE_LIMIT':
+              errorMessage = `Rate limit exceeded. Please try again in ${errorData.retry_after} seconds.`;
+              break;
+            case 'QUOTA_EXCEEDED':
+              errorMessage = 'API quota exceeded. Please try again later.';
+              break;
+            case 'SAFETY_VIOLATION':
+              errorMessage = 'Content safety violation detected. Please modify your request.';
+              break;
+            case 'INVALID_REQUEST':
+              errorMessage = errorData.detail || 'Invalid request parameters.';
+              break;
+            case 'API_ERROR':
+              errorMessage = 'API service error. Please try again later.';
+              break;
+            case 'NETWORK_ERROR':
+              errorMessage = 'Network connection error. Please check your connection.';
+              break;
+            default:
+              errorMessage = errorData.detail || 'Server error occurred.';
+          }
+        }
+        return rejectWithValue(errorMessage);
+      }
+
+      const data = await response.json();
+      if (!data.topics) {
+        return rejectWithValue('Invalid response format from server');
+      }
+
+      return {
+        topics: data.topics,
+        instructional_level: input.instructional_level,
+        num_slides: input.num_slides,
+        slides: []
+      };
+>>>>>>> dd7ecbd (added imagen images)
     } catch (error) {
       throw error;
     }

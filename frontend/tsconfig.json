@@ -20,7 +20,11 @@
     "baseUrl": ".",
     "paths": {
       "@/*": [
+<<<<<<< HEAD
         "./*"
+=======
+        "./src/*"
+>>>>>>> dd7ecbd (added imagen images)
       ]
     },
     "plugins": [
