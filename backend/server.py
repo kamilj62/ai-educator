@@ -286,7 +286,7 @@ async def generate_outline_with_openai(context: str, num_slides: int, level: str
                     filtered_topics.append({**topic, "key_points": valid_key_points, "image_prompt": image_prompt.strip()})
             logger.info(f"Filtered topics: {filtered_topics}")
             if not filtered_topics:
-                logger.error("No valid slides generated: All topics missing required fields.")
+                logger.error("No valid slides generated: All topics missing required fields. Raising error as intended.")
                 raise HTTPException(
                     status_code=500,
                     detail={
@@ -295,6 +295,7 @@ async def generate_outline_with_openai(context: str, num_slides: int, level: str
                         "context": {"error": "All slides missing key_points or image_prompt."}
                     }
                 )
+            logger.info("Returning only valid filtered topics.")
             return filtered_topics
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse OpenAI response: {e}")
