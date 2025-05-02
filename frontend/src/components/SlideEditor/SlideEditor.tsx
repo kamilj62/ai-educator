@@ -1,4 +1,8 @@
+<<<<<<< HEAD
  import React, { useEffect, useState, useRef } from 'react';
+=======
+import React, { useEffect, useState, useRef } from 'react';
+>>>>>>> 49ccefaf (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 import { Box, Typography, Button, IconButton, Tooltip } from '@mui/material';
 import EditorToolbar from './components/EditorToolbar';
 import SaveIcon from '@mui/icons-material/Save';
@@ -16,6 +20,7 @@ import SavePresentation from './components/SavePresentation';
 import SlideEditDialog from './components/SlideEditDialog';
 import { Slide, ImageService, SlideImage, SlideTopic, BackendSlideLayout } from './types';
 import SlideLayoutRenderer from './components/SlideLayoutRenderer';
+<<<<<<< HEAD
 import { backendSlideToFrontend, convertLayoutToFrontend, convertLayoutToBackend } from './utils';
 import EditorControls from './components/EditorControls';
 import AddIcon from '@mui/icons-material/Add';
@@ -30,6 +35,9 @@ const EditorContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
   backgroundColor: theme.palette.grey[100],
 }));
+=======
+import { backendSlideToFrontend } from './utils';
+>>>>>>> 49ccefaf (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 
 const SlideEditor: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -318,6 +326,31 @@ const SlideEditor: React.FC = () => {
           </Box>
         </Box>
       </Box>
+<<<<<<< HEAD
     </EditorContainer>
   );
+=======
+
+      <SavePresentation
+        open={saveDialogOpen}
+        onClose={() => setSaveDialogOpen(false)}
+        onSave={handleSave}
+        slides={slides}
+      />
+
+      {activeSlide && (
+        <SlideEditDialog
+          open={editDialogOpen}
+          onClose={() => setEditDialogOpen(false)}
+          slide={activeSlide}
+          onSave={handleSlideChange}
+          onImageUpload={handleImageUpload}
+          onImageGenerate={handleImageGenerate}
+        />
+      )}
+    </Box>
+  );
+};
+
+>>>>>>> 49ccefaf (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 export default SlideEditor;
