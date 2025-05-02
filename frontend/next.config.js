@@ -5,19 +5,9 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-<<<<<<< HEAD
-        destination: 'http://localhost:8000/:path*',
+        destination: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/:path*',
       },
     ];
-=======
-        destination: 'http://localhost:8005/api/:path*',
-      },
-      {
-        source: '/generate/:path*',
-        destination: 'http://localhost:8005/generate/:path*',
-      }
-    ]
->>>>>>> dd7ecbd (added imagen images)
   },
 };
 
