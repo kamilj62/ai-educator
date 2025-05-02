@@ -1,45 +1,40 @@
-import { BackendSlideLayout, SlideLayout } from '../types';
+import { BackendSlideLayout } from '../types';
 
-export const convertLayoutToFrontend = (layout: BackendSlideLayout): SlideLayout => {
+// Converts from backend dash-case string to frontend SlideLayout (UPPERCASE)
+export const convertLayoutToFrontend = (layout: string): string => {
   switch (layout) {
     case 'title-only':
-      return 'title-only';
     case 'title-body':
-      return 'title-body';
     case 'title-bullets':
-      return 'title-bullets';
     case 'two-column':
-      return 'two-column';
     case 'title-image':
-      return 'title-image';
     case 'title-body-image':
-      return 'title-body-image';
     case 'title-bullets-image':
-      return 'title-bullets-image';
     case 'two-column-image':
-      return 'two-column-image';
+      return layout;
     default:
       return 'title-only';
   }
 };
 
-export const convertLayoutToBackend = (layout: SlideLayout): BackendSlideLayout => {
+// Converts from frontend SlideLayout (UPPERCASE) to backend dash-case string
+export const convertLayoutToBackend = (layout: string): string => {
   switch (layout) {
-    case 'title-only':
+    case 'TITLE_ONLY':
       return 'title-only';
-    case 'title-body':
+    case 'TITLE_BODY':
       return 'title-body';
-    case 'title-bullets':
+    case 'TITLE_BULLETS':
       return 'title-bullets';
-    case 'two-column':
+    case 'TWO_COLUMN':
       return 'two-column';
-    case 'title-image':
+    case 'TITLE_IMAGE':
       return 'title-image';
-    case 'title-body-image':
+    case 'TITLE_BODY_IMAGE':
       return 'title-body-image';
-    case 'title-bullets-image':
+    case 'TITLE_BULLETS_IMAGE':
       return 'title-bullets-image';
-    case 'two-column-image':
+    case 'TWO_COLUMN_IMAGE':
       return 'two-column-image';
     default:
       return 'title-only';

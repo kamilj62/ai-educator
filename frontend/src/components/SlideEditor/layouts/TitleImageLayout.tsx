@@ -2,7 +2,11 @@ import React, { useCallback } from 'react';
 import { Box, Paper, styled, Typography } from '@mui/material';
 import { TiptapSlideEditor as TiptapEditor } from '../components/TiptapSlideEditor';
 import ImageUploader from '../components/ImageUploader';
+<<<<<<< HEAD
 import type { Slide, SlideImage, ImageService } from '../types';
+=======
+import type { Slide, ImageService, SlideImage } from '../types';
+>>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
 
 const LayoutContainer = styled(Paper)(({ theme }) => ({
   width: '100%',
@@ -96,7 +100,11 @@ const TitleImageLayout: React.FC<TitleImageLayoutProps> = ({
       <ContentArea>
         <Box width="60%" height="100%">
           <ImageUploader
+<<<<<<< HEAD
             currentImage={slide.content.image}
+=======
+            image={slide.content.image?.url}
+>>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
             onImageChange={handleImageChange}
             onImageUpload={onImageUpload}
             onImageGenerate={onImageGenerate}
