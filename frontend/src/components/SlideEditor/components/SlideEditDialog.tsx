@@ -238,6 +238,13 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     onClose();
   };
 
+  // Helper to ensure HTML content for TiptapEditor
+  const getHtmlContent = (content: string | undefined): string => {
+    if (!content) return '';
+    if (content.startsWith('<')) return content;
+    return `<p>${content}</p>`;
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Edit Slide</DialogTitle>
@@ -276,7 +283,7 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
             <Box>
               <Typography variant="subtitle1" gutterBottom>Body</Typography>
               <TiptapEditor
-                content={editedSlide.content.body || ''}
+                content={getHtmlContent(editedSlide.content.body || editedSlide.content.description)}
                 onChange={handleBodyChange}
                 placeholder="Enter body content..."
                 bulletList={false}
