@@ -250,7 +250,7 @@ async def generate_slides(request: SlideGenerationRequest):
         response = {
             "title": topic.title,
             "subtitle": "",
-            "body": topic.description,
+            "body": topic.description or "",  # Ensure body is always present
             "bullet_points": topic.key_points,
             "image_url": "",
             "image_alt": topic.image_prompt,
