@@ -1,4 +1,4 @@
-import { BackendSlideLayout, SlideLayout } from './types';
+import { BackendSlideLayout, SlideLayout, Slide } from './types';
 
 export const convertLayoutToFrontend = (layout: BackendSlideLayout): SlideLayout => {
   switch (layout) {
@@ -46,21 +46,27 @@ export const convertLayoutToBackend = (layout: SlideLayout): BackendSlideLayout 
   }
 };
 
-// Converts backend slide response to frontend SlideContent format
-export function backendSlideToFrontend(content: any) {
+// Convert backend slide API response to frontend Slide object
+export function backendSlideToFrontend(raw: any): Slide {
   return {
-    title: content.title,
-    subtitle: content.subtitle,
-    body: content.body,
-    bullets: content.bullet_points?.map((text: string) => ({ text })) || [],
-    image: content.image_url ? {
-      url: content.image_url,
-      alt: content.image_alt,
-      caption: content.image_caption,
-      service: content.image_service,
-      prompt: content.image_prompt,
-    } : undefined,
-    image_prompt: content.image_prompt,
-    // add other fields as needed
+    id: raw.id || crypto.randomUUID(),
+    layout: raw.layout || 'title-body',
+    content: {
+      title: raw.title,
+      subtitle: raw.subtitle,
+      body: raw.body || '',
+      bullets: (raw.bullets || raw.bullet_points || []).map((text: string) => ({ text })),
+      image: raw.image_url
+        ? {
+            url: raw.image_url,
+            alt: raw.image_alt,
+            caption: raw.image_caption,
+            service: raw.image_service,
+            prompt: raw.image_prompt,
+          }
+        : undefined,
+      image_prompt: raw.image_prompt,
+      // Add other fields as needed
+    },
   };
 }

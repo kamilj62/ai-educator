@@ -74,7 +74,7 @@ const LayoutSelector: React.FC<LayoutSelectorProps> = ({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        <Typography variant="h5">Choose Layout for "{topic}"</Typography>
+        <Typography variant="h5">Choose Layout for &quot;{topic}&quot;</Typography>
       </DialogTitle>
       <DialogContent>
         <Grid container spacing={2} sx={{ mt: 1 }}>
