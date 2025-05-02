@@ -252,10 +252,12 @@ async def generate_slides(request: SlideGenerationRequest):
             "subtitle": "",
             "body": topic.description or "",
             "bullet_points": topic.key_points,
-            "image_url": getattr(topic, "image_url", None) or "",
-            "image_alt": topic.image_prompt,
-            "image_caption": getattr(topic, "image_caption", None) or "",
-            "image_service": getattr(topic, "image_service", None) or "generated"
+            "image": {
+                "url": getattr(topic, "image_url", None) or "",
+                "alt": topic.image_prompt,
+                "caption": getattr(topic, "image_caption", None) or "",
+                "service": getattr(topic, "image_service", None) or "generated"
+            }
         }
         return response
     except Exception as e:
