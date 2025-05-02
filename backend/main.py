@@ -250,12 +250,12 @@ async def generate_slides(request: SlideGenerationRequest):
         response = {
             "title": topic.title,
             "subtitle": "",
-            "body": topic.description or "",  # Ensure body is always present
+            "body": topic.description or "",
             "bullet_points": topic.key_points,
-            "image_url": "",
+            "image_url": getattr(topic, "image_url", None) or "",
             "image_alt": topic.image_prompt,
-            "image_caption": "",
-            "image_service": "generated"
+            "image_caption": getattr(topic, "image_caption", None) or "",
+            "image_service": getattr(topic, "image_service", None) or "generated"
         }
         return response
     except Exception as e:
