@@ -12,6 +12,7 @@ import logging
 import uuid
 from openai import OpenAI, OpenAIError
 from dotenv import load_dotenv
+import traceback
 
 # Load environment variables
 load_dotenv()
@@ -271,6 +272,7 @@ async def generate_outline_with_openai(context: str, num_slides: int, level: str
         try:
             import json
             topics = json.loads(content)
+            logger.info(f"Parsed topics from OpenAI: {topics}")
             if not isinstance(topics, list):
                 topics = [topics]
             # Filter topics to only include those with 3-5 non-empty key_points and a non-empty image_prompt
@@ -278,8 +280,8 @@ async def generate_outline_with_openai(context: str, num_slides: int, level: str
             for topic in topics:
                 key_points = topic.get("key_points", [])
                 image_prompt = topic.get("image_prompt", "")
-                # Strict: key_points must be a list with 3-5 non-empty strings, image_prompt must be a non-empty string
                 valid_key_points = [kp for kp in key_points if isinstance(kp, str) and kp.strip()]
+                logger.info(f"Checking topic: title={topic.get('title')}, key_points={key_points}, image_prompt={image_prompt}")
                 if (
                     isinstance(key_points, list)
                     and 3 <= len(valid_key_points) <= 5
@@ -288,6 +290,8 @@ async def generate_outline_with_openai(context: str, num_slides: int, level: str
                     and image_prompt.strip() != ""
                 ):
                     filtered_topics.append({**topic, "key_points": valid_key_points, "image_prompt": image_prompt.strip()})
+                else:
+                    logger.warning(f"Filtered out invalid topic: {topic}")
             logger.info(f"Filtered topics: {filtered_topics}")
             if not filtered_topics:
                 logger.error("No valid slides generated: All topics missing required fields. Raising error as intended.")
@@ -323,14 +327,13 @@ async def generate_outline_with_openai(context: str, num_slides: int, level: str
         )
     except Exception as e:
         logger.error(f"Unexpected error in generate_outline_with_openai: {str(e)}")
+        logger.error(traceback.format_exc())
         raise HTTPException(
             status_code=500,
             detail={
                 "type": "API_ERROR",
-                "message": "Failed to generate outline",
-                "context": {
-                    "error": str(e)
-                }
+                "message": f"Unexpected error: {str(e)}",
+                "context": {"error": str(e)}
             }
         )
 
