@@ -231,24 +231,25 @@ async def generate_outline_with_openai(context: str, num_slides: int, level: str
     try:
         system_prompt = """You are an expert presentation outline generator. 
         Create detailed, well-structured presentation outlines based on the given topic, number of slides, and audience level.
-        Each slide should have a clear title and 3-5 key points.
-        For image-worthy slides, include an image prompt that describes what kind of image would enhance the content.
-        IMPORTANT: Each slide's 'key_points' must be a list with 3 to 5 non-empty strings. If you cannot generate 3 key points, do not include the slide."""
+        Each slide must have a clear title, a non-empty image_prompt, and 3-5 key_points (bullet points) that are informative and non-redundant.
+        IMPORTANT: Only include slides that strictly follow this format. If you cannot generate 3 key points for a slide, do not include it.
+        Example output:
+        [
+          {
+            "id": "slide_1",
+            "title": "Phases of the Moon",
+            "key_points": [
+              "The moon has 8 phases in its monthly cycle",
+              "Phases are caused by the moon's orbit around Earth",
+              "New moon and full moon are opposite phases"
+            ],
+            "image_prompt": "Diagram showing all 8 phases of the moon with labels",
+            "description": "This slide explains the different phases of the moon and why they occur, with a focus on the science behind the cycle."
+          }
+        ]
+        STRICTLY match this JSON structure for every slide."""
 
-        user_prompt = f"""Generate a presentation outline for:
-        Topic: {context}
-        Number of slides: {num_slides}
-        Audience level: {level}
-        
-        Format each slide as:
-        {{
-            "id": "unique_id",
-            "title": "slide title",
-            "key_points": ["point 1", "point 2", "point 3"],
-            "image_prompt": "description for an image that would enhance this slide",
-            "description": "brief description of the slide's content"
-        }}
-        IMPORTANT: Only include slides with 3-5 key_points. Do not include slides with fewer than 3 key_points."""
+        user_prompt = f"""Generate a presentation outline for:\n        Topic: {context}\n        Number of slides: {num_slides}\n        Audience level: {level}\n        \n        Format each slide as:\n        {{\n            \"id\": \"unique_id\",\n            \"title\": \"slide title\",\n            \"key_points\": [\"point 1\", \"point 2\", \"point 3\"],\n            \"image_prompt\": \"description for an image that would enhance this slide\",\n            \"description\": \"brief description of the slide's content\"\n        }}\n        IMPORTANT: Only include slides with 3-5 key_points and a non-empty image_prompt. Do not include slides with fewer than 3 key_points.\n        Output only valid JSON, no explanations."""
 
         response = await client.chat.completions.create(
             model="gpt-4-turbo-preview",
@@ -280,6 +281,16 @@ async def generate_outline_with_openai(context: str, num_slides: int, level: str
                 ):
                     filtered_topics.append(topic)
             logger.info(f"Filtered topics: {filtered_topics}")
+            if not filtered_topics:
+                logger.error("No valid slides generated: All topics missing required fields.")
+                raise HTTPException(
+                    status_code=500,
+                    detail={
+                        "type": "GENERATION_ERROR",
+                        "message": "No valid slides could be generated. Please try a different topic or wording.",
+                        "context": {"error": "All slides missing key_points or image_prompt."}
+                    }
+                )
             return filtered_topics
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse OpenAI response: {e}")
