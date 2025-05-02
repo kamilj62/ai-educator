@@ -135,7 +135,7 @@ class OutlineRequest(BaseModel):
     )
     instructional_level: str = Field(
         ...,
-        pattern='^(elementary|middle_school|high_school|university|professional)$',
+        pattern='^(elementary_school|middle_school|high_school|university|professional)$',
         description="Target audience level"
     )
     layout: Optional[str] = Field(
