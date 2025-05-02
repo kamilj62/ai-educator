@@ -561,7 +561,7 @@ class AIService:
             
             logger.info(f"Successfully generated {len(topics)} topics")
             return {
-                "topics": [t.dict() if hasattr(t, 'dict') else dict(t) for t in topics],
+                "topics": [t.model_dump() for t in topics],
                 "warnings": []
             }
             

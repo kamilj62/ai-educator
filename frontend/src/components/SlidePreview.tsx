@@ -11,6 +11,7 @@ import {
 import { NavigateNext, NavigateBefore, Fullscreen, FullscreenExit } from '@mui/icons-material';
 import { API_BASE_URL } from '../../config';
 import { Slide } from '../components/types';
+import Image from 'next/image';
 
 interface SlidePreviewProps {
   slides: Slide[];
@@ -215,15 +216,15 @@ const SlidePreview: React.FC<SlidePreviewProps> = ({
 
           {(currentSlide.content?.image) && (
             <Box sx={{ my: 3, textAlign: 'center' }}>
-              <img
+              <Image
                 src={getImageUrl(currentSlide.content.image)}
                 alt={getImageCaption(currentSlide.content.image) || 'Slide illustration'}
+                width={800}
+                height={600}
                 style={{
-                  maxWidth: '100%',
-                  maxHeight: isFullscreen ? '50vh' : '400px',
                   objectFit: 'contain',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                  maxHeight: isFullscreen ? '60vh' : '400px',
+                  width: 'auto'
                 }}
               />
               {getImageCaption(currentSlide.content.image) && (

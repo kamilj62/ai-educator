@@ -1,8 +1,7 @@
 import React from 'react';
-import { APIError } from '../store/presentationSlice';
 
 interface ErrorDisplayProps {
-  error: APIError | null;
+  error: string | null;
   onClose?: () => void;
 }
 
@@ -46,45 +45,13 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onClose }) => {
   };
 
   return (
-    <div className={`rounded-lg border p-4 mb-4 ${getErrorColor(error.type ?? '')}`}>
+    <div className={`rounded-lg border p-4 mb-4 ${getErrorColor(error ?? '')}`}>
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <h3 className="text-lg font-semibold mb-2">
-            {getErrorTitle(error.type ?? '')}
+            {getErrorTitle(error ?? '')}
           </h3>
-          <p className="mb-2">{error.message}</p>
-          
-          {error.service && (
-            <p className="text-sm mb-2">
-              Service: {error.service}
-              {error.retryAfter && ` (retry after ${error.retryAfter} seconds)`}
-            </p>
-          )}
-          
-          {error.context && typeof error.context === 'object' && (
-            <div className="text-sm mb-2">
-              <p>Context:</p>
-              <ul className="list-disc list-inside pl-2">
-                {'topic' in error.context && typeof error.context.topic === 'string' && error.context.topic ? (
-                  <li>Topic: {error.context.topic}</li>
-                ) : null}
-                {'level' in error.context && typeof error.context.level === 'string' && error.context.level ? (
-                  <li>Level: {error.context.level}</li>
-                ) : null}
-              </ul>
-            </div>
-          )}
-          
-          {'recommendations' in error && Array.isArray(error.recommendations) && error.recommendations.length > 0 && (
-            <div className="mt-3">
-              <h4 className="font-semibold mb-1">Recommendations:</h4>
-              <ul className="list-disc list-inside text-sm">
-                {error.recommendations.map((rec: string, index: number) => (
-                  <li key={index}>{rec}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <p className="mb-2">{error}</p>
         </div>
         
         {onClose && (
