@@ -115,11 +115,11 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     });
   };
 
-  const handleBodyChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setEditedSlide({
-      ...editedSlide,
-      content: { ...editedSlide.content, body: event.target.value },
-    });
+  const handleBodyChange = (value: string) => {
+    setEditedSlide((prev) => ({
+      ...prev,
+      content: { ...prev.content, body: value },
+    }));
   };
 
   const handleBulletAdd = () => {
@@ -178,12 +178,12 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   };
 
   const handleImageChange = (image: SlideImage) => {
-    setEditedSlide(prev => ({
+    setEditedSlide((prev) => ({
       ...prev,
       content: {
         ...prev.content,
-        image
-      }
+        image,
+      },
     }));
   };
 
@@ -278,7 +278,7 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
               multiline
               rows={4}
               value={editedSlide.content.body || ''}
-              onChange={handleBodyChange}
+              onChange={(e) => handleBodyChange(e.target.value)}
             />
           )}
 
