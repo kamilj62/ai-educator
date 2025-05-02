@@ -24,6 +24,7 @@ import AddIcon from '@mui/icons-material/Add';
 import ImageIcon from '@mui/icons-material/Image';
 import { Slide, SlideLayout, BulletPoint, ImageService, SlideImage, convertLayoutToFrontend, convertLayoutToBackend } from '../types';
 import ImageUploader from './ImageUploader';
+import TiptapEditor from './TiptapEditor'; // Import TiptapEditor
 
 interface SlideEditDialogProps {
   open: boolean;
@@ -272,14 +273,15 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
           />
 
           {(editedSlide.layout === 'title-body' || editedSlide.layout === 'title-body-image') && (
-            <TextField
-              fullWidth
-              label="Body"
-              multiline
-              rows={4}
-              value={editedSlide.content.body || ''}
-              onChange={(e) => handleBodyChange(e.target.value)}
-            />
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>Body</Typography>
+              <TiptapEditor
+                content={editedSlide.content.body || ''}
+                onChange={handleBodyChange}
+                placeholder="Enter body content..."
+                bulletList={false}
+              />
+            </Box>
           )}
 
           {(editedSlide.layout === 'title-bullets' || editedSlide.layout === 'title-bullets-image') && (
