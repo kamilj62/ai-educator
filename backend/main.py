@@ -84,15 +84,16 @@ origins = [
     "http://127.0.0.1:3000",
     "https://marvelai-frontend-62a80e741e41.herokuapp.com",
     "https://ai-educator-jfpenqilf-kamilj62s-projects.vercel.app",
-    "https://frontend-303seubxr-kamilj62s-projects.vercel.app"
+    "https://frontend-303seubxr-kamilj62s-projects.vercel.app",
+    "https://frontend-ql0c9fd82-kamilj62s-projects.vercel.app",
+    "https://ai-educator.windsurf.build"
 ]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,  # Changed to True to allow credentials
-    allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Content-Type", "Accept", "Authorization", "X-Requested-With"],
-    max_age=86400  # Cache preflight requests for 24 hours
+    allow_methods=["*"],
+    allow_headers=["*"]
 )
 
 # Mount static files directory
