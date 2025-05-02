@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import List, Optional, Dict, Any, Union
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, validator, root_validator, ConfigDict
 
 class InstructionalLevel(str, Enum):
     ELEMENTARY = "elementary"
@@ -19,10 +19,24 @@ class Example(BaseModel):
 
 class SlideTopic(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    title: str
-    key_points: List[str]
-    image_prompt: Optional[str] = None
-    description: Optional[str] = None
+    id: Optional[str] = Field(default=None, description="Unique identifier for the topic")
+    title: str = Field(..., description="Title of the topic")
+    description: Optional[str] = Field(None, description="Optional detailed description")
+    key_points: List[str] = Field(..., min_items=3, max_items=5, description="List of 3-5 key points")
+    image_prompt: str = Field(..., min_length=1, description="Non-empty prompt for generating an image")
+    subtopics: Optional[List['SlideTopic']] = Field(default_factory=list, description="Optional list of subtopics")
+
+    @validator('key_points')
+    def check_key_points(cls, v):
+        if not all(isinstance(kp, str) and kp.strip() for kp in v):
+            raise ValueError('All key_points must be non-empty strings')
+        return v
+
+    @validator('image_prompt')
+    def check_image_prompt(cls, v):
+        if not isinstance(v, str) or not v.strip():
+            raise ValueError('image_prompt must be a non-empty string')
+        return v
 
 class SlideLayout(str, Enum):
     TITLE_ONLY = "title-only"
