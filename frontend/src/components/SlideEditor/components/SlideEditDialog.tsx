@@ -92,14 +92,13 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   });
 
   const handleLayoutChange = (newLayout: SlideLayout) => {
-    // Preserve all content fields regardless of layout
-    setEditedSlide({
-      ...editedSlide,
+    setEditedSlide((prev) => ({
+      ...prev,
       layout: newLayout,
       content: {
-        ...editedSlide.content,
+        ...prev.content,
       },
-    });
+    }));
   };
 
   const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
