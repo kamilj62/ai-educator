@@ -14,6 +14,7 @@ import SavePresentation from './components/SavePresentation';
 import SlideEditDialog from './components/SlideEditDialog';
 import { Slide, ImageService } from './types';
 import SlideLayoutRenderer from './components/SlideLayoutRenderer';
+import { backendSlideToFrontend } from './utils';
 
 const SlideEditor: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();

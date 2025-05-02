@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { Box, Button, Typography, styled, CircularProgress, TextField } from '@mui/material';
 import { AddPhotoAlternate as AddPhotoIcon, Refresh as RefreshIcon } from '@mui/icons-material';
-import { SlideImage, ImageService } from '../types';
 
 const UploadContainer = styled('div')(({ theme }) => ({
   width: '100%',
@@ -30,10 +29,10 @@ const ImagePreview = styled('img')({
 });
 
 export interface ImageUploaderProps {
-  currentImage?: SlideImage;
-  onImageChange: (image: SlideImage) => void;
+  currentImage?: any;
+  onImageChange: (image: any) => void;
   onImageUpload?: (file: File) => Promise<string>;
-  onImageGenerate?: (prompt: string, service?: ImageService) => Promise<string>;
+  onImageGenerate?: (prompt: string, service?: any) => Promise<string>;
   maxWidth?: number;
   maxHeight?: number;
   acceptedTypes?: string[];

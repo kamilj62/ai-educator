@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, Typography, Box, IconButton, Tooltip } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
 import { Slide } from '../types';
+import Image from 'next/image';
 
 interface SortableSlideProps {
   slide: Slide;
@@ -75,14 +76,14 @@ const SortableSlide: React.FC<SortableSlideProps> = ({
               bgcolor: 'action.hover',
             }}
           >
-            <img
+            <Image
               src={slide.content.image.url}
               alt={slide.content.image.alt || ''}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-              }}
+              layout="fill"
+              objectFit="cover"
+              style={{ borderRadius: '4px' }}
+              sizes="(max-width: 600px) 100vw, 332px"
+              priority={index === 0}
             />
           </Box>
         )}

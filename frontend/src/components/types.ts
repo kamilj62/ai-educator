@@ -1,13 +1,13 @@
 // Slide layout types
 export type SlideLayout = 
-  | 'TITLE'
-  | 'TITLE_IMAGE'
-  | 'TITLE_BODY'
-  | 'TITLE_BODY_IMAGE'
-  | 'TITLE_BULLETS'
-  | 'TITLE_BULLETS_IMAGE'
-  | 'TWO_COLUMN'
-  | 'TWO_COLUMN_IMAGE';
+  | 'title-only'
+  | 'title-image'
+  | 'title-body'
+  | 'title-body-image'
+  | 'title-bullets'
+  | 'title-bullets-image'
+  | 'two-column'
+  | 'two-column-image';
 
 // Error handling types
 export type ErrorType = 
@@ -36,6 +36,22 @@ export interface ImageGenerationError extends APIError {
   service: ImageService;
   retryAttempts?: number;
   maxRetries?: number;
+}
+
+// Slide type
+export type Slide = {
+  id: string;
+  layout: SlideLayout;
+  content: any;
+};
+
+// Presentation type
+export interface Presentation {
+  id: string;
+  title: string;
+  slides: Slide[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Re-export types from SlideEditor
