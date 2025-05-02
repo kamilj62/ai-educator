@@ -13,6 +13,7 @@ import uuid
 from openai import OpenAI, OpenAIError
 from dotenv import load_dotenv
 import traceback
+from collections import deque
 
 # Load environment variables
 load_dotenv()
@@ -49,6 +50,18 @@ os.makedirs("static/images", exist_ok=True)
 
 # Mount static files directory
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# --- LOGGING STORAGE ---
+openai_log_buffer = deque(maxlen=10)
+
+# Utility to add a log entry
+def add_openai_log(entry):
+    openai_log_buffer.appendleft(entry)
+
+# Endpoint to fetch recent OpenAI logs
+@app.get("/api/logs/openai")
+async def get_openai_logs():
+    return JSONResponse(content={"logs": list(openai_log_buffer)})
 
 @app.exception_handler(404)
 async def custom_404_handler(request: Request, exc: HTTPException):
@@ -291,7 +304,14 @@ Example output:
                 max_tokens=2000
             )
             content = response.choices[0].message.content
+            log_entry = {
+                "attempt": attempt,
+                "raw_response": content,
+                "system_prompt": system,
+                "user_prompt": user
+            }
             logger.info(f"[OpenAI Attempt {attempt}] Raw response: {content}")
+            add_openai_log(log_entry)
             try:
                 topics = json.loads(content)
             except Exception as e:
