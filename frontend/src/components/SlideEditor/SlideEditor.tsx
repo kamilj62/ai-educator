@@ -85,6 +85,7 @@ const SlideEditor: React.FC = () => {
           context: { service }
         }),
       });
+      console.log('[SlideEditor] Image API response:', response);
 
       if (!response.ok) {
         const error = await response.json();
@@ -93,7 +94,7 @@ const SlideEditor: React.FC = () => {
       }
 
       const data = await response.json();
-      console.log('SlideEditor - Image generated:', data);
+      console.log('[SlideEditor] Image API data:', data);
       return data.imageUrl;
     } catch (error) {
       console.error('SlideEditor - Error generating image:', error);

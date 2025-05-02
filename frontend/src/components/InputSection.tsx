@@ -16,6 +16,7 @@ import { RootState } from '../store/store';
 import type { InstructionalLevel, SlideLayout } from '../components/types';
 import { layoutOptions } from '../components/SlideEditor/types';
 import { AppDispatch } from '../store/store';
+import ErrorDisplay from './ErrorDisplay';
 
 const InputSection: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -34,11 +35,13 @@ const InputSection: React.FC = () => {
       return;
     }
     try {
-      await dispatch(generateOutline({
+      const resultAction = await dispatch(generateOutline({
         topic: topic.trim(),
         numSlides: parseInt(numSlides, 10),
         instructionalLevel,
-      })).unwrap();
+      }));
+      console.log('[InputSection] generateOutline API result:', resultAction);
+      // Remove unwrap usage, just check for error in Redux state
       setTopic('');
       setNumSlides('5');
     } catch (err) {
@@ -60,6 +63,8 @@ const InputSection: React.FC = () => {
       <Typography variant="h6" gutterBottom>
         Generate Presentation
       </Typography>
+      {/* Show error message if present */}
+      <ErrorDisplay error={error} />
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <TextField
           label="Topic"
