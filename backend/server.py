@@ -35,7 +35,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://ai-powerpoint.herokuapp.com"
+        "https://ai-powerpoint-f44a1d57b590.herokuapp.com"
     ],
     allow_credentials=True,
     allow_methods=["*"],
