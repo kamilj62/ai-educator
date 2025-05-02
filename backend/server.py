@@ -392,6 +392,10 @@ async def generate_outline(request: OutlineRequest):
             }
         )
 
+@app.get("/")
+def root():
+    return {"status": "ok", "message": "AI PowerPoint backend is running"}
+
 @app.get("/api/")
 async def root():
     return {
