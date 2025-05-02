@@ -279,6 +279,7 @@ async def generate_outline_with_openai(context: str, num_slides: int, level: str
                     and image_prompt.strip() != ""
                 ):
                     filtered_topics.append(topic)
+            logger.info(f"Filtered topics: {filtered_topics}")
             return filtered_topics
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse OpenAI response: {e}")
