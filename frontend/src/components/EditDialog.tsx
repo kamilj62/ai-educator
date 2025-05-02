@@ -132,7 +132,22 @@ const EditDialog: React.FC<EditDialogProps> = ({
             <List>
               {editedSlide.content.bullets.map((point, index: number) => (
                 <ListItem key={index}>
-                  <ListItemText primary={point.text} />
+                  <TextField
+                    value={point.text}
+                    onChange={e => {
+                      const updatedBullets = [...(editedSlide.content.bullets || [])];
+                      updatedBullets[index] = { ...updatedBullets[index], text: e.target.value };
+                      setEditedSlide({
+                        ...editedSlide,
+                        content: {
+                          ...editedSlide.content,
+                          bullets: updatedBullets,
+                        },
+                      });
+                    }}
+                    fullWidth
+                    margin="dense"
+                  />
                   <ListItemSecondaryAction>
                     <IconButton
                       edge="end"
