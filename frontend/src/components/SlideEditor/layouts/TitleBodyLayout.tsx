@@ -66,12 +66,18 @@ const TitleBodyLayout: React.FC<TitleBodyLayoutProps> = ({
           />
         </TitleContainer>
         <BodyContainer>
-          <TiptapEditor
-            content={getHtmlContent(slide.content.body ?? slide.content.description)}
-            onChange={handleBodyChange}
-            placeholder="Enter content..."
-            bulletList={false}
-          />
+          {slide.content.body && slide.content.body.trim().startsWith('<') ? (
+            <TiptapEditor
+              content={slide.content.body}
+              onChange={handleBodyChange}
+              placeholder="Enter content..."
+              bulletList={false}
+            />
+          ) : (
+            <Typography sx={{ whiteSpace: 'pre-line' }}>
+              {slide.content.body ?? slide.content.description}
+            </Typography>
+          )}
           {slide.layout.includes('image') && (
             <ImageUploader
               currentImage={slide.content.image ? {
