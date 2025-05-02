@@ -86,7 +86,8 @@ origins = [
     "https://ai-educator-jfpenqilf-kamilj62s-projects.vercel.app",
     "https://frontend-303seubxr-kamilj62s-projects.vercel.app",
     "https://frontend-ql0c9fd82-kamilj62s-projects.vercel.app",
-    "https://ai-educator.windsurf.build"
+    "https://ai-educator.windsurf.build",
+    "https://frontend-five-henna-11.vercel.app"
 ]
 app.add_middleware(
     CORSMiddleware,
