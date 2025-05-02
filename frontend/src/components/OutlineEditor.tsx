@@ -13,7 +13,7 @@ import {
   AlertTitle,
 } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { generateOutline, setError, APIError } from '../store/presentationSlice';
+import { generateOutline, setError } from '../store/presentationSlice';
 import type { InstructionalLevel, SlideTopic, SlideContent } from '../components/types';
 import { LayoutSelector } from './SlideEditor/components/LayoutSelector';
 import { BackendSlideLayout } from './SlideEditor/types';
@@ -26,8 +26,8 @@ interface OutlineEditorProps {
 
 const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => {
   const dispatch = useAppDispatch();
-  const error = useAppSelector(state => state.presentation.error) as APIError | null;
-  const presentation = useAppSelector(state => state.presentation.presentation);
+  const error = useAppSelector(state => state.presentation.error);
+  const outline = useAppSelector(state => state.presentation.outline);
   const slides = useAppSelector(state => state.presentation.slides);
   const [topic, setTopic] = useState('');
   const [numSlides, setNumSlides] = useState(5);
@@ -64,12 +64,12 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
       })).unwrap();
       onOutlineGenerated?.();
     } catch (err) {
-      const apiError = err as APIError;
-      if (apiError?.type === 'RATE_LIMIT' && apiError?.retryAfter) {
+      const errorObj = getErrorObject(err);
+      if (errorObj.type === 'RATE_LIMIT' && errorObj.retryAfter) {
         const timeout = setTimeout(() => {
           setRetryTimeout(null);
           dispatch(setError(null));
-        }, apiError.retryAfter * 1000);
+        }, errorObj.retryAfter * 1000);
         setRetryTimeout(timeout);
       }
     } finally {
@@ -82,8 +82,21 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
     setIsLayoutSelectorOpen(false);
   };
 
-  const getErrorSeverity = (errorType?: string): 'error' | 'warning' => {
-    switch (errorType) {
+  type APIErrorObject = {
+    type?: string;
+    retryAfter?: number;
+    context?: any;
+    [key: string]: any;
+  };
+
+  const getErrorObject = (err: unknown): APIErrorObject => {
+    if (typeof err === 'string') return { type: 'GENERIC', message: err };
+    if (typeof err === 'object' && err !== null) return err as APIErrorObject;
+    return { type: 'GENERIC', message: 'Unknown error' };
+  };
+
+  const getErrorSeverity = (errorObj: APIErrorObject): 'error' | 'warning' => {
+    switch (errorObj.type) {
       case 'SAFETY_VIOLATION':
       case 'NETWORK_ERROR':
         return 'error';
@@ -95,8 +108,8 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
     }
   };
 
-  const getErrorTitle = (errorType?: string): string => {
-    switch (errorType) {
+  const getErrorTitle = (errorObj: APIErrorObject): string => {
+    switch (errorObj.type) {
       case 'RATE_LIMIT':
         return 'Rate Limit Exceeded';
       case 'QUOTA_EXCEEDED':
@@ -114,11 +127,15 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
     }
   };
 
-  const getErrorMessage = (error: APIError): string => {
-    if (error.type === 'SAFETY_VIOLATION') {
-      return `The topic "${error.context?.topic}" contains potentially sensitive content. Please ensure your topic is appropriate for educational purposes.`;
+  const getErrorMessage = (error: unknown): string => {
+    const err = getErrorObject(error);
+    if (err.type === 'SAFETY_VIOLATION') {
+      return `The topic "${err.context?.topic ?? ''}" contains potentially sensitive content. Please ensure your topic is appropriate for educational purposes.`;
     }
-    return error.message;
+    if (err.type === 'RATE_LIMIT' && err.retryAfter) {
+      return `Rate limit exceeded. Please try again in ${err.retryAfter} seconds.`;
+    }
+    return typeof error === 'string' ? error : err.message || 'An error occurred.';
   };
 
   const handleSaveTopic = (updatedTopic: SlideTopic, updatedSlide?: SlideContent) => {
@@ -140,15 +157,15 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
 
       {error && (
         <Alert 
-          severity={getErrorSeverity(error.type)}
+          severity={getErrorSeverity(getErrorObject(error))}
           onClose={() => dispatch(setError(null))}
           sx={{ mb: 2, whiteSpace: 'pre-wrap' }}
         >
-          <AlertTitle>{getErrorTitle(error.type)}</AlertTitle>
+          <AlertTitle>{getErrorTitle(getErrorObject(error))}</AlertTitle>
           {getErrorMessage(error)}
-          {error.retryAfter && (
+          {getErrorObject(error).retryAfter && (
             <Typography variant="body2" sx={{ mt: 1 }}>
-              Please try again in {error.retryAfter} seconds.
+              Please try again in {getErrorObject(error).retryAfter} seconds.
             </Typography>
           )}
         </Alert>
@@ -189,8 +206,8 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
         onChange={(e) => setTopic(e.target.value)}
         margin="normal"
         required
-        error={!!error && error.type === 'SAFETY_VIOLATION'}
-        helperText={error?.type === 'SAFETY_VIOLATION' ? getErrorMessage(error) : ''}
+        error={getErrorObject(error).type === 'SAFETY_VIOLATION'}
+        helperText={getErrorObject(error).type === 'SAFETY_VIOLATION' ? getErrorMessage(error) : ''}
       />
 
       <TextField
