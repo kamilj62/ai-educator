@@ -12,7 +12,7 @@ from pathlib import Path
 import re
 import hashlib
 import vertexai
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, APIError, RateLimitError, APIConnectionError, APITimeoutError, AuthenticationError
 from google.cloud import aiplatform
 from google.oauth2 import service_account
 from google.api_core import retry, exceptions
@@ -25,9 +25,8 @@ from backend.models import (
     BulletPoint,
     Example,
     Presentation,
-    SlideNew,
     SlideContentNew,
-    SlideLayout
+    SlideNew,
 )
 from backend.rate_limiter import RateLimiter
 from backend.exceptions import (
@@ -36,12 +35,8 @@ from backend.exceptions import (
     ErrorType,
     ContentSafetyError
 )
-import openai
-from openai import APIError, RateLimitError, APIConnectionError, APITimeoutError, AuthenticationError
 from dotenv import load_dotenv
 from backend.utils.export_utils import create_presentation
-
-import httpx
 
 # Load environment variables from .env file
 load_dotenv()
@@ -95,7 +90,7 @@ class AIService:
         
         # Log API key validation (safely)
         logger.info(f"OpenAI API Key loaded and starts with: {openai_key[:4]}...")
-            
+        
         # Initialize Vertex AI with Google Cloud credentials if Imagen is available
         if IMAGEN_AVAILABLE:
             try:
@@ -218,184 +213,6 @@ class AIService:
                     error_type=ErrorType.NETWORK_ERROR,
                     service=ImageServiceProvider.DALLE
                 )
-
-    async def _validate_json_response(self, response_text: str) -> dict:
-        """Validate and parse JSON response from OpenAI."""
-        try:
-            # First, try to parse the JSON
-            try:
-                response_data = json.loads(response_text)
-            except json.JSONDecodeError as e:
-                # If direct parsing fails, try to extract JSON from markdown
-                match = re.search(r'```json\n(.*?)\n```', response_text, re.DOTALL)
-                if match:
-                    try:
-                        response_data = json.loads(match.group(1))
-                    except json.JSONDecodeError:
-                        raise ValueError(f"Invalid JSON in markdown block: {str(e)}")
-                else:
-                    raise ValueError(f"Failed to parse JSON response: {str(e)}")
-
-            # Validate the response format
-            await self._validate_response_format(response_data)
-            return response_data
-
-        except Exception as e:
-            logger.error(f"Error validating JSON response: {str(e)}")
-            logger.error(f"Response text: {response_text}")
-            raise ValueError(f"Invalid response format: {str(e)}")
-
-    async def _validate_response_format(self, response_data: dict) -> None:
-        """Validate that the response has the correct format."""
-        try:
-            # For outline generation
-            if "topics" in response_data:
-                if not isinstance(response_data["topics"], list):
-                    raise ValueError("Topics must be a list")
-                for topic in response_data["topics"]:
-                    if not isinstance(topic, dict):
-                        raise ValueError("Each topic must be a dictionary")
-                    if "title" not in topic or "description" not in topic:
-                        raise ValueError("Each topic must have a title and description")
-                return
-
-            # For slide content generation
-            required_fields = ["title", "bullet_points", "examples", "discussion_questions"]
-            for field in required_fields:
-                if field not in response_data:
-                    raise ValueError(f"Missing required field: {field}")
-                
-                # Title should be a string
-                if field == "title":
-                    if not isinstance(response_data[field], str):
-                        raise ValueError("Title must be a string")
-                    if not response_data[field].strip():
-                        raise ValueError("Title cannot be empty")
-                    continue
-                
-                # Other fields should be lists
-                if not isinstance(response_data[field], list):
-                    raise ValueError(f"Field {field} must be a list")
-                
-                # Validate list items
-                for i, item in enumerate(response_data[field]):
-                    if not isinstance(item, str):
-                        raise ValueError(f"Item {i+1} in {field} must be a string")
-                    if not item.strip():
-                        raise ValueError(f"Item {i+1} in {field} cannot be empty")
-
-        except Exception as e:
-            logger.error(f"Error validating response format: {str(e)}")
-            logger.error(f"Response data: {json.dumps(response_data, indent=2)}")
-            raise
-
-    async def _download_and_save_image(self, image_url: str) -> str:
-        """Download an image from a URL and save it locally."""
-        try:
-            # Generate a unique filename based on the URL
-            filename = hashlib.md5(image_url.encode()).hexdigest() + ".png"
-            filepath = self.images_dir / filename
-            
-            # If file already exists, return its path
-            if filepath.exists():
-                logger.debug(f"Image already exists at {filepath}")
-                return str(filepath)
-            
-            # Download and save the image
-            async with httpx.AsyncClient() as session:
-                async with session.get(image_url) as response:
-                    response.raise_for_status()
-                    image_data = await response.read()
-                    
-                    with open(filepath, "wb") as f:
-                        f.write(image_data)
-                    
-                    logger.debug(f"Image saved to {filepath}")
-                    return str(filepath)
-                    
-        except Exception as e:
-            logger.error(f"Failed to download and save image: {str(e)}")
-            raise ValueError(f"Failed to download and save image: {str(e)}")
-
-    async def _verify_imagen_access(self) -> bool:
-        """Verify access to Imagen API."""
-        try:
-            # 1. Check environment variables (from our memory requirements)
-            project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
-            if not project_id:
-                logger.error("GOOGLE_CLOUD_PROJECT environment variable not set")
-                return False
-
-            credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-            if not credentials_path or not os.path.exists(credentials_path):
-                logger.error("Invalid GOOGLE_APPLICATION_CREDENTIALS")
-                return False
-
-            # 2. Load and verify credentials
-            try:
-                from google.oauth2 import service_account
-                import json
-                
-                # Read service account info to verify project
-                with open(credentials_path) as f:
-                    creds_data = json.load(f)
-                    
-                if creds_data.get('project_id') != project_id:
-                    logger.error(f"Project ID mismatch: {project_id} != {creds_data.get('project_id')}")
-                    return False
-                    
-                credentials = service_account.Credentials.from_service_account_file(
-                    credentials_path,
-                    scopes=['https://www.googleapis.com/auth/cloud-platform']
-                )
-                logger.info(f"Successfully loaded credentials for {credentials.service_account_email}")
-            except Exception as e:
-                logger.error(f"Failed to load credentials: {str(e)}")
-                return False
-
-            # 3. Initialize Vertex AI with explicit project and region
-            try:
-                # Initialize Vertex AI with our project settings
-                vertexai.init(
-                    project=project_id,
-                    location="us-central1",
-                    credentials=credentials
-                )
-                logger.info("Successfully initialized Vertex AI")
-                
-                # Get the Imagen model
-                model = generative_models.GenerativeModel("imagegeneration@002")
-                logger.info("Successfully loaded Imagen model")
-            except Exception as e:
-                logger.error(f"Failed to initialize Imagen model: {str(e)}")
-                return False
-            
-            # 4. Try a minimal test request
-            try:
-                response = model.generate_content(
-                    "A simple test image of a blue circle"
-                )
-                
-                if response and response.candidates:
-                    logger.info("Successfully generated test image with Imagen")
-                    return True
-                else:
-                    logger.error("Imagen API test request returned no images")
-                    return False
-                    
-            except Exception as e:
-                error_msg = str(e)
-                if "permission" in error_msg.lower():
-                    logger.error(f"Permission error with Imagen API: {error_msg}")
-                elif "quota" in error_msg.lower():
-                    logger.error(f"Quota error with Imagen API: {error_msg}")
-                else:
-                    logger.error(f"Unknown error with Imagen API: {error_msg}")
-                return False
-            
-        except Exception as e:
-            logger.error(f"Failed to verify Imagen access: {str(e)}")
-            return False
 
     async def generate_image(self, prompt: str) -> Dict[str, str]:
         """Generate an image using available image service."""
@@ -854,109 +671,6 @@ class AIService:
             logger.error(f"Error in enhance_content: {str(e)}")
             # Don't raise an error here, just return the original content
             return slide_content
-
-    async def _validate_content_specificity(self, slide_data: dict) -> None:
-        """Validate that the content is specific, detailed, and non-repetitive."""
-        # Generic terms to avoid
-        generic_terms = {'things', 'stuff', 'etc'}
-        
-        # Track used content to prevent repetition
-        used_content = set()
-        
-        def check_text(text: str, context: str, min_words: int = 4) -> None:
-            # Remove punctuation for word counting
-            words = text.replace(',', ' ').replace('.', ' ').replace(';', ' ').split()
-            unique_words = set(w.lower() for w in words)
-            
-            # Check for overly generic terms
-            if generic_terms & unique_words:
-                raise ValueError(f"Found overly generic terms in {context}: {generic_terms & unique_words}")
-            
-            # Check for repetitive content
-            content_key = ' '.join(sorted(unique_words))  # Normalize word order
-            if content_key in used_content:
-                raise ValueError(f"Found repetitive content in {context}: {text}")
-            used_content.add(content_key)
-            
-            # Allow shorter phrases if they contain specific data or terminology
-            contains_data = any(c.isdigit() for c in text)
-            contains_proper_noun = any(w[0].isupper() and not w.isupper() for w in words[1:])  # Skip first word
-            contains_date = bool(re.search(r'\b\d{4}\b', text))  # Check for year
-            
-            if len(words) < min_words and not (contains_data or contains_proper_noun or contains_date):
-                raise ValueError(f"Content needs more detail in {context}: {text}")
-
-        # Validate title and subtitle
-        if not slide_data.get('title'):
-            raise ValueError("Missing title")
-        if not slide_data.get('subtitle'):
-            raise ValueError("Missing subtitle")
-        check_text(slide_data['subtitle'], 'subtitle')
-
-        # Validate introduction
-        if not slide_data.get('introduction'):
-            raise ValueError("Missing introduction")
-        check_text(slide_data['introduction'], 'introduction', min_words=8)
-
-        # Track topics to prevent repetition across bullet points
-        topic_fingerprints = set()
-        
-        # Validate bullet points
-        if not slide_data.get('bullet_points'):
-            raise ValueError("Missing bullet points")
-            
-        for i, point in enumerate(slide_data['bullet_points']):
-            # Extract main topic from bullet point and create fingerprint
-            topic_words = ' '.join(sorted(set(point.lower().split())))
-            if topic_words in topic_fingerprints:
-                raise ValueError(f"Bullet point {i+1} repeats a previously covered topic")
-            topic_fingerprints.add(topic_words)
-            
-            # Main point should be more detailed
-            check_text(point, f"bullet point {i+1}", min_words=6)
-            
-            # Sub-points can be more concise if they contain specific data
-            for j, sub_point in enumerate(point.get('sub_points', [])):
-                check_text(sub_point, f"sub-point {i+1}.{j+1}", min_words=4)
-
-        # Validate examples
-        if not slide_data.get('examples'):
-            raise ValueError("Missing examples")
-            
-        for i, example in enumerate(slide_data['examples']):
-            # Check if example repeats a topic from bullet points
-            example_words = ' '.join(sorted(set(example.lower().split())))
-            if example_words in topic_fingerprints:
-                raise ValueError(f"Example {i+1} repeats content from bullet points")
-            topic_fingerprints.add(example_words)
-            
-            # Description should be detailed
-            check_text(example, f"example {i+1}", min_words=5)
-            
-            # Details can be more concise if they contain specific data
-            for j, detail in enumerate(example.get('details', [])):
-                check_text(detail, f"example detail {i+1}.{j+1}", min_words=4)
-
-        # Validate key takeaway
-        if not slide_data.get('key_takeaway'):
-            raise ValueError("Missing key takeaway")
-        check_text(slide_data['key_takeaway'], 'key takeaway', min_words=6)
-
-        # Validate discussion questions
-        if not slide_data.get('discussion_questions'):
-            raise ValueError("Missing discussion questions")
-            
-        for i, question in enumerate(slide_data['discussion_questions']):
-            # Ensure questions cover different aspects
-            question_words = ' '.join(sorted(set(question.lower().split())))
-            if question_words in topic_fingerprints:
-                raise ValueError(f"Discussion question {i+1} repeats content from bullet points")
-            topic_fingerprints.add(question_words)
-            
-            # Ensure proper question format
-            if not any(w in question.lower() for w in ['how', 'what', 'why', 'when', 'where', 'which']):
-                raise ValueError(f"Discussion question {i+1} should start with a question word (how, what, why, etc.)")
-            check_text(question, f"discussion question {i+1}", min_words=6)
 
     def export_presentation(self, presentation: Presentation, format: str = "pptx") -> str:
         """Export presentation with secure image handling."""

@@ -1,9 +1,20 @@
 import React, { useState } from 'react';
-import { Box, TextField, Button, FormControl, InputLabel, Select, MenuItem, Typography, CircularProgress, SelectChangeEvent } from '@mui/material';
+import {
+  Box,
+  TextField,
+  Button,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  CircularProgress,
+  Typography,
+} from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
-import { generateOutline, setInstructionalLevel, setDefaultLayout, setError } from '../store/presentationSlice';
+import { generateOutline, setInstructionalLevel, setDefaultLayout } from '../store/presentationSlice';
 import { RootState } from '../store/store';
-import { InstructionalLevel, SlideLayout, layoutOptions } from './SlideEditor/types';
+import type { InstructionalLevel, SlideLayout } from '../components/types';
+import { layoutOptions } from '../components/SlideEditor/types';
 import { AppDispatch } from '../store/store';
 
 const InputSection: React.FC = () => {
@@ -12,30 +23,22 @@ const InputSection: React.FC = () => {
   const defaultLayout = useSelector((state: RootState) => state.presentation.defaultLayout);
   const isGeneratingOutline = useSelector((state: RootState) => state.presentation.isGeneratingOutline);
   const error = useSelector((state: RootState) => state.presentation.error);
-  
+
   const [topic, setTopic] = useState('');
   const [numSlides, setNumSlides] = useState('5');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('handleSubmit fired!');
-    debugger;
     if (!topic.trim() || !numSlides) {
-      dispatch(setError({
-        message: 'Please fill in all required fields',
-        context: { topic: '' }
-      }));
+      dispatch(setInstructionalLevel('high_school'));
       return;
     }
-
     try {
       await dispatch(generateOutline({
         topic: topic.trim(),
         numSlides: parseInt(numSlides, 10),
         instructionalLevel,
       })).unwrap();
-      
-      // Clear form after successful submission
       setTopic('');
       setNumSlides('5');
     } catch (err) {
@@ -44,11 +47,11 @@ const InputSection: React.FC = () => {
     }
   };
 
-  const handleLevelChange = (event: SelectChangeEvent<InstructionalLevel>) => {
+  const handleLevelChange = (event: any) => {
     dispatch(setInstructionalLevel(event.target.value as InstructionalLevel));
   };
 
-  const handleLayoutChange = (event: SelectChangeEvent<SlideLayout>) => {
+  const handleLayoutChange = (event: any) => {
     dispatch(setDefaultLayout(event.target.value as SlideLayout));
   };
 
@@ -62,8 +65,6 @@ const InputSection: React.FC = () => {
           label="Topic"
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
-          error={error?.context?.topic === ''}
-          helperText={error?.context?.topic === '' ? error.message : ''}
           fullWidth
           required
         />
@@ -79,7 +80,7 @@ const InputSection: React.FC = () => {
         <Box sx={{ display: 'flex', gap: 2 }}>
           <FormControl fullWidth>
             <InputLabel>Instructional Level</InputLabel>
-            <Select<InstructionalLevel>
+            <Select
               value={instructionalLevel}
               onChange={handleLevelChange}
               label="Instructional Level"
@@ -93,7 +94,7 @@ const InputSection: React.FC = () => {
           </FormControl>
           <FormControl fullWidth>
             <InputLabel>Default Layout</InputLabel>
-            <Select<SlideLayout>
+            <Select
               value={defaultLayout}
               onChange={handleLayoutChange}
               label="Default Layout"

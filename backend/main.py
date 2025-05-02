@@ -1,5 +1,4 @@
-from fastapi import FastAPI, HTTPException, Body, Request
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import uvicorn
@@ -19,10 +18,6 @@ from backend.models import (
     InstructionalLevel,
     SlideContent,
     SlideGenerationRequest,
-    ImageGenerationRequest,
-    SlideLayout,
-    SlideContentNew,
-    SlideNew as Slide
 )
 from backend.ai_service import AIService
 from backend.rate_limiter import RateLimiter
@@ -36,8 +31,11 @@ from datetime import datetime
 from pptx import Presentation as pptx_Presentation
 from pptx.util import Inches
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Configure logging with more detail
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 # Load OpenAI API key from credentials or environment
@@ -58,14 +56,17 @@ except Exception as e:
 app = FastAPI()
 
 # Configure CORS
+origins = [
+    "http://localhost:3000",  # Next.js frontend
+    "http://127.0.0.1:3000",
+    "https://marvelai-frontend-62a80e741e41.herokuapp.com",
+    "https://ai-educator-jfpenqilf-kamilj62s-projects.vercel.app",
+    "https://frontend-303seubxr-kamilj62s-projects.vercel.app"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://marvelai-frontend-62a80e741e41.herokuapp.com",
-        "http://localhost:3000",
-        "https://ai-educator-jfpenqilf-kamilj62s-projects.vercel.app",
-        "https://frontend-303seubxr-kamilj62s-projects.vercel.app"
-    ],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

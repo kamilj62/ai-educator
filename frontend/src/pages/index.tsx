@@ -3,6 +3,7 @@ import { Container, Paper, Typography, Box, Grid } from '@mui/material';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import { selectOutline } from '../store/presentationSlice';
+import { Presentation } from '../components/types';
 import InputSection from '../components/InputSection';
 import OutlineEditor from '../components/OutlineEditor';
 import OutlineDisplay from '../components/OutlineDisplay';
