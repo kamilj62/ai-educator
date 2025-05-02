@@ -214,6 +214,20 @@ const SlidePreview: React.FC<SlidePreviewProps> = ({
             {currentSlide.content.title}
           </Typography>
 
+          {/* BODY CONTENT: Render HTML or plain text */}
+          {currentSlide.content?.body && (
+            currentSlide.content.body.trim().startsWith('<') ? (
+              <Box
+                sx={{ mt: 2, mb: 2, fontSize: '1.25rem', color: 'text.secondary' }}
+                dangerouslySetInnerHTML={{ __html: currentSlide.content.body }}
+              />
+            ) : (
+              <Typography sx={{ mt: 2, mb: 2, fontSize: '1.25rem', color: 'text.secondary', whiteSpace: 'pre-line' }}>
+                {currentSlide.content.body}
+              </Typography>
+            )
+          )}
+
           {(currentSlide.content?.image) && (
             <Box sx={{ my: 3, textAlign: 'center' }}>
               <Image
