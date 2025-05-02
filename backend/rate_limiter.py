@@ -136,7 +136,6 @@ class RateLimiter:
                 await asyncio.sleep(5 * retry_count)
             else:
                 break
-<<<<<<< HEAD
 
     @asynccontextmanager
     async def limit(self, operation_type: str = 'default'):
@@ -150,8 +149,6 @@ class RateLimiter:
             raise
         finally:
             logger.debug(f"Completed rate-limited operation: {operation_type}")
-=======
->>>>>>> dd7ecbd (added imagen images)
 
     def get_current_usage(self) -> Dict[str, Dict[str, float]]:
         """Get current usage statistics for all operation types."""
