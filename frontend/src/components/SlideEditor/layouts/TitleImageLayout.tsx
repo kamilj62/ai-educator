@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { useCallback } from 'react';
 import { Box, Paper, styled, Typography } from '@mui/material';
 import { TiptapSlideEditor as TiptapEditor } from '../components/TiptapSlideEditor';
@@ -48,12 +49,26 @@ const ImageContainer = styled(Box)(({ theme }) => ({
     maxHeight: '100%',
     objectFit: 'contain',
   },
+=======
+import { Box, styled } from '@mui/material';
+import BaseLayout from './BaseLayout';
+import TiptapEditor from '../components/TiptapEditor';
+import ImageUploader from '../components/ImageUploader';
+import { Slide } from '../types';
+
+const ContentContainer = styled(Box)(({ theme }) => ({
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  gap: theme.spacing(4),
+  height: '100%',
+>>>>>>> dd7ecbd (added imagen images)
 }));
 
 interface TitleImageLayoutProps {
   slide: Slide;
   onChange: (slide: Slide) => void;
   onImageUpload?: (file: File) => Promise<string>;
+<<<<<<< HEAD
   onImageGenerate?: (prompt: string, service?: ImageService) => Promise<string>;
 }
 
@@ -64,20 +79,36 @@ const TitleImageLayout: React.FC<TitleImageLayoutProps> = ({
   onImageGenerate,
 }) => {
   const handleTitleChange = useCallback((title: string) => {
+=======
+}
+
+const TitleImageLayout = ({ slide, onChange, onImageUpload }: TitleImageLayoutProps) => {
+  const handleTitleChange = (content: string) => {
+>>>>>>> dd7ecbd (added imagen images)
     onChange({
       ...slide,
       content: {
         ...slide.content,
+<<<<<<< HEAD
         title,
       },
     });
   }, [slide, onChange]);
 
   const handleImageChange = useCallback((image: SlideImage) => {
+=======
+        title: content,
+      },
+    });
+  };
+
+  const handleImageChange = (imageUrl: string) => {
+>>>>>>> dd7ecbd (added imagen images)
     onChange({
       ...slide,
       content: {
         ...slide.content,
+<<<<<<< HEAD
         image,
       },
     });
@@ -106,6 +137,49 @@ const TitleImageLayout: React.FC<TitleImageLayoutProps> = ({
         </Box>
       </ContentArea>
     </LayoutContainer>
+=======
+        image: {
+          url: imageUrl,
+          alt: 'Slide image',
+        },
+      },
+    });
+  };
+
+  return (
+    <BaseLayout>
+      <Box mb={4}>
+        <TiptapEditor
+          content={slide.content.title || ''}
+          onChange={handleTitleChange}
+          placeholder="Enter title..."
+        />
+      </Box>
+      <ContentContainer>
+        <Box>
+          {slide.content.subtitle && (
+            <TiptapEditor
+              content={slide.content.subtitle}
+              onChange={(content) =>
+                onChange({
+                  ...slide,
+                  content: { ...slide.content, subtitle: content },
+                })
+              }
+              placeholder="Enter subtitle..."
+            />
+          )}
+        </Box>
+        <Box>
+          <ImageUploader
+            imageUrl={slide.content.image?.url}
+            onImageChange={handleImageChange}
+            onImageUpload={onImageUpload}
+          />
+        </Box>
+      </ContentContainer>
+    </BaseLayout>
+>>>>>>> dd7ecbd (added imagen images)
   );
 };
 

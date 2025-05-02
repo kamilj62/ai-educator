@@ -103,6 +103,7 @@ class ExportFormat(str, Enum):
     PDF = "pdf"
     PPTX = "pptx"
 
+<<<<<<< HEAD
 class ImageServiceProvider(Enum):
     OPENAI = "openai"
     GOOGLE = "google"
@@ -122,3 +123,12 @@ class SlideGenerationRequestNew(BaseModel):
 class PresentationNew(BaseModel):
     model_config = ConfigDict(extra='forbid')
     slides: List[SlideNew]
+=======
+class ExportRequest(BaseModel):
+    presentation: Presentation
+    format: ExportFormat
+
+class ImageGenerationRequest(BaseModel):
+    """Request model for image generation."""
+    prompt: str = Field(..., description="The prompt to generate an image from")
+>>>>>>> dd7ecbd (added imagen images)
