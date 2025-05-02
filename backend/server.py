@@ -303,6 +303,7 @@ async def generate_outline_with_openai(context: str, num_slides: int, level: str
                         "context": {"error": "All slides missing key_points or image_prompt."}
                     }
                 )
+            assert all(len(t['key_points']) >= 3 and len(t['key_points']) <= 5 and t['image_prompt'] for t in filtered_topics), "Returned topics must have 3-5 key_points and non-empty image_prompt"
             logger.info("Returning only valid filtered topics.")
             return filtered_topics
         except json.JSONDecodeError as e:
