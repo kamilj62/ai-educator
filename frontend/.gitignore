@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # dependencies
 /node_modules
 /.pnp
@@ -19,4 +20,6 @@
 
 # vercel
 .vercel
+=======
+>>>>>>> eb231a7 (Track frontend/.gitignore to resolve checkout/rebase conflict)
 .next/
