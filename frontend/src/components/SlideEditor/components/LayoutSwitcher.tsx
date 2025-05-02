@@ -49,6 +49,7 @@ const LayoutSwitcher: React.FC<LayoutSwitcherProps> = ({ layout, onLayoutChange 
           content: {}
         })
       });
+      console.log('[LayoutSwitcher] Layout validate API response:', response);
 
       if (!response.ok) {
         console.error('Failed to validate layout:', await response.text());

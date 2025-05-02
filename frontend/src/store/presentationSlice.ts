@@ -43,15 +43,28 @@ export const generateOutline = createAsyncThunk(
       };
 
       // Use config.ts for API_BASE_URL and API_ENDPOINTS
-      const response = await fetch(`/api/generate/outline`, {
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+      const response = await fetch(`${baseUrl}/api/generate/outline`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API Error: ${response.statusText} - ${errorText}`);
+        let errorPayload;
+        try {
+          errorPayload = await response.json();
+        } catch (e) {
+          errorPayload = await response.text();
+        }
+        // Prefer detail or message if present
+        let errorMessage = 'API Error';
+        if (typeof errorPayload === 'object' && errorPayload !== null) {
+          errorMessage = errorPayload.detail || errorPayload.message || JSON.stringify(errorPayload);
+        } else if (typeof errorPayload === 'string') {
+          errorMessage = errorPayload;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
