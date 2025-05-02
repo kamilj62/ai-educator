@@ -548,7 +548,7 @@ class AIService:
             fixed_topics = []
             for topic in response_data["topics"]:
                 # If topic is already a SlideTopic instance, convert to dict
-                if isinstance(topic, SlideTopic):
+                if hasattr(topic, 'dict') and callable(getattr(topic, 'dict', None)):
                     topic = topic.dict()
                 # Ensure key_points is present and is a list of strings
                 if "key_points" not in topic or not isinstance(topic["key_points"], list):
