@@ -250,9 +250,10 @@ async def generate_outline_with_openai(context: str, num_slides: int, level: str
             "description": "This slide explains the different phases of the moon and why they occur, with a focus on the science behind the cycle."
           }
         ]
-        STRICTLY match this JSON structure for every slide."""
+        STRICTLY match this JSON structure for every slide.
+        If you cannot generate slides that meet these criteria, return an empty list ONLY (no explanations or text)."""
 
-        user_prompt = f"""Generate a presentation outline for:\n        Topic: {context}\n        Number of slides: {num_slides}\n        Audience level: {level}\n        \n        Format each slide as:\n        {{\n            \"id\": \"unique_id\",\n            \"title\": \"slide title\",\n            \"key_points\": [\"point 1\", \"point 2\", \"point 3\"],\n            \"image_prompt\": \"description for an image that would enhance this slide\",\n            \"description\": \"brief description of the slide's content\"\n        }}\n        IMPORTANT: Only include slides with 3-5 key_points and a non-empty image_prompt. Do not include slides with fewer than 3 key_points.\n        Output only valid JSON, no explanations."""
+        user_prompt = f"""Generate a presentation outline for:\n        Topic: {context}\n        Number of slides: {num_slides}\n        Audience level: {level}\n        \n        Format each slide as:\n        {{\n            \"id\": \"unique_id\",\n            \"title\": \"slide title\",\n            \"key_points\": [\"point 1\", \"point 2\", \"point 3\"],\n            \"image_prompt\": \"description for an image that would enhance this slide\",\n            \"description\": \"brief description of the slide's content\"\n        }}\n        IMPORTANT: Only include slides with 3-5 key_points and a non-empty image_prompt. Do not include slides with fewer than 3 key_points.\n        Output only valid JSON, no explanations. If you cannot generate valid slides, return an empty list ONLY."""
 
         response = await client.chat.completions.create(
             model="gpt-4-turbo-preview",
@@ -316,10 +317,8 @@ async def generate_outline_with_openai(context: str, num_slides: int, level: str
             status_code=500,
             detail={
                 "type": "API_ERROR",
-                "message": "OpenAI API error",
-                "context": {
-                    "error": str(e)
-                }
+                "message": f"OpenAI API error: {str(e)}",
+                "context": {"error": str(e)}
             }
         )
     except Exception as e:
