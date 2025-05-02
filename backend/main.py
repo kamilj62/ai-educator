@@ -240,6 +240,35 @@ async def generate_slide_content(request: SlideGenerationRequest):
             detail=f"Unexpected error: {str(e)}"
         )
 
+@app.post("/api/generate/slides")
+async def generate_slides(request: SlideGenerationRequest):
+    """Generate presentation slides from an outline."""
+    try:
+        logger.debug(f"Received slide request: {request.dict()}")
+        topic = request.topic
+        layout = request.layout or "title-bullets"
+        response = {
+            "title": topic.title,
+            "subtitle": "",
+            "body": topic.description,
+            "bullet_points": topic.key_points,
+            "image_url": "",
+            "image_alt": topic.image_prompt,
+            "image_caption": "",
+            "image_service": "generated"
+        }
+        return response
+    except Exception as e:
+        logger.error(f"Error generating slides: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "type": "API_ERROR",
+                "message": f"Failed to generate slides: {str(e)}",
+                "context": {"error": str(e)}
+            }
+        )
+
 @app.post("/api/generate/image")
 async def generate_image(request: dict):
     try:
