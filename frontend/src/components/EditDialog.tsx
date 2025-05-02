@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   TextField,
+  Button,
+  Box,
+  Typography,
   IconButton,
   List,
   ListItem,
@@ -13,181 +15,173 @@ import {
   ListItemSecondaryAction,
 } from '@mui/material';
 import { Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
-import { Slide, SlideContent } from './SlideEditor/types';
+import type { Slide, SlideContent, BulletPoint, SlideTopic } from '../components/types';
 
 interface EditDialogProps {
-  slide: Slide;
-  onSave: (updatedSlide: Slide) => void;
+  open: boolean;
+  topic: SlideTopic;
+  slide?: SlideContent;
   onClose: () => void;
-  open?: boolean;
+  onSave: (topic: SlideTopic, slide?: SlideContent) => void;
 }
 
 const EditDialog: React.FC<EditDialogProps> = ({
+  open,
+  topic,
   slide,
-  onSave,
   onClose,
-  open = true,
+  onSave,
 }) => {
-  const [editedSlide, setEditedSlide] = useState<Slide>(slide);
+  const [editedTopic, setEditedTopic] = useState<SlideTopic>(topic);
+  const [editedSlide, setEditedSlide] = useState<SlideContent | undefined>(
+    slide ? { ...slide } : undefined
+  );
   const [newBulletPoint, setNewBulletPoint] = useState('');
 
-  const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setEditedSlide({
-      ...editedSlide,
-      content: {
-        ...editedSlide.content,
-        title: event.target.value,
-      },
-    });
-  };
+  // Reset state when dialog opens with new topic/slide
+  useEffect(() => {
+    setEditedTopic(topic);
+    setEditedSlide(slide ? { ...slide } : undefined);
+    setNewBulletPoint('');
+  }, [topic, slide]);
 
-  const handleBodyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setEditedSlide({
-      ...editedSlide,
-      content: {
-        ...editedSlide.content,
-        body: event.target.value,
-      },
-    });
+  const handleSave = () => {
+    console.log('Saving changes:', { editedTopic, editedSlide });
+    onSave(editedTopic, editedSlide);
+    onClose();
   };
 
   const handleAddBulletPoint = () => {
     if (!newBulletPoint.trim()) return;
-
-    setEditedSlide({
-      ...editedSlide,
-      content: {
-        ...editedSlide.content,
+    
+    if (!editedSlide) {
+      setEditedSlide({
+        title: editedTopic.title,
+        bullets: [{ text: newBulletPoint, subpoints: [] }],
+      });
+    } else {
+      setEditedSlide({
+        ...editedSlide,
         bullets: [
-          ...(editedSlide.content.bullets || []),
-          { text: newBulletPoint.trim() }
+          ...(editedSlide.bullets || []),
+          { text: newBulletPoint, subpoints: [] },
         ],
-      },
-    });
+      });
+    }
     setNewBulletPoint('');
   };
 
   const handleDeleteBulletPoint = (index: number) => {
-    const updatedBulletPoints = editedSlide.content.bullets?.filter((_, i) => i !== index) || [];
+    if (!editedSlide) return;
+    
+    const updatedBullets = (editedSlide.bullets || []).filter((_, i) => i !== index);
     setEditedSlide({
       ...editedSlide,
-      content: {
-        ...editedSlide.content,
-        bullets: updatedBulletPoints,
-      },
+      bullets: updatedBullets,
     });
   };
 
-  const handleMoveBulletPoint = (index: number, direction: 'up' | 'down') => {
-    if (!editedSlide.content.bullets) return;
-
-    const updatedBulletPoints = [...editedSlide.content.bullets];
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
-
-    if (newIndex >= 0 && newIndex < updatedBulletPoints.length) {
-      const temp = updatedBulletPoints[index];
-      updatedBulletPoints[index] = updatedBulletPoints[newIndex];
-      updatedBulletPoints[newIndex] = temp;
-
-      setEditedSlide({
-        ...editedSlide,
-        content: {
-          ...editedSlide.content,
-          bullets: updatedBulletPoints,
-        },
-      });
-    }
-  };
-
-  const handleSave = () => {
-    onSave(editedSlide);
+  const handleEditBulletPoint = (index: number, newText: string) => {
+    if (!editedSlide) return;
+    
+    const updatedBullets = [...(editedSlide.bullets || [])];
+    updatedBullets[index] = {
+      ...updatedBullets[index],
+      text: newText,
+    };
+    
+    setEditedSlide({
+      ...editedSlide,
+      bullets: updatedBullets,
+    });
   };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Edit Slide</DialogTitle>
       <DialogContent>
-        <TextField
-          fullWidth
-          label="Title"
-          value={editedSlide.content.title}
-          onChange={handleTitleChange}
-          margin="normal"
-        />
-
-        {editedSlide.content.body !== undefined && (
+        <Box sx={{ mb: 3 }}>
           <TextField
+            label="Title"
+            value={editedTopic.title}
+            onChange={(e) => {
+              const newTitle = e.target.value;
+              setEditedTopic({ ...editedTopic, title: newTitle });
+              if (editedSlide) {
+                setEditedSlide({ ...editedSlide, title: newTitle });
+              }
+            }}
             fullWidth
-            label="Body"
-            value={editedSlide.content.body || ''}
-            onChange={handleBodyChange}
+            margin="normal"
+          />
+          <TextField
+            label="Description"
+            value={editedTopic.description || ''}
+            onChange={(e) => {
+              const newDescription = e.target.value;
+              setEditedTopic({ ...editedTopic, description: newDescription });
+            }}
+            fullWidth
             margin="normal"
             multiline
-            rows={4}
+            rows={2}
           />
-        )}
+        </Box>
 
-        {editedSlide.content.bullets !== undefined && (
-          <>
-            <List>
-              {editedSlide.content.bullets.map((point, index: number) => (
-                <ListItem key={index}>
-                  <ListItemText primary={point.text} />
-                  <ListItemSecondaryAction>
-                    <IconButton
-                      edge="end"
-                      onClick={() => handleMoveBulletPoint(index, 'up')}
-                      disabled={index === 0}
-                    >
-                      ↑
-                    </IconButton>
-                    <IconButton
-                      edge="end"
-                      onClick={() => handleMoveBulletPoint(index, 'down')}
-                      disabled={index === (editedSlide.content.bullets?.length || 0) - 1}
-                    >
-                      ↓
-                    </IconButton>
-                    <IconButton
-                      edge="end"
-                      onClick={() => handleDeleteBulletPoint(index)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </ListItemSecondaryAction>
-                </ListItem>
-              ))}
-            </List>
+        <Typography variant="subtitle1" gutterBottom sx={{ mt: 2 }}>
+          Bullet Points
+        </Typography>
+        <Box sx={{ display: 'flex', mb: 2 }}>
+          <TextField
+            label="New Bullet Point"
+            value={newBulletPoint}
+            onChange={(e) => setNewBulletPoint(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' && newBulletPoint.trim()) {
+                handleAddBulletPoint();
+              }
+            }}
+            fullWidth
+            size="small"
+            sx={{ mr: 1 }}
+          />
+          <IconButton
+            onClick={handleAddBulletPoint}
+            color="primary"
+            disabled={!newBulletPoint.trim()}
+          >
+            <AddIcon />
+          </IconButton>
+        </Box>
 
-            <TextField
-              fullWidth
-              label="New Bullet Point"
-              value={newBulletPoint}
-              onChange={(e) => setNewBulletPoint(e.target.value)}
-              margin="normal"
-              InputProps={{
-                endAdornment: (
+        {editedSlide?.bullets && (
+          <List>
+            {editedSlide.bullets.map((bullet: BulletPoint, index: number) => (
+              <ListItem key={index} sx={{ py: 1 }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={bullet.text}
+                  onChange={(e) => handleEditBulletPoint(index, e.target.value)}
+                  sx={{ mr: 1 }}
+                />
+                <ListItemSecondaryAction>
                   <IconButton
-                    onClick={handleAddBulletPoint}
-                    disabled={!newBulletPoint.trim()}
+                    edge="end"
+                    size="small"
+                    onClick={() => handleDeleteBulletPoint(index)}
                   >
-                    <AddIcon />
+                    <DeleteIcon />
                   </IconButton>
-                ),
-              }}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddBulletPoint();
-                }
-              }}
-            />
-          </>
+                </ListItemSecondaryAction>
+              </ListItem>
+            ))}
+          </List>
         )}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSave} color="primary">
+        <Button onClick={handleSave} variant="contained" color="primary">
           Save
         </Button>
       </DialogActions>

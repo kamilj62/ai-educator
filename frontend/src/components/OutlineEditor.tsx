@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { generateOutline, setError, APIError } from '../store/presentationSlice';
-import { InstructionalLevel } from './SlideEditor/types';
+import type { InstructionalLevel, SlideTopic } from '../components/types';
 import { LayoutSelector } from './SlideEditor/components/LayoutSelector';
 import { BackendSlideLayout } from './SlideEditor/types';
 
