@@ -64,7 +64,7 @@ const TitleBodyLayout: React.FC<TitleBodyLayoutProps> = ({
         </TitleContainer>
         <BodyContainer>
           <TiptapEditor
-            content={slide.content.body || ''}
+            content={slide.content.body || slide.content.description || ''}
             onChange={handleBodyChange}
             placeholder="Enter content..."
             bulletList={false}
