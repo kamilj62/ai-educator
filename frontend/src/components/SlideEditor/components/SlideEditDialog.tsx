@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -90,32 +90,6 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
       } : undefined)
     },
   });
-
-  // Update local state when slide prop changes
-  useEffect(() => {
-    const newSlide = {
-      ...slide,
-      layout: convertLayoutToFrontend(slide.layout),
-      content: {
-        ...slide.content,
-        bullets: slide.content.bullets ? [...slide.content.bullets] : [],
-        image: slide.content.image || (slide.content.image_prompt ? {
-          url: '',
-          alt: slide.content.image_prompt,
-          caption: slide.content.image_prompt,
-          prompt: slide.content.image_prompt,
-          service: 'dalle' as ImageService
-        } : undefined)
-      }
-    };
-    setEditedSlide(newSlide);
-
-    // Auto-generate image if needed
-    if (slide.content.image_prompt && (!slide.content.image || !slide.content.image.url)) {
-      console.log('Auto-generating image in edit dialog');
-      handleImageGenerate(slide.content.image_prompt);
-    }
-  }, [slide]);
 
   const handleLayoutChange = (newLayout: SlideLayout) => {
     // Create a new content object based on the selected layout
@@ -222,7 +196,7 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     }));
   };
 
-  const handleImageGenerate = async (prompt: string) => {
+  const handleImageGenerate = useCallback(async (prompt: string) => {
     if (!onImageGenerate) return;
     try {
       console.log('SlideEditDialog - Generating image with prompt:', prompt);
@@ -237,7 +211,32 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     } catch (err) {
       console.error('Failed to generate image:', err);
     }
-  };
+  }, [onImageGenerate, handleImageChange]);
+
+  useEffect(() => {
+    const newSlide = {
+      ...slide,
+      layout: convertLayoutToFrontend(slide.layout),
+      content: {
+        ...slide.content,
+        bullets: slide.content.bullets ? [...slide.content.bullets] : [],
+        image: slide.content.image || (slide.content.image_prompt ? {
+          url: '',
+          alt: slide.content.image_prompt,
+          caption: slide.content.image_prompt,
+          prompt: slide.content.image_prompt,
+          service: 'dalle' as ImageService
+        } : undefined)
+      }
+    };
+    setEditedSlide(newSlide);
+
+    // Auto-generate image if needed
+    if (slide.content.image_prompt && (!slide.content.image || !slide.content.image.url)) {
+      console.log('Auto-generating image in edit dialog');
+      handleImageGenerate(slide.content.image_prompt);
+    }
+  }, [slide, handleImageGenerate]);
 
   const handleSave = () => {
     onSave({

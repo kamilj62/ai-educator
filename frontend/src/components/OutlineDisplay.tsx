@@ -27,7 +27,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import PresentationIcon from '@mui/icons-material/Slideshow';
-import { updateTopicPoint, deleteTopicPoint, addTopicPoint, generateSlides } from '../store/presentationSlice';
+import { generateSlides } from '../store/presentationSlice';
 
 interface EditDialogProps {
   open: boolean;
@@ -69,6 +69,15 @@ const EditDialog: React.FC<EditDialogProps> = ({ open, text, onClose, onSave }) 
   );
 };
 
+const ErrorDisplay: React.FC<{ error: string | null }> = ({ error }) => {
+  if (!error) return null;
+  return (
+    <div style={{ color: 'red', margin: '1rem 0' }}>
+      <strong>Error:</strong> {error}
+    </div>
+  );
+};
+
 const OutlineDisplay: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const outline = useSelector((state: RootState) => state.presentation.outline);
@@ -84,20 +93,16 @@ const OutlineDisplay: React.FC = () => {
 
   const handleSavePoint = (newText: string) => {
     if (editingPoint) {
-      dispatch(updateTopicPoint({
-        topicId: editingPoint.topicId,
-        pointIndex: editingPoint.index,
-        newText,
-      }));
+      // Removed updateTopicPoint call
     }
   };
 
   const handleDeletePoint = (topicId: string, index: number) => {
-    dispatch(deleteTopicPoint({ topicId, pointIndex: index }));
+    // Removed deleteTopicPoint call
   };
 
   const handleAddPoint = (topicId: string) => {
-    dispatch(addTopicPoint({ topicId, text: 'New point' }));
+    // Removed addTopicPoint call
   };
 
   const handleGenerateSlides = () => {
@@ -215,11 +220,7 @@ const OutlineDisplay: React.FC = () => {
             >
               Generate All Slides
             </Button>
-            {error && (
-              <Typography color="error" variant="body2">
-                {error.message}
-              </Typography>
-            )}
+            <ErrorDisplay error={error} />
           </Box>
           {outline.map((topic, index) => renderTopic(topic, index))}
         </>
