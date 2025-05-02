@@ -685,7 +685,7 @@ class AIService:
             # Validate each topic
             for topic in response_data["topics"]:
                 if not isinstance(topic, dict):
-                    raise ValueError("Each topic must be an object")
+                    raise ValueError("Each topic must be a dictionary")
                 
                 required_fields = ["title", "key_points", "image_prompt"]
                 for field in required_fields:
@@ -695,17 +695,17 @@ class AIService:
                 if not isinstance(topic["title"], str):
                     raise ValueError("Topic title must be a string")
                 
+                if "key_points" not in topic:
+                    raise ValueError("Each topic must have a key_points array")
                 if not isinstance(topic["key_points"], list):
-                    raise ValueError("key_points must be an array")
+                    raise ValueError("key_points must be a list")
+                if not (3 <= len(topic["key_points"]) <= 5):
+                    raise ValueError("Each topic must have between 3 and 5 key points (bullet points)")
+                if not all(isinstance(point, str) for point in topic["key_points"]):
+                    raise ValueError("All key points must be strings")
                 
                 if not isinstance(topic["image_prompt"], str):
                     raise ValueError("image_prompt must be a string")
-                
-                if not topic["key_points"]:
-                    raise ValueError("key_points array cannot be empty")
-                
-                if not all(isinstance(point, str) for point in topic["key_points"]):
-                    raise ValueError("All key points must be strings")
             
             return response_data
             
@@ -730,7 +730,7 @@ class AIService:
                 'title-image': "Create a title slide with a subtitle and an image that captures the main concept.",
                 'title-body': "Create a slide with a title and detailed paragraph text.",
                 'title-body-image': "Create a slide with a title, detailed paragraph text, and a relevant image.",
-                'title-bullets': "Create a slide with a title and key points as bullet points.",
+                'title-bullets': "Create a title slide with a title and key points as bullet points.",
                 'title-bullets-image': "Create a slide with a title, bullet points, and a supporting image.",
                 'two-column': "Create a slide with a title and content split into two columns.",
                 'two-column-image': "Create a slide with a title, two columns of content, and an image."
@@ -801,16 +801,16 @@ class AIService:
                     # Log the error but continue - image is optional
                     logger.error(f"Image generation failed: {str(e)}")
 
-            # Create slide content based on layout
-            bullet_points = []
-            if 'bullet_points' in content and isinstance(content['bullet_points'], list):
-                bullet_points = [{"text": point} for point in content['bullet_points'] if point and isinstance(point, str)]
+            # Map key_points to bullet_points (for layouts that use bullets)
+            bullet_points = None
+            if hasattr(topic, 'key_points') and topic.key_points:
+                bullet_points = [{"text": point} for point in topic.key_points]
 
             slide_content = SlideContentNew(
-                title=content.get('title', topic.title),
-                subtitle=content.get('subtitle'),
-                body=content.get('body') if 'body' in layout else None,
-                bullet_points=bullet_points if 'bullets' in layout else None,
+                title=content["title"],
+                subtitle=content.get("subtitle"),
+                body=content.get("body"),
+                bullet_points=bullet_points,
                 image_url=image_url,
                 image_caption=image_caption,
                 layout=layout,
