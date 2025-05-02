@@ -1,29 +1,18 @@
-<<<<<<< HEAD
 import asyncio
 import os
 import time
 from typing import List, Optional, Tuple, Dict, Any
-=======
 from enum import Enum
-from typing import List, Optional, Tuple, Dict, Any
-import os
-import asyncio
 import traceback
->>>>>>> dd7ecbd (added imagen images)
 import logging
 import tempfile
 import base64
 import json
-<<<<<<< HEAD
-import traceback
-=======
->>>>>>> dd7ecbd (added imagen images)
 from datetime import datetime
 from pathlib import Path
 import re
 import hashlib
 import vertexai
-<<<<<<< HEAD
 from openai import AsyncOpenAI, APIError, RateLimitError, APIConnectionError, APITimeoutError, AuthenticationError
 from google.cloud import aiplatform
 from google.oauth2 import service_account
@@ -49,24 +38,6 @@ from backend.exceptions import (
 )
 from dotenv import load_dotenv
 from backend.utils.export_utils import create_presentation
-=======
-from vertexai.preview import generative_models
-from google.cloud import aiplatform
-from google.oauth2 import service_account
-from google.api_core import retry, exceptions
-from fastapi import HTTPException
-from models import InstructionalLevel, SlideContent, SlideTopic, BulletPoint, Example
-from rate_limiter import RateLimiter
-from exceptions import (
-    ImageGenerationError,
-    ImageServiceProvider,
-    ImageGenerationErrorType
-)
-import openai
-from openai import AsyncOpenAI, APIError, RateLimitError, APIConnectionError, APITimeoutError, AuthenticationError
-import time
-from dotenv import load_dotenv
->>>>>>> dd7ecbd (added imagen images)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -107,9 +78,8 @@ class AIService:
         if not openai_key:
             logger.error("OPENAI_API_KEY environment variable is not set")
             raise ValueError("OPENAI_API_KEY environment variable is not set")
-            
+        
         # Initialize OpenAI client with API key
-<<<<<<< HEAD
         self.client = AsyncOpenAI(
             api_key=openai_key,
             default_headers={"User-Agent": "marvelAI/1.0"},
@@ -128,11 +98,11 @@ class AIService:
                 project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
                 if not project_id:
                     raise ValueError("GOOGLE_CLOUD_PROJECT environment variable not set")
-                    
+                
                 credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
                 if not credentials_path:
                     raise ValueError("GOOGLE_APPLICATION_CREDENTIALS environment variable not set")
-                    
+                
                 if not os.path.exists(credentials_path):
                     raise ValueError(f"Credentials file not found at: {credentials_path}")
                 
@@ -156,7 +126,6 @@ class AIService:
                             self.imagen_available = False
                         else:
                             self.imagen_available = True
-                    
                 except Exception as e:
                     logger.error(f"Failed to initialize Google Cloud credentials: {str(e)}")
                     self.imagen_available = False
@@ -178,7 +147,7 @@ class AIService:
                 self.imagen_available = False
         else:
             self.imagen_available = False
-            
+        
         if not self.imagen_available:
             logger.info("Imagen not available, using DALL-E as fallback")
         
@@ -186,65 +155,7 @@ class AIService:
         self.images_dir = Path("static/images")
         self.images_dir.mkdir(parents=True, exist_ok=True)
         logger.debug(f"Images directory created at {self.images_dir}")
-            
-=======
-        self.client = AsyncOpenAI(api_key=openai_key)
-        
-        # Log API key validation (safely)
-        logger.info(f"OpenAI API Key loaded and starts with: {openai_key[:4]}...")
-            
-        # Initialize Vertex AI with Google Cloud credentials
-        project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
-        if not project_id:
-            raise ValueError("GOOGLE_CLOUD_PROJECT environment variable not set")
-            
-        credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-        if not credentials_path:
-            raise ValueError("GOOGLE_APPLICATION_CREDENTIALS environment variable not set")
-            
-        if not os.path.exists(credentials_path):
-            raise ValueError(f"Credentials file not found at: {credentials_path}")
-        
-        # Initialize credentials from service account file
-        try:
-            credentials = service_account.Credentials.from_service_account_file(
-                credentials_path,
-                scopes=["https://www.googleapis.com/auth/cloud-platform"]
-            )
-            
-            # Verify required roles are present
-            required_roles = [
-                "roles/aiplatform.user",
-                "roles/serviceusage.serviceUsageViewer"
-            ]
-            
-            if hasattr(credentials, 'roles'):
-                missing_roles = [role for role in required_roles if role not in credentials.roles]
-                if missing_roles:
-                    logger.warning(f"Missing required roles: {', '.join(missing_roles)}")
-            
-        except Exception as e:
-            logger.error(f"Failed to initialize Google Cloud credentials: {str(e)}")
-            raise ValueError(f"Invalid Google Cloud credentials: {str(e)}")
-        
-        # Initialize Vertex AI with the correct project and region
-        try:
-            vertexai.init(
-                project=project_id,
-                location="us-central1",  # Imagen is available in us-central1
-                credentials=credentials
-            )
-            logger.info(f"Initialized AIService with project: {project_id}")
-        except Exception as e:
-            logger.error(f"Failed to initialize Vertex AI: {str(e)}")
-            raise ValueError(f"Failed to initialize Vertex AI: {str(e)}")
-        
-        # Create images directory if it doesn't exist
-        self.images_dir = Path("static/images")
-        self.images_dir.mkdir(parents=True, exist_ok=True)
-        logger.debug(f"Images directory created at {self.images_dir}")
-            
->>>>>>> dd7ecbd (added imagen images)
+
     async def initialize(self):
         """Initialize async components."""
         try:
@@ -342,150 +253,9 @@ class AIService:
                         raise ValueError("Each topic must be a dictionary")
                     if "title" not in topic or "description" not in topic:
                         raise ValueError("Each topic must have a title and description")
-                return
-
-            # For slide content generation
-            required_fields = ["title", "bullet_points", "examples", "discussion_questions"]
-            for field in required_fields:
-                if field not in response_data:
-                    raise ValueError(f"Missing required field: {field}")
-                
-                # Title should be a string
-                if field == "title":
-                    if not isinstance(response_data[field], str):
-                        raise ValueError("Title must be a string")
-                    if not response_data[field].strip():
-                        raise ValueError("Title cannot be empty")
-                    continue
-                
-                # Other fields should be lists
-                if not isinstance(response_data[field], list):
-                    raise ValueError(f"Field {field} must be a list")
-                
-                # Validate list items
-                for i, item in enumerate(response_data[field]):
-                    if not isinstance(item, str):
-                        raise ValueError(f"Item {i+1} in {field} must be a string")
-                    if not item.strip():
-                        raise ValueError(f"Item {i+1} in {field} cannot be empty")
-
         except Exception as e:
             logger.error(f"Error validating response format: {str(e)}")
-            logger.error(f"Response data: {json.dumps(response_data, indent=2)}")
-            raise
-
-    async def _download_and_save_image(self, image_url: str) -> str:
-        """Download an image from a URL and save it locally."""
-        try:
-            # Generate a unique filename based on the URL
-            filename = hashlib.md5(image_url.encode()).hexdigest() + ".png"
-            filepath = self.images_dir / filename
-            
-            # If file already exists, return its path
-            if filepath.exists():
-                logger.debug(f"Image already exists at {filepath}")
-                return str(filepath)
-            
-            # Download and save the image
-            async with httpx.AsyncClient() as session:
-                async with session.get(image_url) as response:
-                    response.raise_for_status()
-                    image_data = await response.read()
-                    
-                    with open(filepath, "wb") as f:
-                        f.write(image_data)
-                    
-                    logger.debug(f"Image saved to {filepath}")
-                    return str(filepath)
-                    
-        except Exception as e:
-            logger.error(f"Failed to download and save image: {str(e)}")
-            raise ValueError(f"Failed to download and save image: {str(e)}")
-
-<<<<<<< HEAD
-    async def _generate_image_url(self, topic: str, level: InstructionalLevel) -> Tuple[str, str]:
-        """Generate an educational image using DALL-E."""
-=======
-    async def _verify_imagen_access(self) -> bool:
-        """Verify access to Imagen API."""
->>>>>>> dd7ecbd (added imagen images)
-        try:
-            # 1. Check environment variables (from our memory requirements)
-            project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
-            if not project_id:
-                logger.error("GOOGLE_CLOUD_PROJECT environment variable not set")
-                return False
-
-            credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-            if not credentials_path or not os.path.exists(credentials_path):
-                logger.error("Invalid GOOGLE_APPLICATION_CREDENTIALS")
-                return False
-
-            # 2. Load and verify credentials
-            try:
-                from google.oauth2 import service_account
-                import json
-                
-                # Read service account info to verify project
-                with open(credentials_path) as f:
-                    creds_data = json.load(f)
-                    
-                if creds_data.get('project_id') != project_id:
-                    logger.error(f"Project ID mismatch: {project_id} != {creds_data.get('project_id')}")
-                    return False
-                    
-                credentials = service_account.Credentials.from_service_account_file(
-                    credentials_path,
-                    scopes=['https://www.googleapis.com/auth/cloud-platform']
-                )
-                logger.info(f"Successfully loaded credentials for {credentials.service_account_email}")
-            except Exception as e:
-                logger.error(f"Failed to load credentials: {str(e)}")
-                return False
-
-            # 3. Initialize Vertex AI with explicit project and region
-            try:
-                # Initialize Vertex AI with our project settings
-                vertexai.init(
-                    project=project_id,
-                    location="us-central1",
-                    credentials=credentials
-                )
-                logger.info("Successfully initialized Vertex AI")
-                
-                # Get the Imagen model
-                model = generative_models.GenerativeModel("imagegeneration@002")
-                logger.info("Successfully loaded Imagen model")
-            except Exception as e:
-                logger.error(f"Failed to initialize Imagen model: {str(e)}")
-                return False
-            
-            # 4. Try a minimal test request
-            try:
-                response = model.generate_content(
-                    "A simple test image of a blue circle"
-                )
-                
-                if response and response.candidates:
-                    logger.info("Successfully generated test image with Imagen")
-                    return True
-                else:
-                    logger.error("Imagen API test request returned no images")
-                    return False
-                    
-            except Exception as e:
-                error_msg = str(e)
-                if "permission" in error_msg.lower():
-                    logger.error(f"Permission error with Imagen API: {error_msg}")
-                elif "quota" in error_msg.lower():
-                    logger.error(f"Quota error with Imagen API: {error_msg}")
-                else:
-                    logger.error(f"Unknown error with Imagen API: {error_msg}")
-                return False
-            
-        except Exception as e:
-            logger.error(f"Failed to verify Imagen access: {str(e)}")
-            return False
+            raise ValueError(f"Invalid response format: {str(e)}")
 
     async def generate_image(self, prompt: str, context: Optional[Dict[str, Any]] = None, retry_count: int = 0, max_retries: int = 3) -> str:
         """Generate image with Imagen, falling back to DALL-E if needed.
@@ -856,14 +626,9 @@ class AIService:
                 bullet_points=[BulletPoint(text=point) for point in content_data["bullet_points"]],
                 examples=[Example(text=example) for example in content_data["examples"]],
                 discussion_questions=content_data["discussion_questions"],
-<<<<<<< HEAD
                 image_url=str(image_path),
                 image_caption=image_caption,
                 layout=layout
-=======
-                image_url=image_path,
-                image_caption=image_caption
->>>>>>> dd7ecbd (added imagen images)
             )
             
         except ImageGenerationError:
