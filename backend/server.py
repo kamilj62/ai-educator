@@ -233,28 +233,38 @@ def determine_slide_layout(content):
 async def generate_outline_with_openai(context: str, num_slides: int, level: str) -> List[Dict]:
     """Generate an outline using OpenAI's GPT model."""
     try:
-        system_prompt = """You are an expert presentation outline generator. 
-        Create detailed, well-structured presentation outlines based on the given topic, number of slides, and audience level.
-        Each slide must have a clear title, a non-empty image_prompt, and 3-5 key_points (bullet points) that are informative and non-redundant.
-        IMPORTANT: Only include slides that strictly follow this format. If you cannot generate 3 key points for a slide, do not include it.
-        Example output:
-        [
-          {
-            "id": "slide_1",
-            "title": "Phases of the Moon",
-            "key_points": [
-              "The moon has 8 phases in its monthly cycle",
-              "Phases are caused by the moon's orbit around Earth",
-              "New moon and full moon are opposite phases"
-            ],
-            "image_prompt": "Diagram showing all 8 phases of the moon with labels",
-            "description": "This slide explains the different phases of the moon and why they occur, with a focus on the science behind the cycle."
-          }
-        ]
-        STRICTLY match this JSON structure for every slide.
-        If you cannot generate slides that meet these criteria, return an empty list ONLY (no explanations or text)."""
+        system_prompt = """
+You are an expert educational presentation designer.
+Your job is to generate a JSON array of slides for a presentation on a given topic, audience, and slide count.
+STRICT REQUIREMENTS:
+- Each slide MUST have:
+  - a unique id (e.g. 'slide_1', 'slide_2', ...),
+  - a clear, informative title,
+  - a non-empty image_prompt (a description for an image that would enhance the slide),
+  - 3-5 key_points (bullet points), each a non-empty, concise, and unique string,
+  - a brief description.
+- If you cannot generate 3-5 key points for a slide, DO NOT include that slide.
+- If you cannot generate any valid slides, return an empty list ONLY (no explanations).
+- Be creative: break down the topic into subtopics, use examples, and avoid repetition.
+- Do NOT include any text or explanation outside the JSON array.
 
-        user_prompt = f"""Generate a presentation outline for:\n        Topic: {context}\n        Number of slides: {num_slides}\n        Audience level: {level}\n        \n        Format each slide as:\n        {{\n            \"id\": \"unique_id\",\n            \"title\": \"slide title\",\n            \"key_points\": [\"point 1\", \"point 2\", \"point 3\"],\n            \"image_prompt\": \"description for an image that would enhance this slide\",\n            \"description\": \"brief description of the slide's content\"\n        }}\n        IMPORTANT: Only include slides with 3-5 key_points and a non-empty image_prompt. Do not include slides with fewer than 3 key_points.\n        Output only valid JSON, no explanations. If you cannot generate valid slides, return an empty list ONLY."""
+Example output:
+[
+  {
+    "id": "slide_1",
+    "title": "Phases of the Moon",
+    "key_points": [
+      "The moon has 8 phases in its monthly cycle",
+      "Phases are caused by the moon's orbit around Earth",
+      "New moon and full moon are opposite phases"
+    ],
+    "image_prompt": "Diagram showing all 8 phases of the moon with labels",
+    "description": "This slide explains the different phases of the moon and why they occur."
+  }
+]
+"""
+
+        user_prompt = f"""Generate a presentation outline for:\n        Topic: {context}\n        Number of slides: {num_slides}\n        Audience level: {level}\n        \n        Format each slide as:\n        {{\n            \"id\": \"unique_id\",\n            \"title\": \"slide title\",\n            \"key_points\": [\"point 1\", \"point 2\", \"point 3\"],\n            \"image_prompt\": \"description for an image that would enhance this slide\",\n            \"description\": \"brief description of the slide's content\"\n        }}\n        IMPORTANT: Only include slides with 3-5 key_points and a non-empty image_prompt. Do not include slides with fewer than 3 key_points.\n        If you are struggling to come up with 3-5 key points, try breaking the topic into smaller subtopics, using examples, or rephrasing points.\n        Output only valid JSON, no explanations. If you cannot generate valid slides, return an empty list ONLY."""
 
         response = await client.chat.completions.create(
             model="gpt-4-turbo-preview",
