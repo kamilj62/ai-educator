@@ -48,12 +48,18 @@ const TitleBodyLayout: React.FC<TitleBodyLayoutProps> = ({
     });
   };
 
+  const getHtmlContent = (content: string | undefined): string => {
+    if (!content) return '';
+    if (content.startsWith('<')) return content;
+    return `<p>${content}</p>`;
+  };
+
   return (
     <BaseLayout>
       <ContentContainer>
         <TitleContainer>
           <TiptapEditor
-            content={slide.content.title || ''}
+            content={getHtmlContent(slide.content.title)}
             onChange={handleTitleChange}
             placeholder="Enter title..."
             bulletList={false}
@@ -61,7 +67,7 @@ const TitleBodyLayout: React.FC<TitleBodyLayoutProps> = ({
         </TitleContainer>
         <BodyContainer>
           <TiptapEditor
-            content={slide.content.body ?? slide.content.description ?? ''}
+            content={getHtmlContent(slide.content.body ?? slide.content.description)}
             onChange={handleBodyChange}
             placeholder="Enter content..."
             bulletList={false}
