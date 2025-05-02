@@ -1,6 +1,6 @@
-import React from 'react';
-import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, useSensor, useSensors, MouseSensor, TouchSensor } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import React, { useState } from 'react';
+import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, useSensor, useSensors, MouseSensor, TouchSensor, closestCenter, KeyboardSensor, PointerSensor } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers';
 import { Box, styled, Grid } from '@mui/material';
 import SortableSlide from './components/SortableSlide';
@@ -72,6 +72,10 @@ const SlideSorter: React.FC<SlideSorterProps> = ({
         delay: 250,
         tolerance: 5,
       },
+    }),
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 
@@ -102,6 +106,7 @@ const SlideSorter: React.FC<SlideSorterProps> = ({
       <DndContext
         sensors={sensors}
         modifiers={[restrictToVerticalAxis, restrictToWindowEdges]}
+        collisionDetection={closestCenter}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >

@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional, Dict, Any, List
+from typing import Optional, Any, Dict, List
 
 class ErrorType(str, Enum):
     RATE_LIMIT = "RATE_LIMIT"

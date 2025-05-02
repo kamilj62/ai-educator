@@ -50,6 +50,10 @@ export type SlideContent = {
   columnLeft?: string;
   columnRight?: string;
   instructionalLevel?: InstructionalLevel;
+  // Add fields for examples and discussion_questions for compatibility with generated slides
+  examples?: Array<string | { text: string }>;
+  discussion_questions?: string[];
+  description?: string;
 };
 
 export type Slide = {

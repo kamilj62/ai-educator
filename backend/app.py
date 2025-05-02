@@ -6,7 +6,7 @@ import json
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
+CORS(app, resources={r"/api/*": {"origins": ["http://localhost:3000", "https://ai-educator-jfpenqilf-kamilj62s-projects.vercel.app"]}})
 
 # Load OpenAI API key from credentials
 try:
