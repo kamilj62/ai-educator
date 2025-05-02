@@ -43,10 +43,7 @@ const TitleBodyLayout: React.FC<TitleBodyLayoutProps> = ({
       ...slide,
       content: {
         ...slide.content,
-        image: {
-          ...image,
-          prompt: image.prompt || slide.content.title || 'Educational illustration'
-        },
+        image,
       },
     });
   };
@@ -64,7 +61,7 @@ const TitleBodyLayout: React.FC<TitleBodyLayoutProps> = ({
         </TitleContainer>
         <BodyContainer>
           <TiptapEditor
-            content={slide.content.body || slide.content.description || ''}
+            content={slide.content.body ?? slide.content.description ?? ''}
             onChange={handleBodyChange}
             placeholder="Enter content..."
             bulletList={false}
