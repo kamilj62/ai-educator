@@ -20,6 +20,8 @@ const SlideLayoutRenderer: React.FC<SlideLayoutRendererProps> = ({ slide, onChan
       return <TitleBodyLayout slide={slide} onChange={onChange} onImageUpload={onImageUpload} onImageGenerate={onImageGenerate} />;
     case 'title-image':
       return <TitleImageLayout slide={slide} onChange={onChange} onImageUpload={onImageUpload} onImageGenerate={onImageGenerate} />;
+    case 'title-body-image':
+      return <TitleBodyLayout slide={slide} onChange={onChange} onImageUpload={onImageUpload} onImageGenerate={onImageGenerate} />;
     case 'two-column':
       return <TwoColumnLayout slide={slide} onChange={onChange} onImageUpload={onImageUpload} onImageGenerate={onImageGenerate} />;
     default:

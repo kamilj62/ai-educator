@@ -1,7 +1,7 @@
-import { useEditor, EditorContent } from '@tiptap/react';
+import React, { useCallback, useEffect } from 'react';
+import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
-import { useCallback, useEffect } from 'react';
 import EditorToolbar from './EditorToolbar';
 import { Box } from '@mui/material';
 
@@ -86,6 +86,8 @@ const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', edit
           width: 100%;
           min-height: 100px;
           padding: 1rem;
+          border: 1px solid #e2e8f0;
+          border-radius: 0.375rem;
         }
         .tiptap-editor:focus-within {
           border-color: #4f46e5;

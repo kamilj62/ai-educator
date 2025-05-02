@@ -43,12 +43,15 @@ const TitleBodyLayout: React.FC<TitleBodyLayoutProps> = ({
       ...slide,
       content: {
         ...slide.content,
-        image: {
-          ...image,
-          prompt: image.prompt || slide.content.title || 'Educational illustration'
-        },
+        image,
       },
     });
+  };
+
+  const getHtmlContent = (content: string | undefined): string => {
+    if (!content) return '';
+    if (content.startsWith('<')) return content;
+    return `<p>${content}</p>`;
   };
 
   return (
@@ -56,19 +59,25 @@ const TitleBodyLayout: React.FC<TitleBodyLayoutProps> = ({
       <ContentContainer>
         <TitleContainer>
           <TiptapEditor
-            content={slide.content.title || ''}
+            content={getHtmlContent(slide.content.title)}
             onChange={handleTitleChange}
             placeholder="Enter title..."
             bulletList={false}
           />
         </TitleContainer>
         <BodyContainer>
-          <TiptapEditor
-            content={slide.content.body || ''}
-            onChange={handleBodyChange}
-            placeholder="Enter content..."
-            bulletList={false}
-          />
+          {slide.content.body && slide.content.body.trim().startsWith('<') ? (
+            <TiptapEditor
+              content={slide.content.body}
+              onChange={handleBodyChange}
+              placeholder="Enter content..."
+              bulletList={false}
+            />
+          ) : (
+            <Typography sx={{ whiteSpace: 'pre-line' }}>
+              {slide.content.body ?? slide.content.description}
+            </Typography>
+          )}
           {slide.layout.includes('image') && (
             <ImageUploader
               currentImage={slide.content.image ? {

@@ -94,6 +94,10 @@ class ExportRequest(BaseModel):
     presentation: Presentation
     format: str = "pptx"  # Only pptx supported for now
 
+class ImageServiceProvider(Enum):
+    OPENAI = "openai"
+    GOOGLE = "google"
+
 class ImageGenerationRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
     prompt: str
@@ -103,22 +107,8 @@ class ExportFormat(str, Enum):
     PDF = "pdf"
     PPTX = "pptx"
 
-class ImageServiceProvider(Enum):
-    OPENAI = "openai"
-    GOOGLE = "google"
-
 class PresentationInput(BaseModel):
     model_config = ConfigDict(extra='forbid')
     context: str = Field(..., min_length=1)
     num_slides: int = Field(..., ge=1, le=20)
     instructional_level: InstructionalLevel
-
-class SlideGenerationRequestNew(BaseModel):
-    model_config = ConfigDict(extra='forbid')
-    topic: str
-    level: InstructionalLevel
-    slides: List[SlideNew]
-
-class PresentationNew(BaseModel):
-    model_config = ConfigDict(extra='forbid')
-    slides: List[SlideNew]
