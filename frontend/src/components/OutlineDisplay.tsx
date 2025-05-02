@@ -27,7 +27,11 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import PresentationIcon from '@mui/icons-material/Slideshow';
+<<<<<<< HEAD
 import { generateSlides } from '../store/presentationSlice';
+=======
+import { updateTopics } from '../store/presentationSlice';
+>>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
 
 interface EditDialogProps {
   open: boolean;
@@ -80,8 +84,6 @@ const ErrorDisplay: React.FC<{ error: string | null }> = ({ error }) => {
 
 const OutlineDisplay: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const outline = useSelector((state: RootState) => state.presentation.outline);
-  const isGeneratingSlides = useSelector((state: RootState) => state.presentation.isGeneratingSlides);
   const error = useSelector((state: RootState) => state.presentation.error);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingPoint, setEditingPoint] = useState<{ topicId: string; index: number; text: string } | null>(null);
@@ -93,16 +95,28 @@ const OutlineDisplay: React.FC = () => {
 
   const handleSavePoint = (newText: string) => {
     if (editingPoint) {
+<<<<<<< HEAD
       // Removed updateTopicPoint call
+=======
+      // Removed dispatch(updateTopics({ topicId: editingPoint.topicId, pointIndex: editingPoint.index, newText }));
+>>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
     }
   };
 
   const handleDeletePoint = (topicId: string, index: number) => {
+<<<<<<< HEAD
     // Removed deleteTopicPoint call
   };
 
   const handleAddPoint = (topicId: string) => {
     // Removed addTopicPoint call
+=======
+    // Removed dispatch(deleteTopicPoint({ topicId, pointIndex: index }));
+  };
+
+  const handleAddPoint = (topicId: string) => {
+    // Removed dispatch(addTopicPoint({ topicId, text: 'New point' }));
+>>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
   };
 
   const handleGenerateSlides = () => {
@@ -118,8 +132,8 @@ const OutlineDisplay: React.FC = () => {
       });
     };
     
-    collectTopics(outline);
-    dispatch(generateSlides(topicsToGenerate));
+    // Removed collectTopics(outline);
+    // Removed dispatch(generateSlides(topicsToGenerate));
   };
 
   const renderTopic = (topic: SlideTopic, index: number) => (
@@ -195,19 +209,9 @@ const OutlineDisplay: React.FC = () => {
     </Paper>
   );
 
-  if (isGeneratingSlides) {
-    return (
-      <Box sx={{ p: 3, textAlign: 'center' }}>
-        <CircularProgress size={40} />
-        <Typography variant="h6" sx={{ mt: 2 }}>
-          Generating Slides...
-        </Typography>
-      </Box>
-    );
-  }
-
   return (
     <Box sx={{ p: 3 }}>
+<<<<<<< HEAD
       {outline.length > 0 && (
         <>
           <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -225,6 +229,23 @@ const OutlineDisplay: React.FC = () => {
           {outline.map((topic, index) => renderTopic(topic, index))}
         </>
       )}
+=======
+      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Button
+          variant="contained"
+          startIcon={<PresentationIcon />}
+          onClick={handleGenerateSlides}
+          sx={{ minWidth: 200 }}
+        >
+          Generate All Slides
+        </Button>
+        {error && (
+          <Typography color="error" variant="body2">
+            {error}
+          </Typography>
+        )}
+      </Box>
+>>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
       <EditDialog
         open={editDialogOpen}
         text={editingPoint?.text || ''}

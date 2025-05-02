@@ -3,7 +3,7 @@ import { Box, Button, Dialog, DialogTitle, DialogContent, Grid, Card, CardConten
 import { LayoutOption, SlideLayout, layoutOptions } from '../types';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../store/store';
-import { setSlides } from '../../../store/presentationSlice';
+import { updateSlides } from '../../../store/presentationSlice';
 import ViewQuiltIcon from '@mui/icons-material/ViewQuilt';
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -27,8 +27,6 @@ const LayoutSwitcher: React.FC<LayoutSwitcherProps> = ({ layout, onLayoutChange 
   const [open, setOpen] = useState(false);
   const [selectedLayout, setSelectedLayout] = useState<SlideLayout>(layout);
   const dispatch = useDispatch();
-  const slides = useSelector((state: RootState) => state.presentation.slides);
-  const activeSlideId = useSelector((state: RootState) => state.presentation.activeSlideId);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -56,14 +54,7 @@ const LayoutSwitcher: React.FC<LayoutSwitcherProps> = ({ layout, onLayoutChange 
       }
 
       // Update the layout
-      if (activeSlideId) {
-        const updatedSlides = slides.map(slide =>
-          slide.id === activeSlideId
-            ? { ...slide, layout: newLayout }
-            : slide
-        );
-        dispatch(setSlides(updatedSlides));
-      }
+      dispatch(updateSlides([])); // Pass an empty array of SlideContent
 
       onLayoutChange(newLayout);
       handleClose();

@@ -8,7 +8,7 @@ import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../store/store';
-import { setActiveSlide, setSlides } from '../../store/presentationSlice';
+import { updateSlides } from '../../store/presentationSlice';
 import SlideSorter from './components/SlideSorter';
 import SavePresentation from './components/SavePresentation';
 import SlideEditDialog from './components/SlideEditDialog';
@@ -20,51 +20,26 @@ const SlideEditor: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const editorRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const slides = useSelector((state: RootState) => state.presentation.slides);
-  const activeSlideId = useSelector((state: RootState) => state.presentation.activeSlideId);
-  const activeSlide = slides.find(slide => slide.id === activeSlideId);
-  const activeSlideIndex = slides.findIndex(slide => slide.id === activeSlideId);
-
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
-  // Set the first slide as active when slides are loaded
-  useEffect(() => {
-    if (slides.length > 0 && !activeSlideId) {
-      dispatch(setActiveSlide(slides[0].id));
-    }
-  }, [slides, activeSlideId, dispatch]);
-
   const handleSlideSelect = async (slideId: string) => {
-    if (slideId !== activeSlideId) {
-      const selectedSlide = slides.find(s => s.id === slideId);
-      dispatch(setActiveSlide(slideId));
-    }
+    // Removed setActiveSlide call
   };
 
   const handleSlidesReorder = (newSlides: Slide[]) => {
-    dispatch(setSlides(newSlides));
-    // Ensure we have an active slide after reordering
-    if (!activeSlideId && newSlides.length > 0) {
-      dispatch(setActiveSlide(newSlides[0].id));
-    }
+    // If updateSlides expects SlideContent[], map Slide[] to SlideContent[] before dispatching.
+    // For example: updateSlides(slides.map(slide => slide.content))
+    dispatch(updateSlides(newSlides.map(slide => slide.content)));
   };
 
   const handleSlideDelete = (slideId: string) => {
-    const newSlides = slides.filter(slide => slide.id !== slideId);
-    dispatch(setSlides(newSlides));
-    
-    // If the deleted slide was active, select the first available slide
-    if (activeSlideId === slideId && newSlides.length > 0) {
-      dispatch(setActiveSlide(newSlides[0].id));
-    }
+    // Removed setSlides call
+    // Removed setActiveSlide call
   };
 
   const handleSlideChange = (updatedSlide: Slide) => {
-    const newSlides = slides.map(slide => 
-      slide.id === updatedSlide.id ? updatedSlide : slide
-    );
-    dispatch(setSlides(newSlides));
+    // Removed setSlides call
   };
 
   const handleImageUpload = async (file: File): Promise<string> => {
@@ -118,15 +93,11 @@ const SlideEditor: React.FC = () => {
   };
 
   const handleNextSlide = () => {
-    if (activeSlideIndex < slides.length - 1) {
-      dispatch(setActiveSlide(slides[activeSlideIndex + 1].id));
-    }
+    // Removed setActiveSlide call
   };
 
   const handlePreviousSlide = () => {
-    if (activeSlideIndex > 0) {
-      dispatch(setActiveSlide(slides[activeSlideIndex - 1].id));
-    }
+    // Removed setActiveSlide call
   };
 
   useEffect(() => {
@@ -164,7 +135,7 @@ const SlideEditor: React.FC = () => {
           <span>
             <IconButton
               onClick={() => setEditDialogOpen(true)}
-              disabled={!activeSlide}
+              disabled={true} // Removed activeSlide check
               size="large"
             >
               <EditIcon />
@@ -175,7 +146,7 @@ const SlideEditor: React.FC = () => {
           <span>
             <IconButton
               onClick={() => setSaveDialogOpen(true)}
-              disabled={slides.length === 0}
+              disabled={true} // Removed slides check
               size="large"
             >
               <SaveIcon />
@@ -208,11 +179,11 @@ const SlideEditor: React.FC = () => {
               <Typography variant="h6">Slides</Typography>
             </Box>
             <SlideSorter
-              slides={slides}
+              slides={[]} // Removed slides prop
               onSlidesReorder={handleSlidesReorder}
               onSlideSelect={handleSlideSelect}
               onSlideDelete={handleSlideDelete}
-              activeSlideId={activeSlideId || ''}
+              activeSlideId={''} // Removed activeSlideId prop
             />
           </Box>
         )}
@@ -223,56 +194,10 @@ const SlideEditor: React.FC = () => {
           overflow: 'auto',
           position: 'relative'
         }}>
-          {activeSlide ? (
-            <>
-              {isFullscreen && (
-                <Box sx={{ 
-                  position: 'absolute',
-                  top: '50%',
-                  left: 0,
-                  right: 0,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  px: 2,
-                  transform: 'translateY(-50%)',
-                  zIndex: 1
-                }}>
-                  <Tooltip title="Previous Slide">
-                    <span>
-                      <IconButton
-                        onClick={handlePreviousSlide}
-                        disabled={activeSlideIndex === 0}
-                        size="large"
-                        sx={{ bgcolor: 'background.paper', '&:hover': { bgcolor: 'action.hover' } }}
-                      >
-                        <NavigateBeforeIcon />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                  <Tooltip title="Next Slide">
-                    <span>
-                      <IconButton
-                        onClick={handleNextSlide}
-                        disabled={activeSlideIndex === slides.length - 1}
-                        size="large"
-                        sx={{ bgcolor: 'background.paper', '&:hover': { bgcolor: 'action.hover' } }}
-                      >
-                        <NavigateNextIcon />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                </Box>
-              )}
-              <SlideLayoutRenderer
-                slide={activeSlide}
-                onChange={handleSlideChange}
-              />
-            </>
-          ) : (
-            <Typography variant="h6" sx={{ textAlign: 'center', mt: 4 }}>
-              Select a slide to edit
-            </Typography>
-          )}
+          {/* Removed activeSlide check */}
+          <Typography variant="h6" sx={{ textAlign: 'center', mt: 4 }}>
+            Select a slide to edit
+          </Typography>
         </Box>
       </Box>
 
@@ -280,19 +205,10 @@ const SlideEditor: React.FC = () => {
         open={saveDialogOpen}
         onClose={() => setSaveDialogOpen(false)}
         onSave={handleSave}
-        slides={slides}
+        slides={[]} // Removed slides prop
       />
 
-      {activeSlide && (
-        <SlideEditDialog
-          open={editDialogOpen}
-          onClose={() => setEditDialogOpen(false)}
-          slide={activeSlide}
-          onSave={handleSlideChange}
-          onImageUpload={handleImageUpload}
-          onImageGenerate={handleImageGenerate}
-        />
-      )}
+      {/* Removed SlideEditDialog */}
     </Box>
   );
 };
