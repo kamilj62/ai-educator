@@ -257,12 +257,13 @@ async def generate_outline_with_openai(context: str, num_slides: int, level: str
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            temperature=0.7,
+            temperature=0.3,  # Lowered for more deterministic output
             max_tokens=2000
         )
-
-        # Parse and validate the response
+        
+        # Log the raw OpenAI response
         content = response.choices[0].message.content
+        logger.info(f"Raw OpenAI response: {content}")
         try:
             import json
             topics = json.loads(content)
@@ -273,13 +274,16 @@ async def generate_outline_with_openai(context: str, num_slides: int, level: str
             for topic in topics:
                 key_points = topic.get("key_points", [])
                 image_prompt = topic.get("image_prompt", "")
+                # Strict: key_points must be a list with 3-5 non-empty strings, image_prompt must be a non-empty string
+                valid_key_points = [kp for kp in key_points if isinstance(kp, str) and kp.strip()]
                 if (
                     isinstance(key_points, list)
-                    and 3 <= len([kp for kp in key_points if isinstance(kp, str) and kp.strip()]) <= 5
+                    and 3 <= len(valid_key_points) <= 5
+                    and all(isinstance(kp, str) and kp.strip() for kp in key_points)
                     and isinstance(image_prompt, str)
                     and image_prompt.strip() != ""
                 ):
-                    filtered_topics.append(topic)
+                    filtered_topics.append({**topic, "key_points": valid_key_points, "image_prompt": image_prompt.strip()})
             logger.info(f"Filtered topics: {filtered_topics}")
             if not filtered_topics:
                 logger.error("No valid slides generated: All topics missing required fields.")
