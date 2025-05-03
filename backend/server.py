@@ -573,7 +573,7 @@ async def generate_image(request: dict):
         try:
             # Generate image using OpenAI DALL-E (openai>=1.0.0 syntax)
             openai.api_key = os.getenv("OPENAI_API_KEY")
-            response = openai.Image.create(
+            response = openai.images.generate(
                 prompt=prompt,
                 n=1,
                 size="1024x1024",
