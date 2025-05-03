@@ -2,39 +2,35 @@ import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { v4 as uuidv4 } from 'uuid';
 import type { Slide, SlideTopic, SlideLayout, InstructionalLevel } from '../components/types';
 import { RootState } from './store';
+import type { SlideContent } from '../components/SlideEditor/types';
 
-// API Configuration is now handled in config.ts, so remove duplicate declarations here.
-// import { API_BASE_URL, API_ENDPOINTS } from '../config';
-
-interface PresentationState {
+export interface PresentationState {
   outline: SlideTopic[];
   slides: Slide[];
-  activeSlideId: string | null;
-  isGeneratingSlides: boolean;
   isGeneratingOutline: boolean;
+  isGeneratingSlides: boolean;
   error: string | null;
   instructionalLevel: InstructionalLevel;
+  numSlides: number;
+  activeSlideId: string | null;
   defaultLayout: SlideLayout;
 }
 
 const initialState: PresentationState = {
   outline: [],
   slides: [],
-  activeSlideId: null,
-  isGeneratingSlides: false,
   isGeneratingOutline: false,
+  isGeneratingSlides: false,
   error: null,
-  instructionalLevel: 'high_school',
+  instructionalLevel: 'elementary_school',
+  numSlides: 5,
+  activeSlideId: null,
   defaultLayout: 'title-bullets',
 };
 
 export const generateOutline = createAsyncThunk(
   'presentation/generateOutline',
-  async (params: {
-    topic: string;
-    numSlides: number;
-    instructionalLevel: InstructionalLevel;
-  }) => {
+  async (params: { topic: string; numSlides: number; instructionalLevel: InstructionalLevel }) => {
     try {
       const requestBody = {
         context: params.topic,
@@ -42,7 +38,7 @@ export const generateOutline = createAsyncThunk(
         instructional_level: params.instructionalLevel,
       };
 
-      // Use config.ts for API_BASE_URL and API_ENDPOINTS
+      // Use environment variable for API base URL
       const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
       const response = await fetch(`${baseUrl}/api/generate/outline`, {
         method: 'POST',
@@ -91,7 +87,7 @@ export const generateSlides = createAsyncThunk(
       const slides: Slide[] = [];
       for (const topic of topics) {
         const requestBody = {
-          topic,
+          topic: topic, // Wrap the topic in an object field
           instructional_level: instructionalLevel,
           layout: defaultLayout,
         };
@@ -106,7 +102,25 @@ export const generateSlides = createAsyncThunk(
         }
 
         const data = await response.json();
-        slides.push(data);
+        // Map backend response to frontend Slide type
+        slides.push({
+          id: uuidv4(),
+          layout: defaultLayout,
+          content: {
+            title: data.title || '',
+            subtitle: data.subtitle || '',
+            body: data.body || '',
+            bullets: (data.bullet_points && data.bullet_points.length > 0)
+              ? data.bullet_points.map((text: string) => ({ text }))
+              : (topic.key_points ? topic.key_points.map(text => ({ text })) : []),
+            image: data.image_url ? {
+              url: data.image_url,
+              alt: data.image_alt || '',
+              caption: data.image_caption || '',
+              service: data.image_service || '',
+            } : undefined,
+          }
+        });
       }
       return slides;
     } catch (error: any) {
@@ -119,14 +133,11 @@ const presentationSlice = createSlice({
   name: 'presentation',
   initialState,
   reducers: {
-    setSlides(state, action: PayloadAction<Slide[]>) {
-      state.slides = action.payload;
-    },
-    updateOutline(state, action: PayloadAction<SlideTopic[]>) {
+    setOutline(state, action: PayloadAction<SlideTopic[]>) {
       state.outline = action.payload;
     },
-    setActiveSlide(state, action: PayloadAction<string | null>) {
-      state.activeSlideId = action.payload;
+    setSlides(state, action: PayloadAction<Slide[]>) {
+      state.slides = action.payload;
     },
     setError(state, action: PayloadAction<string | null>) {
       state.error = action.payload;
@@ -134,13 +145,14 @@ const presentationSlice = createSlice({
     setInstructionalLevel(state, action: PayloadAction<InstructionalLevel>) {
       state.instructionalLevel = action.payload;
     },
+    setNumSlides(state, action: PayloadAction<number>) {
+      state.numSlides = action.payload;
+    },
+    setActiveSlide(state, action: PayloadAction<string | null>) {
+      state.activeSlideId = action.payload;
+    },
     setDefaultLayout(state, action: PayloadAction<SlideLayout>) {
       state.defaultLayout = action.payload;
-    },
-    reorderSlides(state, action: PayloadAction<{ from: number; to: number }>) {
-      const { from, to } = action.payload;
-      const slide = state.slides.splice(from, 1)[0];
-      state.slides.splice(to, 0, slide);
     },
   },
   extraReducers: (builder) => {
@@ -170,21 +182,22 @@ const presentationSlice = createSlice({
         state.isGeneratingSlides = false;
         state.error = action.payload as string || 'Failed to generate slides';
       });
-  },
+  }
 });
 
 export const {
+  setOutline,
   setSlides,
-  updateOutline,
-  setActiveSlide,
   setError,
   setInstructionalLevel,
+  setNumSlides,
+  setActiveSlide,
   setDefaultLayout,
-  reorderSlides,
 } = presentationSlice.actions;
 
-export default presentationSlice.reducer;
-
+export const selectPresentation = (state: RootState) => state.presentation;
+export const selectLoading = (state: RootState) => state.presentation.isGeneratingOutline || state.presentation.isGeneratingSlides;
+export const selectError = (state: RootState) => state.presentation.error;
 export const selectOutline = (state: RootState) => state.presentation.outline;
 export const selectSlides = (state: RootState) => state.presentation.slides;
 export const selectActiveSlideId = (state: RootState) => state.presentation.activeSlideId;
@@ -193,3 +206,5 @@ export const selectActiveSlide = (state: RootState) => {
   return activeId ? state.presentation.slides.find((s: Slide) => s.id === activeId) : null;
 };
 export const selectDefaultLayout = (state: RootState) => state.presentation.defaultLayout;
+
+export default presentationSlice.reducer;

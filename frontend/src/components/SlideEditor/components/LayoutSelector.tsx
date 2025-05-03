@@ -22,8 +22,8 @@ interface LayoutOption {
   description: string;
   preview: string;
   features: {
-    hasImage: boolean;
-    hasBullets: boolean;
+    supportsImage: boolean;
+    supportsBullets: boolean;
   };
 }
 
@@ -136,9 +136,10 @@ export const LayoutSelector: React.FC<LayoutSelectorProps> = ({
         <Grid container spacing={2}>
           {layoutOptionsList.map((option) => {
             const features = option.features;
+            // Fix property names to match actual type
             const isRecommended = (
-              (topic.image_prompt && features.hasImage) ||
-              (topic.key_points?.length > 0 && features.hasBullets)
+              (topic.image_prompt && features.supportsImage) ||
+              (topic.key_points?.length > 0 && features.supportsBullets)
             );
 
             return (

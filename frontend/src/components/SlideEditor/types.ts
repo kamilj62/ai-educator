@@ -221,7 +221,7 @@ export interface EditorProps {
   slide: Slide;
   onChange: (slide: Slide) => void;
   onImageUpload?: (file: File) => Promise<string>;
-  onImageGenerate?: (prompt: string, service?: ImageService) => Promise<string>;
+  onImageGenerate?: (prompt: string, service?: ImageService) => Promise<SlideImage>;
   onSafetyCheck?: (content: string) => Promise<{
     passed: boolean;
     reason?: string;

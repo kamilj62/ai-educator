@@ -83,6 +83,24 @@ const TitleImageLayout: React.FC<TitleImageLayoutProps> = ({
     });
   }, [slide, onChange]);
 
+  // Fix onImageGenerate type to always return Promise<SlideImage>
+  // Wrap string result in SlideImage object with all required properties
+  const handleImageGenerate = async (prompt: string, service?: ImageService): Promise<SlideImage> => {
+    if (!onImageGenerate) throw new Error('onImageGenerate not provided');
+    const result = await onImageGenerate(prompt, service);
+    if (typeof result === 'string') {
+      return {
+        url: result,
+        prompt,
+        alt: prompt,
+        service: service || ({} as ImageService),
+      };
+    }
+    return result;
+  };
+
+  console.log('TitleImageLayout image:', slide.content.image);
+
   return (
     <LayoutContainer elevation={1}>
       <TitleArea>
@@ -96,10 +114,10 @@ const TitleImageLayout: React.FC<TitleImageLayoutProps> = ({
       <ContentArea>
         <Box width="60%" height="100%">
           <ImageUploader
-            currentImage={slide.content.image}
+            image={slide.content.image}
             onImageChange={handleImageChange}
             onImageUpload={onImageUpload}
-            onImageGenerate={onImageGenerate}
+            onImageGenerate={handleImageGenerate}
             maxWidth={1920}
             maxHeight={1080}
           />

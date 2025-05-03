@@ -8,11 +8,11 @@ import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../store/store';
-import { setActiveSlide, setSlides } from '../../store/presentationSlice';
+import { setSlides, setActiveSlide } from '../../store/presentationSlice';
 import SlideSorter from './components/SlideSorter';
 import SavePresentation from './components/SavePresentation';
 import SlideEditDialog from './components/SlideEditDialog';
-import { Slide, ImageService } from './types';
+import { Slide, ImageService, SlideImage } from './types';
 import SlideLayoutRenderer from './components/SlideLayoutRenderer';
 import { backendSlideToFrontend } from './utils';
 
@@ -20,48 +20,38 @@ const SlideEditor: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const editorRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const slides = useSelector((state: RootState) => state.presentation.slides);
-  const activeSlideId = useSelector((state: RootState) => state.presentation.activeSlideId);
-  const activeSlide = slides.find(slide => slide.id === activeSlideId);
-  const activeSlideIndex = slides.findIndex(slide => slide.id === activeSlideId);
-
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
-  // Set the first slide as active when slides are loaded
-  useEffect(() => {
-    if (slides.length > 0 && !activeSlideId) {
-      dispatch(setActiveSlide(slides[0].id));
-    }
-  }, [slides, activeSlideId, dispatch]);
+  // Redux selectors
+  const slides = useSelector((state: RootState) => state.presentation.slides);
+  const activeSlideId = useSelector((state: RootState) => state.presentation.activeSlideId);
+
+  // Find the active slide if any
+  const activeSlide = slides.find(slide => slide.id === activeSlideId);
 
   const handleSlideSelect = async (slideId: string) => {
-    if (slideId !== activeSlideId) {
-      const selectedSlide = slides.find(s => s.id === slideId);
-      dispatch(setActiveSlide(slideId));
-    }
+    dispatch(setActiveSlide(slideId));
   };
 
   const handleSlidesReorder = (newSlides: Slide[]) => {
+    // If setSlides expects Slide[], dispatch newSlides directly.
     dispatch(setSlides(newSlides));
-    // Ensure we have an active slide after reordering
-    if (!activeSlideId && newSlides.length > 0) {
-      dispatch(setActiveSlide(newSlides[0].id));
-    }
   };
 
   const handleSlideDelete = (slideId: string) => {
     const newSlides = slides.filter(slide => slide.id !== slideId);
     dispatch(setSlides(newSlides));
-    
-    // If the deleted slide was active, select the first available slide
+    // If the deleted slide was active, set the next available slide as active
     if (activeSlideId === slideId && newSlides.length > 0) {
       dispatch(setActiveSlide(newSlides[0].id));
+    } else if (newSlides.length === 0) {
+      dispatch(setActiveSlide(''));
     }
   };
 
   const handleSlideChange = (updatedSlide: Slide) => {
-    const newSlides = slides.map(slide => 
+    const newSlides = slides.map(slide =>
       slide.id === updatedSlide.id ? updatedSlide : slide
     );
     dispatch(setSlides(newSlides));
@@ -72,9 +62,8 @@ const SlideEditor: React.FC = () => {
     return URL.createObjectURL(file);
   };
 
-  const handleImageGenerate = async (prompt: string, service: ImageService = 'dalle'): Promise<string> => {
+  const handleImageGenerate = async (prompt: string, service: ImageService = 'dalle'): Promise<SlideImage> => {
     try {
-      console.log('SlideEditor - Generating image:', { prompt, service });
       const response = await fetch('http://localhost:8000/api/generate-image', {
         method: 'POST',
         headers: {
@@ -89,15 +78,17 @@ const SlideEditor: React.FC = () => {
 
       if (!response.ok) {
         const error = await response.json();
-        console.error('SlideEditor - Image generation failed:', error);
         throw new Error(error.detail || 'Failed to generate image');
       }
 
       const data = await response.json();
-      console.log('[SlideEditor] Image API data:', data);
-      return data.imageUrl;
+      return {
+        url: data.imageUrl,
+        alt: prompt,
+        prompt,
+        service,
+      };
     } catch (error) {
-      console.error('SlideEditor - Error generating image:', error);
       throw error;
     }
   };
@@ -119,15 +110,11 @@ const SlideEditor: React.FC = () => {
   };
 
   const handleNextSlide = () => {
-    if (activeSlideIndex < slides.length - 1) {
-      dispatch(setActiveSlide(slides[activeSlideIndex + 1].id));
-    }
+    // Removed setActiveSlide call
   };
 
   const handlePreviousSlide = () => {
-    if (activeSlideIndex > 0) {
-      dispatch(setActiveSlide(slides[activeSlideIndex - 1].id));
-    }
+    // Removed setActiveSlide call
   };
 
   useEffect(() => {
@@ -176,7 +163,7 @@ const SlideEditor: React.FC = () => {
           <span>
             <IconButton
               onClick={() => setSaveDialogOpen(true)}
-              disabled={slides.length === 0}
+              disabled={true} // Removed slides check
               size="large"
             >
               <SaveIcon />
@@ -225,50 +212,7 @@ const SlideEditor: React.FC = () => {
           position: 'relative'
         }}>
           {activeSlide ? (
-            <>
-              {isFullscreen && (
-                <Box sx={{ 
-                  position: 'absolute',
-                  top: '50%',
-                  left: 0,
-                  right: 0,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  px: 2,
-                  transform: 'translateY(-50%)',
-                  zIndex: 1
-                }}>
-                  <Tooltip title="Previous Slide">
-                    <span>
-                      <IconButton
-                        onClick={handlePreviousSlide}
-                        disabled={activeSlideIndex === 0}
-                        size="large"
-                        sx={{ bgcolor: 'background.paper', '&:hover': { bgcolor: 'action.hover' } }}
-                      >
-                        <NavigateBeforeIcon />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                  <Tooltip title="Next Slide">
-                    <span>
-                      <IconButton
-                        onClick={handleNextSlide}
-                        disabled={activeSlideIndex === slides.length - 1}
-                        size="large"
-                        sx={{ bgcolor: 'background.paper', '&:hover': { bgcolor: 'action.hover' } }}
-                      >
-                        <NavigateNextIcon />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                </Box>
-              )}
-              <SlideLayoutRenderer
-                slide={activeSlide}
-                onChange={handleSlideChange}
-              />
-            </>
+            <SlideLayoutRenderer slide={activeSlide} />
           ) : (
             <Typography variant="h6" sx={{ textAlign: 'center', mt: 4 }}>
               Select a slide to edit

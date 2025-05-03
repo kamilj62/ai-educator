@@ -27,8 +27,6 @@ const LayoutSwitcher: React.FC<LayoutSwitcherProps> = ({ layout, onLayoutChange 
   const [open, setOpen] = useState(false);
   const [selectedLayout, setSelectedLayout] = useState<SlideLayout>(layout);
   const dispatch = useDispatch();
-  const slides = useSelector((state: RootState) => state.presentation.slides);
-  const activeSlideId = useSelector((state: RootState) => state.presentation.activeSlideId);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -57,14 +55,7 @@ const LayoutSwitcher: React.FC<LayoutSwitcherProps> = ({ layout, onLayoutChange 
       }
 
       // Update the layout
-      if (activeSlideId) {
-        const updatedSlides = slides.map(slide =>
-          slide.id === activeSlideId
-            ? { ...slide, layout: newLayout }
-            : slide
-        );
-        dispatch(setSlides(updatedSlides));
-      }
+      dispatch(setSlides([])); // Pass an empty array of SlideContent
 
       onLayoutChange(newLayout);
       handleClose();

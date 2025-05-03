@@ -14,6 +14,8 @@ from openai import OpenAI, OpenAIError
 from dotenv import load_dotenv
 import traceback
 from collections import deque
+import openai
+import base64
 
 # Load environment variables
 load_dotenv()
@@ -31,6 +33,14 @@ if not api_key:
 client = OpenAI(api_key=api_key)
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Or ["*"] for all origins (dev only)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Configure CORS - Allow all origins in development
 app.add_middleware(
@@ -102,6 +112,35 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         }
     )
 
+# --- ERROR HANDLING FOR OPENAI API KEY ---
+@app.exception_handler(ValueError)
+async def value_error_handler(request: Request, exc: ValueError):
+    if "OPENAI_API_KEY" in str(exc):
+        logger.error(f"OpenAI API key error: {str(exc)}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "type": "OPENAI_API_KEY_ERROR",
+                "message": str(exc),
+                "recommendations": [
+                    "Set the OPENAI_API_KEY environment variable in backend/.env",
+                    "Check that your OpenAI API key is correct and active",
+                    "Restart the backend server after updating the environment variable"
+                ]
+            }
+        )
+    # fallback for other value errors
+    return JSONResponse(
+        status_code=500,
+        content={
+            "type": "VALUE_ERROR",
+            "message": str(exc),
+            "recommendations": [
+                "Check your request and backend configuration"
+            ]
+        }
+    )
+
 class Layout(BaseModel):
     name: str = Field(..., description="Name of the layout")
     type: str = Field(..., description="Type of the layout")
@@ -135,7 +174,7 @@ class OutlineRequest(BaseModel):
     )
     instructional_level: str = Field(
         ...,
-        pattern='^(elementary|middle_school|high_school|university|professional)$',
+        pattern='^(elementary_school|middle_school|high_school|university|professional)$',
         description="Target audience level"
     )
     layout: Optional[str] = Field(
@@ -154,7 +193,7 @@ class SlideRequest(BaseModel):
     topic: SlideTopic
     instructional_level: str = Field(
         ...,
-        pattern='^(elementary|middle_school|high_school|university|professional)$',
+        pattern='^(elementary_school|middle_school|high_school|university|professional)$',
         description="Target audience level"
     )
     layout: str = Field(
@@ -292,16 +331,21 @@ Example output:
             return system, user
 
         max_attempts = 2
+        import asyncio
         for attempt in range(1, max_attempts + 1):
             system, user = build_prompts(context, num_slides, level, attempt)
-            response = await client.chat.completions.create(
-                model="gpt-4-turbo-preview",
-                messages=[
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user}
-                ],
-                temperature=0.2,  # Lower for more deterministic output
-                max_tokens=2000
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: client.chat.completions.create(
+                    model="gpt-4-turbo-preview",
+                    messages=[
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user}
+                    ],
+                    temperature=0.2,  # Lower for more deterministic output
+                    max_tokens=2000
+                )
             )
             content = response.choices[0].message.content
             log_entry = {
@@ -391,6 +435,10 @@ async def generate_outline(request: OutlineRequest):
                 }
             }
         )
+
+@app.get("/")
+def root():
+    return {"status": "ok", "message": "AI PowerPoint backend is running"}
 
 @app.get("/api/")
 async def root():
@@ -539,6 +587,78 @@ async def upload_image(file: UploadFile = File(...)):
                 "type": "API_ERROR",
                 "message": str(e),
                 "context": {"field": "file"}
+            }
+        )
+
+# --- IMAGE GENERATION ENDPOINT ---
+@app.post("/api/generate/image")
+async def generate_image(request: dict):
+    try:
+        logger.info(f"Received image generation request: {request}")
+        # Ensure prompt is present and valid
+        prompt = request.get('prompt') if isinstance(request, dict) else None
+        if not prompt or not isinstance(prompt, str) or not prompt.strip():
+            logger.error("Image generation request missing valid 'prompt'")
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "status": "error",
+                    "message": "Image generation request must include a non-empty 'prompt' field.",
+                    "error_type": "INVALID_REQUEST"
+                }
+            )
+        try:
+            # Generate image using OpenAI DALL-E (openai>=1.0.0 syntax)
+            openai.api_key = os.getenv("OPENAI_API_KEY")
+            response = openai.images.generate(
+                prompt=prompt,
+                n=1,
+                size="1024x1024",
+                response_format="b64_json"
+            )
+            b64_image = response.data[0].b64_json
+            # Save image to static/images
+            image_data = base64.b64decode(b64_image)
+            filename = f"{uuid.uuid4().hex[:8]}.png"
+            filepath = f"static/images/{filename}"
+            with open(filepath, "wb") as f:
+                f.write(image_data)
+            image_url = f"/static/images/{filename}"
+            logger.info(f"Generated image URL: {image_url}")
+            add_openai_log({
+                "prompt": prompt,
+                "image_url": image_url
+            })
+            return {"image_url": image_url}
+        except openai.OpenAIError as oe:
+            logger.error(f"OpenAI API error: {str(oe)}")
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "message": f"OpenAI API error: {str(oe)}",
+                    "error_type": "OPENAI_API_ERROR"
+                }
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error in OpenAI image generation: {str(e)}")
+            logger.error(traceback.format_exc())
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "message": f"Unexpected error: {str(e)}",
+                    "error_type": "UNEXPECTED_ERROR"
+                }
+            )
+    except Exception as e:
+        logger.error(f"Error in generate_image: {str(e)}")
+        logger.error(traceback.format_exc())
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error",
+                "message": f"Error generating image: {str(e)}"
             }
         )
 
