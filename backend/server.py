@@ -551,6 +551,39 @@ async def upload_image(file: UploadFile = File(...)):
             }
         )
 
+# --- IMAGE GENERATION ENDPOINT ---
+@app.post("/api/generate/image")
+async def generate_image(request: dict):
+    try:
+        logger.info(f"Received image generation request: {request}")
+        # Ensure prompt is present and valid
+        prompt = request.get('prompt') if isinstance(request, dict) else None
+        if not prompt or not isinstance(prompt, str) or not prompt.strip():
+            logger.error("Image generation request missing valid 'prompt'")
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "status": "error",
+                    "message": "Image generation request must include a non-empty 'prompt' field.",
+                    "error_type": "INVALID_REQUEST"
+                }
+            )
+        # Dummy image URL for demonstration (replace with real image generation logic)
+        # In production, call your AIService or OpenAI API here
+        image_url = f"/static/images/dummy_{uuid.uuid4().hex[:8]}.png"
+        logger.info(f"Generated image URL: {image_url}")
+        return {"image_url": image_url}
+    except Exception as e:
+        logger.error(f"Error in generate_image: {str(e)}")
+        logger.error(traceback.format_exc())
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error",
+                "message": f"Error generating image: {str(e)}"
+            }
+        )
+
 if __name__ == "__main__":
     import uvicorn
     print("Starting server on port 8000...")
