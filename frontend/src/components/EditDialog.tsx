@@ -128,54 +128,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
           />
         </Box>
 
-<<<<<<< HEAD
-        {editedSlide.content.bullets !== undefined && (
-          <>
-            <List>
-              {editedSlide.content.bullets.map((point, index: number) => (
-                <ListItem key={index}>
-                  <TextField
-                    value={point.text}
-                    onChange={e => {
-                      const updatedBullets = [...(editedSlide.content.bullets || [])];
-                      updatedBullets[index] = { ...updatedBullets[index], text: e.target.value };
-                      setEditedSlide({
-                        ...editedSlide,
-                        content: {
-                          ...editedSlide.content,
-                          bullets: updatedBullets,
-                        },
-                      });
-                    }}
-                    fullWidth
-                    margin="dense"
-                  />
-                  <ListItemSecondaryAction>
-                    <IconButton
-                      edge="end"
-                      onClick={() => handleMoveBulletPoint(index, 'up')}
-                      disabled={index === 0}
-                    >
-                      ↑
-                    </IconButton>
-                    <IconButton
-                      edge="end"
-                      onClick={() => handleMoveBulletPoint(index, 'down')}
-                      disabled={index === (editedSlide.content.bullets?.length || 0) - 1}
-                    >
-                      ↓
-                    </IconButton>
-                    <IconButton
-                      edge="end"
-                      onClick={() => handleDeleteBulletPoint(index)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </ListItemSecondaryAction>
-                </ListItem>
-              ))}
-            </List>
-=======
         <Typography variant="subtitle1" gutterBottom sx={{ mt: 2 }}>
           Bullet Points
         </Typography>
@@ -201,8 +153,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
             <AddIcon />
           </IconButton>
         </Box>
->>>>>>> heroku/main
-
         {editedSlide?.bullets && (
           <List>
             {editedSlide.bullets.map((bullet: BulletPoint, index: number) => (

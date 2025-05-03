@@ -8,11 +8,11 @@ import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../store/store';
-import { updateSlides } from '../../store/presentationSlice';
+import { setSlides, setActiveSlide } from '../../store/presentationSlice';
 import SlideSorter from './components/SlideSorter';
 import SavePresentation from './components/SavePresentation';
 import SlideEditDialog from './components/SlideEditDialog';
-import { Slide, ImageService } from './types';
+import { Slide, ImageService, SlideImage } from './types';
 import SlideLayoutRenderer from './components/SlideLayoutRenderer';
 import { backendSlideToFrontend } from './utils';
 
@@ -23,23 +23,38 @@ const SlideEditor: React.FC = () => {
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
+  // Redux selectors
+  const slides = useSelector((state: RootState) => state.presentation.slides);
+  const activeSlideId = useSelector((state: RootState) => state.presentation.activeSlideId);
+
+  // Find the active slide if any
+  const activeSlide = slides.find(slide => slide.id === activeSlideId);
+
   const handleSlideSelect = async (slideId: string) => {
-    // Removed setActiveSlide call
+    dispatch(setActiveSlide(slideId));
   };
 
   const handleSlidesReorder = (newSlides: Slide[]) => {
-    // If updateSlides expects SlideContent[], map Slide[] to SlideContent[] before dispatching.
-    // For example: updateSlides(slides.map(slide => slide.content))
-    dispatch(updateSlides(newSlides.map(slide => slide.content)));
+    // If setSlides expects Slide[], dispatch newSlides directly.
+    dispatch(setSlides(newSlides));
   };
 
   const handleSlideDelete = (slideId: string) => {
-    // Removed setSlides call
-    // Removed setActiveSlide call
+    const newSlides = slides.filter(slide => slide.id !== slideId);
+    dispatch(setSlides(newSlides));
+    // If the deleted slide was active, set the next available slide as active
+    if (activeSlideId === slideId && newSlides.length > 0) {
+      dispatch(setActiveSlide(newSlides[0].id));
+    } else if (newSlides.length === 0) {
+      dispatch(setActiveSlide(''));
+    }
   };
 
   const handleSlideChange = (updatedSlide: Slide) => {
-    // Removed setSlides call
+    const newSlides = slides.map(slide =>
+      slide.id === updatedSlide.id ? updatedSlide : slide
+    );
+    dispatch(setSlides(newSlides));
   };
 
   const handleImageUpload = async (file: File): Promise<string> => {
@@ -47,9 +62,8 @@ const SlideEditor: React.FC = () => {
     return URL.createObjectURL(file);
   };
 
-  const handleImageGenerate = async (prompt: string, service: ImageService = 'dalle'): Promise<string> => {
+  const handleImageGenerate = async (prompt: string, service: ImageService = 'dalle'): Promise<SlideImage> => {
     try {
-      console.log('SlideEditor - Generating image:', { prompt, service });
       const response = await fetch('http://localhost:8000/api/generate-image', {
         method: 'POST',
         headers: {
@@ -63,15 +77,17 @@ const SlideEditor: React.FC = () => {
 
       if (!response.ok) {
         const error = await response.json();
-        console.error('SlideEditor - Image generation failed:', error);
         throw new Error(error.detail || 'Failed to generate image');
       }
 
       const data = await response.json();
-      console.log('SlideEditor - Image generated:', data);
-      return data.imageUrl;
+      return {
+        url: data.imageUrl,
+        alt: prompt,
+        prompt,
+        service,
+      };
     } catch (error) {
-      console.error('SlideEditor - Error generating image:', error);
       throw error;
     }
   };
@@ -135,7 +151,7 @@ const SlideEditor: React.FC = () => {
           <span>
             <IconButton
               onClick={() => setEditDialogOpen(true)}
-              disabled={true} // Removed activeSlide check
+              disabled={!activeSlide}
               size="large"
             >
               <EditIcon />
@@ -179,11 +195,11 @@ const SlideEditor: React.FC = () => {
               <Typography variant="h6">Slides</Typography>
             </Box>
             <SlideSorter
-              slides={[]} // Removed slides prop
+              slides={slides}
               onSlidesReorder={handleSlidesReorder}
               onSlideSelect={handleSlideSelect}
               onSlideDelete={handleSlideDelete}
-              activeSlideId={''} // Removed activeSlideId prop
+              activeSlideId={activeSlideId || ''}
             />
           </Box>
         )}
@@ -194,10 +210,13 @@ const SlideEditor: React.FC = () => {
           overflow: 'auto',
           position: 'relative'
         }}>
-          {/* Removed activeSlide check */}
-          <Typography variant="h6" sx={{ textAlign: 'center', mt: 4 }}>
-            Select a slide to edit
-          </Typography>
+          {activeSlide ? (
+            <SlideLayoutRenderer slide={activeSlide} />
+          ) : (
+            <Typography variant="h6" sx={{ textAlign: 'center', mt: 4 }}>
+              Select a slide to edit
+            </Typography>
+          )}
         </Box>
       </Box>
 
@@ -205,10 +224,19 @@ const SlideEditor: React.FC = () => {
         open={saveDialogOpen}
         onClose={() => setSaveDialogOpen(false)}
         onSave={handleSave}
-        slides={[]} // Removed slides prop
+        slides={slides}
       />
 
-      {/* Removed SlideEditDialog */}
+      {activeSlide && (
+        <SlideEditDialog
+          open={editDialogOpen}
+          onClose={() => setEditDialogOpen(false)}
+          slide={activeSlide}
+          onSave={handleSlideChange}
+          onImageUpload={handleImageUpload}
+          onImageGenerate={handleImageGenerate}
+        />
+      )}
     </Box>
   );
 };

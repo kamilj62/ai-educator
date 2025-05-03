@@ -3,13 +3,6 @@ import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, F
 import pptxgen from 'pptxgenjs';
 import { Slide } from '../types';
 
-// Add this at the top or in a global.d.ts file, but for now add here for the error:
-declare global {
-  interface Window {
-    showSaveFilePicker?: (...args: any[]) => Promise<any>;
-  }
-}
-
 interface SavePresentationProps {
   open: boolean;
   onClose: () => void;
@@ -116,7 +109,7 @@ const SavePresentation: React.FC<SavePresentationProps> = ({
               [getMimeType(format)]: [getFileExtension(format)],
             },
           }],
-        });
+        }) as FileSystemFileHandle;
         const writable = await fileHandle.createWritable();
 
         if (format === 'pptx') {

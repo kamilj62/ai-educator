@@ -3,13 +3,13 @@ import TitleBulletsLayout from '../layouts/TitleBulletsLayout';
 import TitleBodyLayout from '../layouts/TitleBodyLayout';
 import TitleImageLayout from '../layouts/TitleImageLayout';
 import TwoColumnLayout from '../layouts/TwoColumnLayout';
-import type { Slide, SlideLayout } from '../types';
+import type { Slide, SlideLayout, SlideImage } from '../types';
 
 interface SlideLayoutRendererProps {
   slide: Slide;
   onChange?: (slide: Slide) => void;
   onImageUpload?: (file: File) => Promise<string>;
-  onImageGenerate?: (prompt: string, service?: string) => Promise<string>;
+  onImageGenerate?: (prompt: string, service?: string) => Promise<SlideImage>;
 }
 
 const SlideLayoutRenderer: React.FC<SlideLayoutRendererProps> = ({ slide, onChange = () => {}, onImageUpload, onImageGenerate }) => {

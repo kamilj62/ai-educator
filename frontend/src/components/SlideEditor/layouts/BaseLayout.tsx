@@ -23,11 +23,7 @@ const SlideContainer = styled(Box)(({ theme }) => ({
 
 interface BaseLayoutProps {
   children: ReactNode;
-<<<<<<< HEAD
   error?: string | null;
-=======
-  error?: any | null;
->>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
   onErrorClose?: () => void;
 }
 

@@ -134,18 +134,13 @@ export const LayoutSelector: React.FC<LayoutSelectorProps> = ({
 
       <DialogContent dividers>
         <Grid container spacing={2}>
-<<<<<<< HEAD
           {layoutOptionsList.map((option) => {
             const features = option.features;
+            // Fix property names to match actual type
             const isRecommended = (
-              (topic.image_prompt && features.hasImage) ||
-              (topic.key_points?.length > 0 && features.hasBullets)
+              (topic.image_prompt && features.supportsImage) ||
+              (topic.key_points?.length > 0 && features.supportsBullets)
             );
-=======
-          {layoutOptions.map((option) => {
-            const features = getLayoutFeatures(option.layout);
-            const isRecommended = false;
->>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
 
             return (
               <Grid item xs={12} sm={6} md={4} key={option.layout}>

@@ -38,7 +38,9 @@ export const generateOutline = createAsyncThunk(
         instructional_level: params.instructionalLevel,
       };
 
-      const response = await fetch(`/api/generate/outline`, {
+      // Use absolute URL for API call
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+      const response = await fetch(`${baseUrl}/api/generate/outline`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
@@ -73,7 +75,7 @@ export const generateSlides = createAsyncThunk(
       const slides: Slide[] = [];
       for (const topic of topics) {
         const requestBody = {
-          topic,
+          topic: topic, // Wrap the topic in an object field
           instructional_level: instructionalLevel,
           layout: defaultLayout,
         };
@@ -88,7 +90,25 @@ export const generateSlides = createAsyncThunk(
         }
 
         const data = await response.json();
-        slides.push(data);
+        // Map backend response to frontend Slide type
+        slides.push({
+          id: uuidv4(),
+          layout: defaultLayout,
+          content: {
+            title: data.title || '',
+            subtitle: data.subtitle || '',
+            body: data.body || '',
+            bullets: (data.bullet_points && data.bullet_points.length > 0)
+              ? data.bullet_points.map((text: string) => ({ text }))
+              : (topic.key_points ? topic.key_points.map(text => ({ text })) : []),
+            image: data.image_url ? {
+              url: data.image_url,
+              alt: data.image_alt || '',
+              caption: data.image_caption || '',
+              service: data.image_service || '',
+            } : undefined,
+          }
+        });
       }
       return slides;
     } catch (error: any) {
