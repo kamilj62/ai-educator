@@ -14,6 +14,8 @@ from openai import OpenAI, OpenAIError
 from dotenv import load_dotenv
 import traceback
 from collections import deque
+import openai
+import base64
 
 # Load environment variables
 load_dotenv()
@@ -568,11 +570,50 @@ async def generate_image(request: dict):
                     "error_type": "INVALID_REQUEST"
                 }
             )
-        # Dummy image URL for demonstration (replace with real image generation logic)
-        # In production, call your AIService or OpenAI API here
-        image_url = f"/static/images/dummy_{uuid.uuid4().hex[:8]}.png"
-        logger.info(f"Generated image URL: {image_url}")
-        return {"image_url": image_url}
+        try:
+            # Generate image using OpenAI DALL-E
+            openai.api_key = os.getenv("OPENAI_API_KEY")
+            response = openai.Image.create(
+                prompt=prompt,
+                n=1,
+                size="1024x1024",
+                response_format="b64_json"
+            )
+            b64_image = response['data'][0]['b64_json']
+            # Save image to static/images
+            image_data = base64.b64decode(b64_image)
+            filename = f"{uuid.uuid4().hex[:8]}.png"
+            filepath = f"static/images/{filename}"
+            with open(filepath, "wb") as f:
+                f.write(image_data)
+            image_url = f"/static/images/{filename}"
+            logger.info(f"Generated image URL: {image_url}")
+            add_openai_log({
+                "prompt": prompt,
+                "image_url": image_url
+            })
+            return {"image_url": image_url}
+        except openai.OpenAIError as oe:
+            logger.error(f"OpenAI API error: {str(oe)}")
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "message": f"OpenAI API error: {str(oe)}",
+                    "error_type": "OPENAI_API_ERROR"
+                }
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error in OpenAI image generation: {str(e)}")
+            logger.error(traceback.format_exc())
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "message": f"Unexpected error: {str(e)}",
+                    "error_type": "UNEXPECTED_ERROR"
+                }
+            )
     except Exception as e:
         logger.error(f"Error in generate_image: {str(e)}")
         logger.error(traceback.format_exc())
