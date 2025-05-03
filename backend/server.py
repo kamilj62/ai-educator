@@ -571,7 +571,7 @@ async def generate_image(request: dict):
                 }
             )
         try:
-            # Generate image using OpenAI DALL-E
+            # Generate image using OpenAI DALL-E (openai>=1.0.0 syntax)
             openai.api_key = os.getenv("OPENAI_API_KEY")
             response = openai.Image.create(
                 prompt=prompt,
@@ -579,7 +579,7 @@ async def generate_image(request: dict):
                 size="1024x1024",
                 response_format="b64_json"
             )
-            b64_image = response['data'][0]['b64_json']
+            b64_image = response.data[0].b64_json
             # Save image to static/images
             image_data = base64.b64decode(b64_image)
             filename = f"{uuid.uuid4().hex[:8]}.png"
