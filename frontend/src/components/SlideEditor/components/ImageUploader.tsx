@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { Box, Button, Typography, styled, CircularProgress, TextField } from '@mui/material';
 import { AddPhotoAlternate as AddPhotoIcon, Refresh as RefreshIcon } from '@mui/icons-material';
+import type { SlideImage, ImageService } from '../types';
 
 const UploadContainer = styled('div')(({ theme }) => ({
   width: '100%',
@@ -29,17 +30,17 @@ const ImagePreview = styled('img')({
 });
 
 export interface ImageUploaderProps {
-  currentImage?: any;
-  onImageChange: (image: any) => void;
+  image?: string | SlideImage;
+  onImageChange: (image: SlideImage) => void;
   onImageUpload?: (file: File) => Promise<string>;
-  onImageGenerate?: (prompt: string, service?: any) => Promise<string>;
+  onImageGenerate?: (prompt: string, service?: ImageService) => Promise<SlideImage>;
   maxWidth?: number;
   maxHeight?: number;
   acceptedTypes?: string[];
 }
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
-  currentImage,
+  image,
   onImageChange,
   onImageUpload,
   onImageGenerate,
@@ -49,7 +50,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [prompt, setPrompt] = useState(currentImage?.prompt || '');
+  const [prompt, setPrompt] = useState('');
 
   const handleFileUpload = useCallback(async (file: File) => {
     if (!onImageUpload) return;
@@ -57,12 +58,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       setIsLoading(true);
       setError(null);
       const imageUrl = await onImageUpload(file);
-      onImageChange({
-        url: imageUrl,
-        alt: file.name,
-        caption: file.name,
-        service: 'upload'
-      });
+      onImageChange({ url: imageUrl, alt: 'Uploaded image', service: 'upload' });
     } catch (err) {
       setError('Failed to upload image. Please try again.');
       console.error('Image upload error:', err);
@@ -80,14 +76,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     try {
       setIsLoading(true);
       setError(null);
-      const imageUrl = await onImageGenerate(prompt, 'dalle');
-      onImageChange({
-        url: imageUrl,
-        alt: prompt,
-        caption: prompt,
-        service: 'dalle',
-        prompt
-      });
+      const imageObj = await onImageGenerate(prompt, 'dalle');
+      onImageChange(imageObj);
     } catch (err) {
       setError('Failed to generate image. Please try again.');
       console.error('Image generation error:', err);
@@ -111,11 +101,18 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     }
   }, [handleFileUpload]);
 
+  let imageUrl = '';
+  if (typeof image === 'string') {
+    imageUrl = image;
+  } else if (image && typeof image === 'object' && 'url' in image) {
+    imageUrl = image.url;
+  }
+
   return (
     <Box>
-      {currentImage?.url ? (
+      {imageUrl ? (
         <Box sx={{ textAlign: 'center' }}>
-          <ImagePreview src={currentImage.url} alt={currentImage.alt || 'Slide image'} />
+          <ImagePreview src={imageUrl} alt="Slide image" />
           <Box sx={{ mt: 2, display: 'flex', gap: 1, justifyContent: 'center' }}>
             {onImageGenerate && (
               <Button

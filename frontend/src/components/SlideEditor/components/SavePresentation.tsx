@@ -100,40 +100,67 @@ const SavePresentation: React.FC<SavePresentationProps> = ({
 
   const handleSave = async () => {
     try {
-      // Create a file handle with native file picker
-      const handle = await window.showSaveFilePicker({
-        suggestedName: `${filename}${getFileExtension(format)}`,
-        types: [{
-          description: format === 'pptx' ? 'PowerPoint Presentation' : 'JSON Files',
-          accept: {
-            [getMimeType(format)]: [getFileExtension(format)],
-          },
-        }],
-      });
+      if (window.showSaveFilePicker) {
+        const fileHandle = await window.showSaveFilePicker({
+          suggestedName: `${filename}${getFileExtension(format)}`,
+          types: [{
+            description: format === 'pptx' ? 'PowerPoint Presentation' : 'JSON Files',
+            accept: {
+              [getMimeType(format)]: [getFileExtension(format)],
+            },
+          }],
+        }) as FileSystemFileHandle;
+        const writable = await fileHandle.createWritable();
 
-      // Create a writable stream
-      const writable = await handle.createWritable();
+        if (format === 'pptx') {
+          // Generate PowerPoint file
+          const pptx = await createPowerPoint();
+          // Export as binary data
+          const data = await pptx.stream();
+          const blob = new Blob([data], { type: getMimeType('pptx') });
+          // Write the blob to the file
+          await writable.write(blob);
+        } else {
+          // Write JSON content
+          const presentationData = {
+            slides,
+            version: '1.0',
+            savedAt: new Date().toISOString(),
+          };
+          await writable.write(JSON.stringify(presentationData, null, 2));
+        }
 
-      if (format === 'pptx') {
-        // Generate PowerPoint file
-        const pptx = await createPowerPoint();
-        // Export as binary data
-        const data = await pptx.stream();
-        const blob = new Blob([data], { type: getMimeType('pptx') });
-        // Write the blob to the file
-        await writable.write(blob);
+        // Close the stream
+        await writable.close();
       } else {
-        // Write JSON content
-        const presentationData = {
-          slides,
-          version: '1.0',
-          savedAt: new Date().toISOString(),
-        };
-        await writable.write(JSON.stringify(presentationData, null, 2));
+        // Fallback logic for browsers that do not support showSaveFilePicker
+        let blob;
+        if (format === 'pptx') {
+          // Generate PowerPoint file
+          const pptx = await createPowerPoint();
+          // Export as binary data
+          const data = await pptx.stream();
+          blob = new Blob([data], { type: getMimeType('pptx') });
+        } else {
+          // Write JSON content
+          const presentationData = {
+            slides,
+            version: '1.0',
+            savedAt: new Date().toISOString(),
+          };
+          blob = new Blob([JSON.stringify(presentationData, null, 2)], { type: getMimeType('json') });
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${filename}${getFileExtension(format)}`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 0);
       }
-
-      // Close the stream
-      await writable.close();
 
       onSave(filename);
       onClose();

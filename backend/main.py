@@ -125,57 +125,30 @@ async def root():
 
 @app.post("/api/generate/outline")
 async def generate_outline(input_data: PresentationInput) -> OutlineResponse:
-    """Generate presentation outline with enhanced error handling."""
+    """Generate presentation outline with enhanced error handling and explicit logging."""
     try:
-        logger.info(f"Received outline generation request: {input_data}")
+        logging.info(f"[DEBUG] Received outline generation request: {input_data}")
         # Validate input
         if not input_data.context.strip():
+            logging.warning("[DEBUG] Context is empty!")
             raise HTTPException(status_code=400, detail="Context cannot be empty")
         if not 1 <= input_data.num_slides <= 20:
+            logging.warning(f"[DEBUG] Invalid num_slides: {input_data.num_slides}")
             raise HTTPException(status_code=400, detail="Number of slides must be between 1 and 20")
         # Check for sensitive topics
-        sensitive = is_sensitive_topic(input_data.context)
-        if sensitive:
-            logger.info(f"Detected sensitive topic in context: {input_data.context}")
+        logging.info("[DEBUG] Calling ai_service.generate_outline...")
         try:
-            # Generate outline with safety checks if needed
             response = await ai_service.generate_outline(
-                context=input_data.context,
-                num_slides=input_data.num_slides,
-                level=input_data.instructional_level,
-                sensitive=sensitive
+                input_data.context,
+                input_data.num_slides,
+                input_data.instructional_level,
+                sensitive=False
             )
-            # Convert to OutlineResponse model
-            return OutlineResponse(
-                topics=[SlideTopic(**topic) for topic in response["topics"]],
-                warnings=response.get("warnings", [])
-            )
-        except ContentSafetyError as cse:
-            logger.error(f"Content safety error: {str(cse)}")
-            return JSONResponse(
-                status_code=400,
-                content={
-                    "type": "SAFETY_VIOLATION",
-                    "message": str(cse),
-                    "recommendations": [
-                        "Focus on verified historical facts and academic sources",
-                        "Maintain neutral, balanced perspective",
-                        "Use precise, non-inflammatory language",
-                        "Include multiple viewpoints when appropriate",
-                        "Emphasize historical context and complexity",
-                        "Avoid bias or taking sides",
-                        "Focus on education rather than advocacy",
-                        "Include citations and sources when possible",
-                        "Use appropriate academic tone",
-                        "Consider the educational level of the audience",
-                        "Use balanced and objective language",
-                        "Include multiple perspectives when appropriate"
-                    ]
-                }
-            )
+            logging.info(f"[DEBUG] ai_service.generate_outline response: {response}")
+            return response
         except Exception as e:
-            logger.error(f"Error in generate_outline: {str(e)}")
-            logger.error(traceback.format_exc())
+            logging.error(f"[DEBUG] Error in generate_outline: {str(e)}")
+            logging.error(traceback.format_exc())
             raise HTTPException(
                 status_code=500,
                 detail=f"Error generating outline: {str(e)}"
@@ -183,8 +156,8 @@ async def generate_outline(input_data: PresentationInput) -> OutlineResponse:
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Unexpected error in generate_outline endpoint: {str(e)}")
-        logger.error(traceback.format_exc())
+        logging.error(f"[DEBUG] Unexpected error in generate_outline endpoint: {str(e)}")
+        logging.error(traceback.format_exc())
         raise HTTPException(
             status_code=500,
             detail=f"Unexpected error: {str(e)}"
@@ -278,6 +251,18 @@ async def generate_image(request: dict):
     try:
         logger.info(f"Received image generation request: {request}")
         try:
+            # Ensure prompt is present and valid
+            prompt = request.get('prompt') if isinstance(request, dict) else None
+            if not prompt or not isinstance(prompt, str) or not prompt.strip():
+                logger.error("Image generation request missing valid 'prompt'")
+                return JSONResponse(
+                    status_code=400,
+                    content={
+                        "status": "error",
+                        "message": "Image generation request must include a non-empty 'prompt' field.",
+                        "error_type": "INVALID_REQUEST"
+                    }
+                )
             image_url = await ai_service.generate_image(request)
             logger.info(f"Generated image URL: {image_url}")
             return {"image_url": image_url}

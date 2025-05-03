@@ -9,57 +9,49 @@ import {
   InputLabel,
   CircularProgress,
   Typography,
+  SelectChangeEvent,
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
-import { generateOutline, setInstructionalLevel, setDefaultLayout } from '../store/presentationSlice';
+import { generateOutline, selectPresentation, selectLoading, selectError } from '../store/presentationSlice';
 import { RootState } from '../store/store';
-import type { InstructionalLevel, SlideLayout } from '../components/types';
-import { layoutOptions } from '../components/SlideEditor/types';
+import type { InstructionalLevel } from '../components/SlideEditor/types';
 import { AppDispatch } from '../store/store';
 import ErrorDisplay from './ErrorDisplay';
 
 const InputSection: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const instructionalLevel = useSelector((state: RootState) => state.presentation.instructionalLevel);
-  const defaultLayout = useSelector((state: RootState) => state.presentation.defaultLayout);
-  const isGeneratingOutline = useSelector((state: RootState) => state.presentation.isGeneratingOutline);
-  const error = useSelector((state: RootState) => state.presentation.error);
+  const presentation = useSelector(selectPresentation);
+  const loading = useSelector(selectLoading);
+  const error = useSelector(selectError);
 
-  const [topic, setTopic] = useState('');
-  const [numSlides, setNumSlides] = useState('5');
+  const [contextInput, setContextInput] = useState('');
+  const [numSlidesInput, setNumSlidesInput] = useState('5');
+  const [instructionalLevelInput, setInstructionalLevelInput] = useState<InstructionalLevel>('elementary_school');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!topic.trim() || !numSlides) {
-      dispatch(setInstructionalLevel('high_school'));
+  const handleGenerateOutline = async () => {
+    if (!contextInput.trim() || !numSlidesInput) {
+      console.error('Please fill in all required fields');
       return;
     }
     try {
-      const resultAction = await dispatch(generateOutline({
-        topic: topic.trim(),
-        numSlides: parseInt(numSlides, 10),
-        instructionalLevel,
-      }));
-      console.log('[InputSection] generateOutline API result:', resultAction);
-      // Remove unwrap usage, just check for error in Redux state
-      setTopic('');
-      setNumSlides('5');
+      await dispatch(generateOutline({
+        topic: contextInput.trim(),
+        numSlides: Number(numSlidesInput),
+        instructionalLevel: instructionalLevelInput,
+      })).unwrap();
+      setContextInput('');
+      setNumSlidesInput('5');
     } catch (err) {
-      // Error is handled by the thunk
       console.error('Failed to generate outline:', err);
     }
   };
 
-  const handleLevelChange = (event: any) => {
-    dispatch(setInstructionalLevel(event.target.value as InstructionalLevel));
-  };
-
-  const handleLayoutChange = (event: any) => {
-    dispatch(setDefaultLayout(event.target.value as SlideLayout));
+  const handleLevelChange = (event: SelectChangeEvent<InstructionalLevel>) => {
+    setInstructionalLevelInput(event.target.value as InstructionalLevel);
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ p: 2 }}>
+    <Box component="form" sx={{ p: 2 }}>
       <Typography variant="h6" gutterBottom>
         Generate Presentation
       </Typography>
@@ -67,58 +59,42 @@ const InputSection: React.FC = () => {
       <ErrorDisplay error={error} />
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <TextField
-          label="Topic"
-          value={topic}
-          onChange={(e) => setTopic(e.target.value)}
+          label="Context"
+          value={contextInput}
+          onChange={(e) => setContextInput(e.target.value)}
           fullWidth
           required
         />
         <TextField
           label="Number of Slides"
           type="number"
-          value={numSlides}
-          onChange={(e) => setNumSlides(e.target.value)}
+          value={numSlidesInput}
+          onChange={(e) => setNumSlidesInput(e.target.value)}
           inputProps={{ min: 1, max: 20 }}
           fullWidth
           required
         />
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <FormControl fullWidth>
-            <InputLabel>Instructional Level</InputLabel>
-            <Select
-              value={instructionalLevel}
-              onChange={handleLevelChange}
-              label="Instructional Level"
-            >
-              <MenuItem value="elementary">Elementary School</MenuItem>
-              <MenuItem value="middle_school">Middle School</MenuItem>
-              <MenuItem value="high_school">High School</MenuItem>
-              <MenuItem value="university">University</MenuItem>
-              <MenuItem value="professional">Professional</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl fullWidth>
-            <InputLabel>Default Layout</InputLabel>
-            <Select
-              value={defaultLayout}
-              onChange={handleLayoutChange}
-              label="Default Layout"
-            >
-              {layoutOptions.map((option) => (
-                <MenuItem key={option.layout} value={option.layout}>
-                  {option.title}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
+        <FormControl fullWidth>
+          <InputLabel>Instructional Level</InputLabel>
+          <Select
+            value={instructionalLevelInput}
+            onChange={handleLevelChange}
+            label="Instructional Level"
+          >
+            <MenuItem value="elementary_school">Elementary School</MenuItem>
+            <MenuItem value="middle_school">Middle School</MenuItem>
+            <MenuItem value="high_school">High School</MenuItem>
+            <MenuItem value="university">University</MenuItem>
+            <MenuItem value="professional">Professional</MenuItem>
+          </Select>
+        </FormControl>
         <Button
-          type="submit"
+          onClick={handleGenerateOutline}
           variant="contained"
-          disabled={isGeneratingOutline}
+          disabled={loading}
           sx={{ minWidth: 150 }}
         >
-          {isGeneratingOutline ? (
+          {loading ? (
             <>
               <CircularProgress size={24} sx={{ mr: 1 }} color="inherit" />
               Generating...
