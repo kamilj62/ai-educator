@@ -251,6 +251,18 @@ async def generate_image(request: dict):
     try:
         logger.info(f"Received image generation request: {request}")
         try:
+            # Ensure prompt is present and valid
+            prompt = request.get('prompt') if isinstance(request, dict) else None
+            if not prompt or not isinstance(prompt, str) or not prompt.strip():
+                logger.error("Image generation request missing valid 'prompt'")
+                return JSONResponse(
+                    status_code=400,
+                    content={
+                        "status": "error",
+                        "message": "Image generation request must include a non-empty 'prompt' field.",
+                        "error_type": "INVALID_REQUEST"
+                    }
+                )
             image_url = await ai_service.generate_image(request)
             logger.info(f"Generated image URL: {image_url}")
             return {"image_url": image_url}

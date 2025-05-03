@@ -6,7 +6,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import PresentationIcon from '@mui/icons-material/Slideshow';
 import LayoutSwitcher from './LayoutSwitcher';
 import { Slide, BackendSlideLayout } from '../types';
-import { convertLayoutToFrontend, convertLayoutToBackend } from './utils';
+import { convertLayoutToFrontend, convertLayoutToBackend } from '../utils';
 
 interface EditorControlsProps {
   slide: Slide;

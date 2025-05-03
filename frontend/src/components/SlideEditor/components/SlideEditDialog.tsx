@@ -22,7 +22,8 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import ImageIcon from '@mui/icons-material/Image';
-import { Slide, SlideLayout, BulletPoint, ImageService, SlideImage, convertLayoutToFrontend, convertLayoutToBackend } from '../types';
+import { Slide, SlideLayout, BulletPoint, ImageService, SlideImage } from '../types';
+import { convertLayoutToFrontend, convertLayoutToBackend } from '../utils';
 import ImageUploader from './ImageUploader';
 import TiptapEditor from './TiptapEditor'; // Import TiptapEditor
 
@@ -32,7 +33,7 @@ interface SlideEditDialogProps {
   slide: Slide;
   onSave: (slide: Slide) => void;
   onImageUpload?: (file: File) => Promise<string>;
-  onImageGenerate?: (prompt: string, service?: ImageService) => Promise<string>;
+  onImageGenerate?: (prompt: string, service?: ImageService) => Promise<SlideImage>;
 }
 
 const layoutOptions: { value: SlideLayout; label: string; description: string }[] = [
@@ -76,21 +77,55 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   onImageUpload,
   onImageGenerate,
 }) => {
-  const [editedSlide, setEditedSlide] = useState<Slide>({
-    ...slide,
-    layout: convertLayoutToFrontend(slide.layout),
-    content: {
+  // Only update editedSlide when the dialog is opened or the slide changes (not on every render)
+  const [editedSlide, setEditedSlide] = useState<Slide>(() => {
+    const baseContent = {
       ...slide.content,
       bullets: slide.content.bullets ? [...slide.content.bullets] : [],
-      image: slide.content.image || (slide.content.image_prompt ? {
+    };
+    const layout = convertLayoutToFrontend(slide.layout);
+    console.log('SlideEditDialog INIT layout:', layout, 'baseContent:', baseContent);
+    // TEMP: Force fallback for all layouts if image missing
+    if (!baseContent.image) {
+      baseContent.image = {
         url: '',
-        alt: slide.content.image_prompt,
-        caption: slide.content.image_prompt,
-        prompt: slide.content.image_prompt,
-        service: 'dalle' as ImageService
-      } : undefined)
-    },
+        alt: '',
+        prompt: '',
+        service: 'generated',
+      };
+    }
+    return {
+      ...slide,
+      layout,
+      content: baseContent,
+    };
   });
+
+  useEffect(() => {
+    if (open) {
+      const validLayout = convertLayoutToFrontend(slide.layout);
+      const baseContent = {
+        ...slide.content,
+        bullets: slide.content.bullets ? [...slide.content.bullets] : [],
+      };
+      console.log('SlideEditDialog EFFECT layout:', validLayout, 'baseContent:', baseContent);
+      // TEMP: Force fallback for all layouts if image missing
+      if (!baseContent.image) {
+        baseContent.image = {
+          url: '',
+          alt: '',
+          prompt: '',
+          service: 'generated',
+        };
+      }
+      setEditedSlide({
+        ...slide,
+        layout: validLayout,
+        content: baseContent,
+      });
+    }
+    // Only re-run when dialog opens or slide changes
+  }, [open, slide]);
 
   const [bodyError, setBodyError] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -195,43 +230,12 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     if (!onImageGenerate) return;
     try {
       console.log('SlideEditDialog - Generating image with prompt:', prompt);
-      const imageUrl = await onImageGenerate(prompt, 'dalle');
-      handleImageChange({
-        url: imageUrl,
-        alt: prompt,
-        caption: prompt,
-        service: 'dalle' as ImageService,
-        prompt
-      });
+      const image = await onImageGenerate(prompt, 'dalle');
+      handleImageChange(image);
     } catch (err) {
       console.error('Failed to generate image:', err);
     }
   }, [onImageGenerate, handleImageChange]);
-
-  useEffect(() => {
-    const newSlide = {
-      ...slide,
-      layout: convertLayoutToFrontend(slide.layout),
-      content: {
-        ...slide.content,
-        bullets: slide.content.bullets ? [...slide.content.bullets] : [],
-        image: slide.content.image || (slide.content.image_prompt ? {
-          url: '',
-          alt: slide.content.image_prompt,
-          caption: slide.content.image_prompt,
-          prompt: slide.content.image_prompt,
-          service: 'dalle' as ImageService
-        } : undefined)
-      }
-    };
-    setEditedSlide(newSlide);
-
-    // Auto-generate image if needed
-    if (slide.content.image_prompt && (!slide.content.image || !slide.content.image.url)) {
-      console.log('Auto-generating image in edit dialog');
-      handleImageGenerate(slide.content.image_prompt);
-    }
-  }, [slide, handleImageGenerate]);
 
   useEffect(() => {
     if ((editedSlide.layout === 'title-body' || editedSlide.layout === 'title-body-image')) {
@@ -250,7 +254,7 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   useEffect(() => {
     if (editedSlide.layout.includes('image')) {
       if (!editedSlide.content.image || !editedSlide.content.image.url) {
-        setImageError('Image is missing or not set.');
+        setImageError('Image is missing or not set. You can save without an image, or generate/upload one below.');
       } else {
         setImageError(null);
       }
@@ -258,6 +262,10 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
       setImageError(null);
     }
   }, [editedSlide.layout, editedSlide.content.image]);
+
+  useEffect(() => {
+    console.log('SlideEditDialog image:', editedSlide.content.image);
+  }, [editedSlide.content.image]);
 
   const handleSave = () => {
     onSave({
@@ -267,14 +275,17 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     onClose();
   };
 
+  const currentLayout = layoutOptions.find(option => option.value === editedSlide.layout) ? editedSlide.layout : 'title-bullets';
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Edit Slide</DialogTitle>
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 1 }}>
-          <FormControl fullWidth sx={{ mb: 3 }}>
-            <InputLabel>Layout</InputLabel>
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel id="layout-label">Layout</InputLabel>
             <Select
+              labelId="layout-label"
               value={editedSlide.layout}
               label="Layout"
               onChange={(e) => handleLayoutChange(e.target.value as SlideLayout)}
@@ -375,13 +386,13 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
             <Box>
               <Typography variant="h6" gutterBottom>Image</Typography>
               <ImageUploader
-                currentImage={editedSlide.content.image}
+                image={editedSlide.content.image}
                 onImageChange={handleImageChange}
                 onImageUpload={onImageUpload}
                 onImageGenerate={onImageGenerate}
               />
               {imageError && (
-                <Typography color="error" variant="body2" sx={{ mt: 1 }}>{imageError}</Typography>
+                <Typography color="warning" variant="body2" sx={{ mt: 1 }}>{imageError}</Typography>
               )}
             </Box>
           )}

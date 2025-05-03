@@ -27,11 +27,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import PresentationIcon from '@mui/icons-material/Slideshow';
-<<<<<<< HEAD
-import { generateSlides } from '../store/presentationSlice';
-=======
-import { updateTopics } from '../store/presentationSlice';
->>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
+import { generateSlides, setOutline } from '../store/presentationSlice';
 
 interface EditDialogProps {
   open: boolean;
@@ -85,6 +81,7 @@ const ErrorDisplay: React.FC<{ error: string | null }> = ({ error }) => {
 const OutlineDisplay: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const error = useSelector((state: RootState) => state.presentation.error);
+  const outline = useSelector((state: RootState) => state.presentation.outline);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingPoint, setEditingPoint] = useState<{ topicId: string; index: number; text: string } | null>(null);
 
@@ -94,35 +91,49 @@ const OutlineDisplay: React.FC = () => {
   };
 
   const handleSavePoint = (newText: string) => {
-    if (editingPoint) {
-<<<<<<< HEAD
-      // Removed updateTopicPoint call
-=======
-      // Removed dispatch(updateTopics({ topicId: editingPoint.topicId, pointIndex: editingPoint.index, newText }));
->>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
+    if (editingPoint && outline) {
+      // Find the topic and update the point
+      const updatedOutline = outline.map(topic => {
+        if (topic.id === editingPoint.topicId) {
+          const updatedPoints = [...topic.key_points];
+          updatedPoints[editingPoint.index] = newText;
+          return { ...topic, key_points: updatedPoints };
+        }
+        return topic;
+      });
+      dispatch(setOutline(updatedOutline));
     }
   };
 
   const handleDeletePoint = (topicId: string, index: number) => {
-<<<<<<< HEAD
-    // Removed deleteTopicPoint call
+    if (outline) {
+      const updatedOutline = outline.map(topic => {
+        if (topic.id === topicId) {
+          const updatedPoints = topic.key_points.filter((_, i) => i !== index);
+          return { ...topic, key_points: updatedPoints };
+        }
+        return topic;
+      });
+      dispatch(setOutline(updatedOutline));
+    }
   };
 
   const handleAddPoint = (topicId: string) => {
-    // Removed addTopicPoint call
-=======
-    // Removed dispatch(deleteTopicPoint({ topicId, pointIndex: index }));
-  };
-
-  const handleAddPoint = (topicId: string) => {
-    // Removed dispatch(addTopicPoint({ topicId, text: 'New point' }));
->>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
+    if (outline) {
+      const updatedOutline = outline.map(topic => {
+        if (topic.id === topicId) {
+          return { ...topic, key_points: [...topic.key_points, 'New point'] };
+        }
+        return topic;
+      });
+      dispatch(setOutline(updatedOutline));
+    }
   };
 
   const handleGenerateSlides = () => {
+    console.log('Clicked Generate All Slides');
     // Collect all topics in order
     const topicsToGenerate: SlideTopic[] = [];
-    
     const collectTopics = (topics: SlideTopic[]) => {
       topics.forEach(topic => {
         topicsToGenerate.push(topic);
@@ -131,9 +142,13 @@ const OutlineDisplay: React.FC = () => {
         }
       });
     };
-    
-    // Removed collectTopics(outline);
-    // Removed dispatch(generateSlides(topicsToGenerate));
+    if (outline) {
+      collectTopics(outline);
+      console.log('Topics to generate:', topicsToGenerate);
+      dispatch(generateSlides(topicsToGenerate));
+    } else {
+      console.warn('No outline found when trying to generate slides.');
+    }
   };
 
   const renderTopic = (topic: SlideTopic, index: number) => (
@@ -211,25 +226,6 @@ const OutlineDisplay: React.FC = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-<<<<<<< HEAD
-      {outline.length > 0 && (
-        <>
-          <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Button
-              variant="contained"
-              startIcon={<PresentationIcon />}
-              onClick={handleGenerateSlides}
-              disabled={isGeneratingSlides}
-              sx={{ minWidth: 200 }}
-            >
-              Generate All Slides
-            </Button>
-            <ErrorDisplay error={error} />
-          </Box>
-          {outline.map((topic, index) => renderTopic(topic, index))}
-        </>
-      )}
-=======
       <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
         <Button
           variant="contained"
@@ -245,7 +241,7 @@ const OutlineDisplay: React.FC = () => {
           </Typography>
         )}
       </Box>
->>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
+      {outline && outline.map((topic, index) => renderTopic(topic, index))}
       <EditDialog
         open={editDialogOpen}
         text={editingPoint?.text || ''}

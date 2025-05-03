@@ -3,7 +3,7 @@ import { Box, Button, Dialog, DialogTitle, DialogContent, Grid, Card, CardConten
 import { LayoutOption, SlideLayout, layoutOptions } from '../types';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../store/store';
-import { updateSlides } from '../../../store/presentationSlice';
+import { setSlides } from '../../../store/presentationSlice';
 import ViewQuiltIcon from '@mui/icons-material/ViewQuilt';
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -54,7 +54,7 @@ const LayoutSwitcher: React.FC<LayoutSwitcherProps> = ({ layout, onLayoutChange 
       }
 
       // Update the layout
-      dispatch(updateSlides([])); // Pass an empty array of SlideContent
+      dispatch(setSlides([])); // Pass an empty array of SlideContent
 
       onLayoutChange(newLayout);
       handleClose();
