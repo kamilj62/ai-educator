@@ -34,6 +34,14 @@ client = OpenAI(api_key=api_key)
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Or ["*"] for all origins (dev only)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Configure CORS - Allow all origins in development
 app.add_middleware(
     CORSMiddleware,
@@ -100,6 +108,35 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
                 "Check the request parameters match the API specification",
                 "Ensure all required fields are provided",
                 "Verify the data types of all fields"
+            ]
+        }
+    )
+
+# --- ERROR HANDLING FOR OPENAI API KEY ---
+@app.exception_handler(ValueError)
+async def value_error_handler(request: Request, exc: ValueError):
+    if "OPENAI_API_KEY" in str(exc):
+        logger.error(f"OpenAI API key error: {str(exc)}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "type": "OPENAI_API_KEY_ERROR",
+                "message": str(exc),
+                "recommendations": [
+                    "Set the OPENAI_API_KEY environment variable in backend/.env",
+                    "Check that your OpenAI API key is correct and active",
+                    "Restart the backend server after updating the environment variable"
+                ]
+            }
+        )
+    # fallback for other value errors
+    return JSONResponse(
+        status_code=500,
+        content={
+            "type": "VALUE_ERROR",
+            "message": str(exc),
+            "recommendations": [
+                "Check your request and backend configuration"
             ]
         }
     )
