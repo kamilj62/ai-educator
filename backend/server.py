@@ -20,6 +20,9 @@ import base64
 # Load environment variables
 load_dotenv()
 
+# DEBUG: Log OpenAI API key presence at startup
+print('[server.py] OPENAI_API_KEY present:', bool(os.environ.get('OPENAI_API_KEY')))
+
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -33,6 +36,15 @@ if not api_key:
 client = OpenAI(api_key=api_key)
 
 app = FastAPI()
+
+# --- CORS MIDDLEWARE SETUP ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # You can restrict this to your frontend domain in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -593,6 +605,9 @@ async def upload_image(file: UploadFile = File(...)):
 # --- IMAGE GENERATION ENDPOINT ---
 @app.post("/api/generate/image")
 async def generate_image(request: dict):
+    logger.info('[server.py] /api/generate/image called')
+    logger.info('[server.py] Request data: %s', request)
+    logger.info('[server.py] OPENAI_API_KEY present: %s', bool(os.environ.get('OPENAI_API_KEY')))
     try:
         logger.info(f"Received image generation request: {request}")
         # Ensure prompt is present and valid
