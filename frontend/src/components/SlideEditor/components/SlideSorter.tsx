@@ -9,11 +9,13 @@ const getItemStyle = (isDragging: boolean) => ({
   userSelect: 'none' as const,
   padding: grid * 2,
   margin: `0 0 ${grid}px 0`,
-  background: isDragging ? '#f5f5f5' : 'white',
-  border: '1px solid #e0e0e0',
-  borderRadius: '4px',
-  cursor: 'grab',
-  opacity: isDragging ? 0.5 : 1
+  background: isDragging ? '#e3f2fd' : 'white',
+  border: isDragging ? '2px solid #1976d2' : '1px solid #e0e0e0',
+  boxShadow: isDragging ? '0 4px 24px rgba(25, 118, 210, 0.12)' : 'none',
+  borderRadius: '6px',
+  cursor: isDragging ? 'grabbing' : 'grab',
+  opacity: isDragging ? 0.85 : 1,
+  transition: 'background 0.2s, border 0.2s, box-shadow 0.2s, opacity 0.2s',
 });
 
 interface DraggableItemProps {
@@ -37,16 +39,15 @@ const DraggableItem = memo(({
   onDragEnd,
   onDragOver
 }: DraggableItemProps) => {
+  const [isDragging, setIsDragging] = useState(false);
+
   return (
     <div
       draggable
-      onDragStart={() => onDragStart(index)}
-      onDragEnd={onDragEnd}
-      onDragOver={(e) => {
-        e.preventDefault();
-        onDragOver(index);
-      }}
-      style={getItemStyle(false)}
+      onDragStart={() => { onDragStart(index); setIsDragging(true); }}
+      onDragEnd={() => { onDragEnd(); setIsDragging(false); }}
+      onDragOver={(e) => { e.preventDefault(); onDragOver(index); }}
+      style={getItemStyle(isDragging)}
     >
       <SortableSlide
         slide={slide}

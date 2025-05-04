@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  images: {
+    domains: ['ai-powerpoint-f44a1d57b590.herokuapp.com'],
+  },
   async rewrites() {
     return [
       {

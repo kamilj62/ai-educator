@@ -1,0 +1,15 @@
+.draggable-image-handle,
+.draggable-image-handle.hide-border {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Hide all react-rnd resize handles and borders unless actively dragging/resizing */
+.rnd-resizable-handle,
+.react-draggable,
+.rnd-resizable-handle::after,
+.rnd-resizable-handle::before {
+  border: none !important;
+  background: none !important;
+  box-shadow: none !important;
+}

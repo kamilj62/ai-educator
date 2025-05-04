@@ -9,7 +9,7 @@ const Home: React.FC = () => {
     <Provider store={store}>
       <main>
         <App />
-        <LogViewer />
+        {/* <LogViewer /> */}
       </main>
     </Provider>
   );

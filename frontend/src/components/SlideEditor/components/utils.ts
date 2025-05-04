@@ -38,3 +38,23 @@ export const convertLayoutToBackend = (layout: string): string => {
       return 'title-only';
   }
 };
+
+// Normalize bullets to HTML string
+export function normalizeBullets(bullets: any): string {
+  if (!bullets) return '';
+  if (typeof bullets === 'string') {
+    // If already HTML, return as is
+    if (bullets.trim().startsWith('<ul')) return bullets;
+    // If plain text, split by newlines
+    const lines = bullets.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length) return `<ul>${lines.map(l => `<li>${l}</li>`).join('')}</ul>`;
+    return '';
+  }
+  if (Array.isArray(bullets)) {
+    // Array of strings or objects
+    const lines = bullets.map(b => typeof b === 'string' ? b : (b && b.text ? b.text : '')).filter(Boolean);
+    if (lines.length) return `<ul>${lines.map(l => `<li>${l}</li>`).join('')}</ul>`;
+    return '';
+  }
+  return '';
+}

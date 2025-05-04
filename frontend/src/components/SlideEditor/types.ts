@@ -31,6 +31,11 @@ export type SlideImage = {
     level?: 'low' | 'medium' | 'high';
   };
   error?: APIError;
+  // Added for draggable/resizable support
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
 };
 
 export type InstructionalLevel = 
@@ -44,7 +49,7 @@ export type SlideContent = {
   title: string;
   subtitle?: string;
   body?: string;
-  bullets?: BulletPoint[];
+  bullets?: string;
   image?: SlideImage;
   image_prompt?: string;
   columnLeft?: string;

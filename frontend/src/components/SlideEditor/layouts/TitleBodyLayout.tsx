@@ -1,50 +1,14 @@
 import { styled } from '@mui/material/styles';
 import { Box, Typography } from '@mui/material';
 import BaseLayout from './BaseLayout';
-import TiptapEditor from '../components/TiptapEditor';
-import ImageUploader from '../components/ImageUploader';
-import type { Slide, ImageService, SlideImage } from '../types';
+import { Rnd } from 'react-rnd';
 
 const ContentContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
-  flexDirection: 'row',
+  flexDirection: 'column',
   width: '100%',
   height: '100%',
   gap: theme.spacing(2),
-}));
-
-const BodyContainer = styled(Box)(({ theme }) => ({
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: theme.spacing(1),
-}));
-
-const TextContent = styled(Box)(({ theme }) => ({
-  flex: 1,
-  minWidth: 0,
-  '& .ProseMirror': {
-    fontSize: '1.25rem',
-    color: theme.palette.text.primary,
-    lineHeight: 1.6,
-    '& p': {
-      margin: '0.75em 0',
-      '&:first-child': {
-        marginTop: 0,
-      },
-      '&:last-child': {
-        marginBottom: 0,
-      },
-    },
-  },
-}));
-
-const ImageContainer = styled(Box)(({ theme }) => ({
-  width: '40%',
-  minWidth: 200,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: theme.spacing(1),
 }));
 
 const TitleContainer = styled(Typography)(({ theme }) => ({
@@ -54,103 +18,90 @@ const TitleContainer = styled(Typography)(({ theme }) => ({
 }));
 
 interface TitleBodyLayoutProps {
-  slide: Slide;
-  onChange: (slide: Slide) => void;
-  onImageUpload?: (file: File) => Promise<string>;
-  onImageGenerate?: (prompt: string, service?: ImageService) => Promise<SlideImage>;
+  slide: any;
+  onChange: (slide: any) => void;
 }
 
 const TitleBodyLayout: React.FC<TitleBodyLayoutProps> = ({ 
   slide, 
-  onChange,
-  onImageUpload,
-  onImageGenerate 
+  onChange
 }) => {
-  const handleBodyChange = (content: string) => {
-    onChange({
-      ...slide,
-      content: {
-        ...slide.content,
-        body: content,
-      },
-    });
-  };
-
-  const handleTitleChange = (content: string) => {
-    onChange({
-      ...slide,
-      content: {
-        ...slide.content,
-        title: content,
-      },
-    });
-  };
-
-  const handleImageChange = (image: SlideImage) => {
-    onChange({
-      ...slide,
-      content: {
-        ...slide.content,
-        image,
-      },
-    });
-  };
-
-  const getHtmlContent = (content: string | undefined): string => {
-    if (!content) return '';
-    if (content.startsWith('<')) return content;
-    return `<p>${content}</p>`;
-  };
-
-  const handleImageGenerate = async (prompt: string, service?: ImageService): Promise<SlideImage> => {
-    if (!onImageGenerate) throw new Error('onImageGenerate not provided');
-    const result = await onImageGenerate(prompt, service);
-    return result;
-  };
-
   return (
     <BaseLayout>
       <ContentContainer>
         <TitleContainer>
-          <TiptapEditor
-            content={getHtmlContent(slide.content.title)}
-            onChange={handleTitleChange}
-            placeholder="Enter title..."
-            bulletList={false}
+          <span
+            style={{ fontSize: '2.2rem', fontWeight: 600, color: '#222', display: 'block', marginBottom: '1rem' }}
+            dangerouslySetInnerHTML={{ __html: typeof slide.content.title === 'string' ? (slide.content.title.trim().startsWith('<') ? slide.content.title : `<p>${slide.content.title}</p>`) : '' }}
           />
         </TitleContainer>
-        <BodyContainer>
-          {slide.content.body && slide.content.body.trim().startsWith('<') ? (
-            <TiptapEditor
-              content={slide.content.body}
-              onChange={handleBodyChange}
-              placeholder="Enter content..."
-              bulletList={false}
+        <span
+          style={{ fontSize: '1.25rem', color: '#333', display: 'block', marginTop: '1.5rem' }}
+          dangerouslySetInnerHTML={{ __html: typeof slide.content.body === 'string' ? (slide.content.body.trim().startsWith('<') ? slide.content.body : `<p>${slide.content.body}</p>`) : '' }}
+        />
+        {/* Draggable/Resizable image below body for title-body-image layout */}
+        {slide.content.image && slide.content.image.url && (
+          <Rnd
+            default={{
+              x: slide.content.image.x || 100,
+              y: slide.content.image.y || 420,
+              width: slide.content.image.width || 300,
+              height: slide.content.image.height || 200,
+            }}
+            bounds="parent"
+            enableResizing={true}
+            dragHandleClassName="draggable-image-handle"
+            disableDragging={false}
+            style={{ zIndex: 2, marginTop: 32, transition: 'box-shadow 0.2s, transform 0.1s' }}
+            onDragStart={() => {
+              // Optional: add visual feedback for dragging
+            }}
+            onDragStop={(e: any, d: any) => {
+              if (!slide.content.image) return;
+              onChange({
+                ...slide,
+                content: {
+                  ...slide.content,
+                  image: {
+                    ...slide.content.image,
+                    x: d.x,
+                    y: d.y,
+                    url: slide.content.image.url || '',
+                    alt: slide.content.image.alt || '',
+                    service: slide.content.image.service || 'upload',
+                  },
+                },
+              });
+            }}
+            onResizeStop={(e: any, direction: any, ref: any, delta: any, position: any) => {
+              if (!slide.content.image) return;
+              onChange({
+                ...slide,
+                content: {
+                  ...slide.content,
+                  image: {
+                    ...slide.content.image,
+                    width: parseInt(ref.style.width, 10),
+                    height: parseInt(ref.style.height, 10),
+                    x: position.x,
+                    y: position.y,
+                    url: slide.content.image.url || '',
+                    alt: slide.content.image.alt || '',
+                    service: slide.content.image.service || 'upload',
+                  },
+                },
+              });
+            }}
+          >
+            <img
+              src={slide.content.image.url}
+              alt={slide.content.image.alt || 'Slide image'}
+              style={{ width: '100%', height: '100%', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.10)', cursor: 'grab', transition: 'box-shadow 0.2s, transform 0.1s' }}
+              className="draggable-image-handle"
+              draggable={false}
             />
-          ) : (
-            <Typography sx={{ whiteSpace: 'pre-line' }}>
-              {slide.content.body ?? slide.content.description}
-            </Typography>
-          )}
-          {slide.layout.includes('image') && (
-            <ImageUploader
-              image={slide.content.image}
-              onImageChange={handleImageChange}
-              onImageUpload={onImageUpload}
-              onImageGenerate={handleImageGenerate}
-            />
-          )}
-          {slide.layout.includes('image') && (
-            <>
-              {console.log('TitleBodyLayout image:', slide.content.image)}
-              <ImageContainer>
-                {slide.content.image?.url && (
-                  <img src={slide.content.image.url} alt={slide.content.image.alt || ''} style={{ maxWidth: '100%', maxHeight: 300 }} />
-                )}
-              </ImageContainer>
-            </>
-          )}
-        </BodyContainer>
+          </Rnd>
+        )}
       </ContentContainer>
     </BaseLayout>
   );

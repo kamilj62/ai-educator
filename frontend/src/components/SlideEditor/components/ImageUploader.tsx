@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { Box, Button, Typography, styled, CircularProgress, TextField } from '@mui/material';
 import { AddPhotoAlternate as AddPhotoIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import type { SlideImage, ImageService } from '../types';
@@ -37,6 +37,7 @@ export interface ImageUploaderProps {
   maxWidth?: number;
   maxHeight?: number;
   acceptedTypes?: string[];
+  prompt?: string;
 }
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
@@ -47,10 +48,21 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   maxWidth = 1920,
   maxHeight = 1080,
   acceptedTypes = ['image/jpeg', 'image/png', 'image/gif'],
+  prompt: initialPrompt = '',
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState(initialPrompt);
+
+  // DEBUG: Log if onImageGenerate is present
+  useEffect(() => {
+    console.log('[ImageUploader] onImageGenerate present:', typeof onImageGenerate === 'function');
+  }, [onImageGenerate]);
+
+  // When the initialPrompt changes, update the prompt state
+  useEffect(() => {
+    setPrompt(initialPrompt);
+  }, [initialPrompt]);
 
   const handleFileUpload = useCallback(async (file: File) => {
     if (!onImageUpload) return;
@@ -111,20 +123,30 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   return (
     <Box>
       {imageUrl ? (
-        <Box sx={{ textAlign: 'center' }}>
-          <ImagePreview src={imageUrl} alt="Slide image" />
-          <Box sx={{ mt: 2, display: 'flex', gap: 1, justifyContent: 'center' }}>
-            {onImageGenerate && (
-              <Button
-                variant="outlined"
-                startIcon={<RefreshIcon />}
-                onClick={handleImageGenerate}
-                disabled={isLoading || !prompt.trim()}
-              >
-                Regenerate Image
-              </Button>
-            )}
-          </Box>
+        <Box sx={{ textAlign: 'center', position: 'relative', display: 'inline-block', width: '100%' }}>
+          <ImagePreview src={imageUrl} alt="Slide image" style={{ opacity: isLoading ? 0.3 : 1, filter: isLoading ? 'blur(2px)' : 'none', transition: 'opacity 0.2s, filter 0.2s' }} />
+          {/* Overlay spinner and message when generating */}
+          {isLoading && (
+            <Box sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: 'rgba(255,255,255,0.7)',
+              zIndex: 20,
+              borderRadius: 2,
+            }}>
+              <CircularProgress size={48} />
+              <Typography variant="subtitle1" sx={{ mt: 2, color: 'text.secondary' }}>
+                Generating image...
+              </Typography>
+            </Box>
+          )}
         </Box>
       ) : (
         <UploadContainer
@@ -146,7 +168,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center', width: '100%', maxWidth: 400 }}>
                 {onImageGenerate && (
                   <TextField
-                    label="Image Prompt"
+                    label="image_prompt"
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     fullWidth
@@ -188,6 +210,21 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
             </>
           )}
         </UploadContainer>
+      )}
+      {/* Move re-generate button below image preview */}
+      {imageUrl && onImageGenerate && !isLoading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+          <Button
+            variant="contained"
+            color="secondary"
+            size="small"
+            startIcon={<RefreshIcon />}
+            disabled={isLoading}
+            onClick={handleImageGenerate}
+          >
+            Re-generate
+          </Button>
+        </Box>
       )}
     </Box>
   );

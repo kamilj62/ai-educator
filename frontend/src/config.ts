@@ -14,6 +14,9 @@ export const API_CONFIG = {
   }
 } as const;
 
+// DEBUG: Log API base URL for troubleshooting
+console.log('[config] API_CONFIG.BASE_URL:', API_CONFIG.BASE_URL);
+
 // Retry configuration for API calls
 export const API_RETRY_CONFIG = {
   maxRetries: 3,

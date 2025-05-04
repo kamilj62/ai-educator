@@ -12,7 +12,7 @@ import { setSlides, setActiveSlide } from '../../store/presentationSlice';
 import SlideSorter from './components/SlideSorter';
 import SavePresentation from './components/SavePresentation';
 import SlideEditDialog from './components/SlideEditDialog';
-import { Slide, ImageService, SlideImage } from './types';
+import { Slide, ImageService, SlideImage, SlideTopic } from './types';
 import SlideLayoutRenderer from './components/SlideLayoutRenderer';
 import { backendSlideToFrontend } from './utils';
 
@@ -62,15 +62,29 @@ const SlideEditor: React.FC = () => {
     return URL.createObjectURL(file);
   };
 
+  // Enhance prompts for better image quality
+  const IMAGE_PROMPT_QUALITY_TEMPLATE = 'highly detailed, photorealistic, trending on ArtStation, 4k, vibrant colors, dramatic lighting';
+
+  const enhancePrompt = (prompt: string) => {
+    if (!prompt) return IMAGE_PROMPT_QUALITY_TEMPLATE;
+    // Avoid duplicating the template if user already added it
+    if (prompt.toLowerCase().includes('artstation') || prompt.toLowerCase().includes('photorealistic')) {
+      return prompt;
+    }
+    return `${prompt}, ${IMAGE_PROMPT_QUALITY_TEMPLATE}`;
+  };
+
   const handleImageGenerate = async (prompt: string, service: ImageService = 'dalle'): Promise<SlideImage> => {
     try {
-      const response = await fetch('http://localhost:8000/api/generate-image', {
+      // Enhance the prompt before sending to backend
+      const enhancedPrompt = enhancePrompt(prompt);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/generate/image`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          prompt,
+          prompt: enhancedPrompt,
           context: { service }
         }),
       });
@@ -82,10 +96,17 @@ const SlideEditor: React.FC = () => {
       }
 
       const data = await response.json();
+      // Support both imageUrl (old Flask) and image_url (FastAPI)
+      let url = data.imageUrl || data.image_url || '';
+      // If url is a relative path, prepend backend base URL
+      if (url && url.startsWith('/static/')) {
+        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '');
+        url = baseUrl ? `${baseUrl}${url}` : url;
+      }
       return {
-        url: data.imageUrl,
-        alt: prompt,
-        prompt,
+        url,
+        alt: enhancedPrompt,
+        prompt: enhancedPrompt,
         service,
       };
     } catch (error) {
@@ -125,6 +146,42 @@ const SlideEditor: React.FC = () => {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
+  const [topics, setTopics] = useState<SlideTopic[]>([]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (typeof window !== 'undefined' && (window as any).topicsToGenerate) {
+        setTopics((window as any).topicsToGenerate);
+      }
+    }, 200); // check every 200ms
+    return () => clearInterval(interval);
+  }, []);
+
+  const getTopicForSlide = (slide: Slide): SlideTopic | undefined => {
+    if (!slide || !slide.content || !slide.content.title) return undefined;
+    // Fuzzy match: ignore punctuation and spaces, match lowercased
+    const normalize = (str: string) => str.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    console.log('Normalized topic title:', normalize(slide.content.title));
+    console.log('Normalized topic titles:', topics.map(t => normalize(t.title)));
+    return topics.find(
+      (topic: SlideTopic) =>
+        normalize(topic.title) === normalize(slide.content.title)
+    );
+  };
+
+  // Debug logs for topic matching
+  console.log('topics:', topics);
+  console.log('activeSlide:', activeSlide);
+  if (activeSlide) {
+    console.log('activeSlide.content.title:', activeSlide.content.title);
+    console.log('All topic titles:', topics.map(t => t.title));
+  }
+  if (activeSlide) {
+    console.log('getTopicForSlide(activeSlide):', getTopicForSlide(activeSlide));
+  }
+
+  if (!activeSlide) return null;
+
   return (
     <Box ref={editorRef} sx={{ 
       height: '100%', 
@@ -163,7 +220,7 @@ const SlideEditor: React.FC = () => {
           <span>
             <IconButton
               onClick={() => setSaveDialogOpen(true)}
-              disabled={true} // Removed slides check
+              disabled={false} 
               size="large"
             >
               <SaveIcon />
@@ -212,12 +269,11 @@ const SlideEditor: React.FC = () => {
           position: 'relative'
         }}>
           {activeSlide ? (
-            <SlideLayoutRenderer slide={activeSlide} />
-          ) : (
-            <Typography variant="h6" sx={{ textAlign: 'center', mt: 4 }}>
-              Select a slide to edit
-            </Typography>
-          )}
+            <SlideLayoutRenderer
+              slide={activeSlide}
+              onChange={updated => dispatch(setSlides(slides.map(s => s.id === updated.id ? updated : s)))}
+            />
+          ) : null}
         </Box>
       </Box>
 
@@ -228,11 +284,12 @@ const SlideEditor: React.FC = () => {
         slides={slides}
       />
 
-      {activeSlide && (
+      {activeSlide && topics.length > 0 && (
         <SlideEditDialog
           open={editDialogOpen}
           onClose={() => setEditDialogOpen(false)}
           slide={activeSlide}
+          topic={getTopicForSlide(activeSlide)}
           onSave={handleSlideChange}
           onImageUpload={handleImageUpload}
           onImageGenerate={handleImageGenerate}
