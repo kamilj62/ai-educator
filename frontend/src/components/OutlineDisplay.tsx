@@ -145,6 +145,8 @@ const OutlineDisplay: React.FC = () => {
     if (outline) {
       collectTopics(outline);
       console.log('Topics to generate:', topicsToGenerate);
+      // Set topicsToGenerate on window so SlideEditor can access it
+      (window as any).topicsToGenerate = topicsToGenerate;
       dispatch(generateSlides(topicsToGenerate));
     } else {
       console.warn('No outline found when trying to generate slides.');

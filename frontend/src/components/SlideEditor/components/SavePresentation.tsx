@@ -25,52 +25,34 @@ const SavePresentation: React.FC<SavePresentationProps> = ({
     const pptx = new pptxgen();
 
     // Convert each slide to PowerPoint format
-    for (const slide of slides) {
+    for (let i = 0; i < slides.length; i++) {
+      const slide = slides[i];
       const pptSlide = pptx.addSlide();
 
       // Add title
-      pptSlide.addText(slide.content.title, {
-        x: 0.5,
-        y: 0.5,
-        w: '90%',
-        fontSize: 24,
-        bold: true,
-      });
+      if (slide.content.title) {
+        pptSlide.addText(slide.content.title, {
+          x: 0.5,
+          y: 0.5,
+          w: '90%',
+          fontSize: 24,
+          bold: true,
+        });
+      }
+
+      // Add subtitle if present
+      if (slide.content.subtitle) {
+        pptSlide.addText(slide.content.subtitle, {
+          x: 0.5,
+          y: 1.1,
+          w: '90%',
+          fontSize: 16,
+          italic: true,
+          color: '666666',
+        });
+      }
 
       // Add content based on layout
-      if (slide.content.body) {
-        pptSlide.addText(slide.content.body, {
-          x: 0.5,
-          y: 1.5,
-          w: '90%',
-          fontSize: 14,
-        });
-      }
-
-      if (slide.content.bullets) {
-        pptSlide.addText(slide.content.bullets.map(b => ({ text: b.text })), {
-          x: 0.5,
-          y: 1.5,
-          w: '90%',
-          bullet: true,
-          fontSize: 14,
-        });
-      }
-
-      if (slide.content.image?.url) {
-        try {
-          pptSlide.addImage({
-            path: slide.content.image.url,
-            x: 0.5,
-            y: slide.content.bullets || slide.content.body ? 3 : 1.5,
-            w: '90%',
-            h: 3,
-          });
-        } catch (error) {
-          console.error('Error adding image:', error);
-        }
-      }
-
       if (slide.layout === 'two-column' && slide.content.columnLeft && slide.content.columnRight) {
         pptSlide.addText(slide.content.columnLeft, {
           x: 0.5,
@@ -84,6 +66,38 @@ const SavePresentation: React.FC<SavePresentationProps> = ({
           w: '45%',
           fontSize: 14,
         });
+      } else if (slide.content.bullets && slide.content.bullets.length > 0) {
+        // Parse HTML bullet string to array of text
+        const bulletsArr = slide.content.bullets.replace(/<\/?ul>/g, '').split(/<li>|<\/li>/).filter(Boolean).map(text => ({ text }));
+        pptSlide.addText(bulletsArr, {
+          x: 0.5,
+          y: 1.5,
+          w: '90%',
+          bullet: true,
+          fontSize: 14,
+        });
+      } else if (slide.content.body) {
+        pptSlide.addText(slide.content.body, {
+          x: 0.5,
+          y: 1.5,
+          w: '90%',
+          fontSize: 14,
+        });
+      }
+
+      // Add image if present
+      if (slide.content.image?.url) {
+        try {
+          pptSlide.addImage({
+            path: slide.content.image.url,
+            x: 0.5,
+            y: 3.2,
+            w: '90%',
+            h: 3,
+          });
+        } catch (error) {
+          console.error('Error adding image:', error);
+        }
       }
     }
 

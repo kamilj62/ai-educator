@@ -12,9 +12,10 @@ interface TiptapEditorProps {
   editable?: boolean;
   onMount?: (editor: any) => void;
   bulletList?: boolean;
+  type?: 'body' | 'slide' | 'bullet';
 }
 
-const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', editable = true, onMount, bulletList }: TiptapEditorProps) => {
+const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', editable = true, onMount, bulletList, type, ...rest }: TiptapEditorProps) => {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -68,7 +69,7 @@ const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', edit
   }, [editor]);
 
   return (
-    <Box className="tiptap-editor-container">
+    <Box className="tiptap-editor-container" {...rest}>
       {editor && <EditorToolbar editor={editor} />}
       <Box className="tiptap-editor">
         <EditorContent editor={editor} />

@@ -55,20 +55,22 @@ const EditDialog: React.FC<EditDialogProps> = ({
   const handleAddBulletPoint = () => {
     console.log('[EditDialog] handleAddBulletPoint: Adding bullet', newBulletPoint);
     if (!newBulletPoint.trim()) return;
-    
+
+    // Parse bullets HTML string into array
+    const bulletsArr = (editedSlide?.bullets || '').replace(/<\/?ul>/g, '').split(/<li>|<\/li>/).filter(Boolean);
+    bulletsArr.push(newBulletPoint.trim());
+    const bulletsHtml = `<ul>${bulletsArr.map(b => `<li>${b}</li>`).join('')}</ul>`;
+
     if (!editedSlide) {
       setEditedSlide({
         title: editedTopic.title,
-        bullets: [{ text: newBulletPoint, subpoints: [] }],
+        bullets: bulletsHtml,
       });
       console.log('[EditDialog] handleAddBulletPoint: Created new editedSlide with bullet');
     } else {
       setEditedSlide({
         ...editedSlide,
-        bullets: [
-          ...(editedSlide.bullets || []),
-          { text: newBulletPoint, subpoints: [] },
-        ],
+        bullets: bulletsHtml,
       });
       console.log('[EditDialog] handleAddBulletPoint: Added bullet to existing editedSlide');
     }
@@ -78,27 +80,24 @@ const EditDialog: React.FC<EditDialogProps> = ({
   const handleDeleteBulletPoint = (index: number) => {
     console.log('[EditDialog] handleDeleteBulletPoint: Deleting bullet at', index);
     if (!editedSlide) return;
-    
-    const updatedBullets = (editedSlide.bullets || []).filter((_, i) => i !== index);
+    const bulletsArr = (editedSlide.bullets || '').replace(/<\/?ul>/g, '').split(/<li>|<\/li>/).filter(Boolean);
+    bulletsArr.splice(index, 1);
+    const bulletsHtml = `<ul>${bulletsArr.map(b => `<li>${b}</li>`).join('')}</ul>`;
     setEditedSlide({
       ...editedSlide,
-      bullets: updatedBullets,
+      bullets: bulletsHtml,
     });
   };
 
   const handleEditBulletPoint = (index: number, newText: string) => {
     console.log('[EditDialog] handleEditBulletPoint: Editing bullet', { index, newText });
     if (!editedSlide) return;
-    
-    const updatedBullets = [...(editedSlide.bullets || [])];
-    updatedBullets[index] = {
-      ...updatedBullets[index],
-      text: newText,
-    };
-    
+    const bulletsArr = (editedSlide.bullets || '').replace(/<\/?ul>/g, '').split(/<li>|<\/li>/).filter(Boolean);
+    bulletsArr[index] = newText;
+    const bulletsHtml = `<ul>${bulletsArr.map(b => `<li>${b}</li>`).join('')}</ul>`;
     setEditedSlide({
       ...editedSlide,
-      bullets: updatedBullets,
+      bullets: bulletsHtml,
     });
   };
 
@@ -162,12 +161,12 @@ const EditDialog: React.FC<EditDialogProps> = ({
 
         {editedSlide?.bullets && (
           <List>
-            {editedSlide.bullets.map((bullet: BulletPoint, index: number) => (
+            {editedSlide.bullets.replace(/<\/?ul>/g, '').split(/<li>|<\/li>/).filter(Boolean).map((bullet: string, index: number) => (
               <ListItem key={index} sx={{ py: 1 }}>
                 <TextField
                   fullWidth
                   size="small"
-                  value={bullet.text}
+                  value={bullet}
                   onChange={(e) => handleEditBulletPoint(index, e.target.value)}
                   sx={{ mr: 1 }}
                 />

@@ -153,7 +153,17 @@ const SlidePreview: React.FC<SlidePreviewProps> = ({
   };
 
   // Helper to safely get array fields
-  const getArray = (field: any) => Array.isArray(field) ? field : [];
+  const getArray = (field: any) => {
+    if (!field) return [];
+    if (Array.isArray(field)) return field;
+    // If field is a string of bullet HTML, extract <li>...</li> as bullet points
+    if (typeof field === 'string' && field.trim().startsWith('<ul')) {
+      // Extract text between <li>...</li>
+      const matches = Array.from(field.matchAll(/<li>(.*?)<\/li>/g)).map(m => ({ text: m[1] }));
+      return matches.length > 0 ? matches : [];
+    }
+    return [];
+  };
 
   return (
     <Box sx={{ p: 2 }}>

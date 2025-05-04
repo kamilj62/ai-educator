@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { store } from '../store/store';
+import '../components/SlideEditor/layouts/SlideEditorImageFix.css';
 
 const theme = createTheme({
   palette: {

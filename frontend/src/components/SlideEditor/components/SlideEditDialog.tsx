@@ -22,7 +22,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import ImageIcon from '@mui/icons-material/Image';
-import { Slide, SlideLayout, BulletPoint, ImageService, SlideImage } from '../types';
+import { Slide, SlideLayout, BulletPoint, ImageService, SlideImage, SlideTopic } from '../types';
 import { convertLayoutToFrontend, convertLayoutToBackend } from '../utils';
 import ImageUploader from './ImageUploader';
 import TiptapEditor from './TiptapEditor'; // Import TiptapEditor
@@ -31,6 +31,7 @@ interface SlideEditDialogProps {
   open: boolean;
   onClose: () => void;
   slide: Slide;
+  topic?: SlideTopic;
   onSave: (slide: Slide) => void;
   onImageUpload?: (file: File) => Promise<string>;
   onImageGenerate?: (prompt: string, service?: ImageService) => Promise<SlideImage>;
@@ -73,19 +74,43 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   open,
   onClose,
   slide,
+  topic,
   onSave,
   onImageUpload,
   onImageGenerate,
 }) => {
+  // DEBUG: Log if onImageGenerate is present
+  console.log('[SlideEditDialog] onImageGenerate present:', typeof onImageGenerate === 'function');
+
+  // Helper to normalize bullets to HTML string
+  function normalizeBulletsForDialog(bullets: any): string {
+    if (!bullets) return '';
+    if (typeof bullets === 'string') {
+      if (bullets.trim().startsWith('<ul')) return bullets;
+      const lines = bullets.split('\n').map(l => l.trim()).filter(Boolean);
+      if (lines.length) return `<ul>${lines.map(l => `<li>${l}</li>`).join('')}</ul>`;
+      return '';
+    }
+    if (Array.isArray(bullets)) {
+      const lines = bullets.map(b => typeof b === 'string' ? b : (b && b.text ? b.text : '')).filter(Boolean);
+      if (lines.length) return `<ul>${lines.map(l => `<li>${l}</li>`).join('')}</ul>`;
+      return '';
+    }
+    return '';
+  }
+
   // Only update editedSlide when the dialog is opened or the slide changes (not on every render)
   const [editedSlide, setEditedSlide] = useState<Slide>(() => {
     const baseContent = {
       ...slide.content,
-      bullets: slide.content.bullets ? [...slide.content.bullets] : [],
+      // Normalize bullets for all possible input types
+      bullets: normalizeBulletsForDialog(slide.content.bullets),
     };
     const layout = convertLayoutToFrontend(slide.layout);
-    console.log('SlideEditDialog INIT layout:', layout, 'baseContent:', baseContent);
-    // TEMP: Force fallback for all layouts if image missing
+    // Ensure image_prompt is present from slide.content if missing
+    if (!('image_prompt' in baseContent) && 'image_prompt' in slide.content) {
+      baseContent.image_prompt = slide.content.image_prompt;
+    }
     if (!baseContent.image) {
       baseContent.image = {
         url: '',
@@ -101,15 +126,20 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     };
   });
 
+  console.log('SlideEditDialog topic:', topic);
+  console.log('SlideEditDialog defaultImagePrompt:', editedSlide.content.image_prompt || topic?.image_prompt || slide.content.image_prompt || '');
+
   useEffect(() => {
     if (open) {
       const validLayout = convertLayoutToFrontend(slide.layout);
       const baseContent = {
         ...slide.content,
-        bullets: slide.content.bullets ? [...slide.content.bullets] : [],
+        // Normalize bullets for all possible input types
+        bullets: normalizeBulletsForDialog(slide.content.bullets),
       };
-      console.log('SlideEditDialog EFFECT layout:', validLayout, 'baseContent:', baseContent);
-      // TEMP: Force fallback for all layouts if image missing
+      if (!('image_prompt' in baseContent) && 'image_prompt' in slide.content) {
+        baseContent.image_prompt = slide.content.image_prompt;
+      }
       if (!baseContent.image) {
         baseContent.image = {
           url: '',
@@ -131,19 +161,30 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   const [imageError, setImageError] = useState<string | null>(null);
 
   const handleLayoutChange = (newLayout: SlideLayout) => {
-    setEditedSlide((prev) => ({
-      ...prev,
-      layout: newLayout,
-      content: {
-        ...prev.content,
-      },
-    }));
+    setEditedSlide((prev) => {
+      // Remove image if switching to a layout that does not support images
+      const imageLayouts = [
+        'title-body-image',
+        'title-bullets-image',
+        'title-image',
+        'two-column-image',
+      ];
+      const shouldKeepImage = imageLayouts.includes(newLayout);
+      return {
+        ...prev,
+        layout: newLayout,
+        content: {
+          ...prev.content,
+          image: shouldKeepImage ? prev.content.image : undefined,
+        },
+      };
+    });
   };
 
-  const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleTitleChange = (content: string) => {
     setEditedSlide({
       ...editedSlide,
-      content: { ...editedSlide.content, title: event.target.value },
+      content: { ...editedSlide.content, title: content },
     });
   };
 
@@ -154,69 +195,98 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     });
   };
 
-  const handleBodyChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleBodyChange = (content: string) => {
     setEditedSlide({
       ...editedSlide,
-      content: { ...editedSlide.content, body: event.target.value },
+      content: { ...editedSlide.content, body: content },
     });
   };
 
   const handleBulletAdd = () => {
-    const newBullets = [...(editedSlide.content.bullets || []), { text: '' }];
+    // Parse the current bullets HTML string into an array, add a new empty bullet, then convert back to HTML string
+    let bulletsArr: string[] = [];
+    if (typeof editedSlide.content.bullets === 'string') {
+      bulletsArr = editedSlide.content.bullets
+        .replace(/<ul>|<\/ul>/g, '')
+        .split(/<li>|<\/li>/)
+        .map(b => b.trim())
+        .filter(Boolean);
+    }
+    bulletsArr.push('');
+    const bulletsHtml = `<ul>${bulletsArr.map(b => `<li>${b}</li>`).join('')}</ul>`;
     setEditedSlide({
       ...editedSlide,
       content: {
         ...editedSlide.content,
-        bullets: newBullets
-      }
-    });
-  };
-
-  const handleBulletDelete = (index: number) => {
-    const newBullets = [...(editedSlide.content.bullets || [])];
-    newBullets.splice(index, 1);
-    setEditedSlide({
-      ...editedSlide,
-      content: {
-        ...editedSlide.content,
-        bullets: newBullets
-      }
+        bullets: bulletsHtml,
+      },
     });
   };
 
   const handleBulletChange = (index: number, value: string) => {
-    const newBullets = [...(editedSlide.content.bullets || [])];
-    newBullets[index] = { text: value };
+    // Parse HTML to array, change, then convert back to HTML
+    let bulletsArr: string[] = [];
+    if (typeof editedSlide.content.bullets === 'string') {
+      bulletsArr = editedSlide.content.bullets
+        .replace(/<ul>|<\/ul>/g, '')
+        .split(/<li>|<\/li>/)
+        .map(b => b.trim())
+        .filter(Boolean);
+    }
+    bulletsArr[index] = value;
+    const bulletsHtml = `<ul>${bulletsArr.map(b => `<li>${b}</li>`).join('')}</ul>`;
     setEditedSlide({
       ...editedSlide,
       content: {
         ...editedSlide.content,
-        bullets: newBullets
-      }
-    });
-  };
-
-  const handleColumnLeftChange = (value: string) => {
-    setEditedSlide({
-      ...editedSlide,
-      content: {
-        ...editedSlide.content,
-        columnLeft: value,
+        bullets: bulletsHtml,
       },
     });
   };
 
-  const handleColumnRightChange = (value: string) => {
+  const handleBulletDelete = (index: number) => {
+    // Parse HTML to array, delete, then convert back to HTML
+    let bulletsArr: string[] = [];
+    if (typeof editedSlide.content.bullets === 'string') {
+      bulletsArr = editedSlide.content.bullets
+        .replace(/<ul>|<\/ul>/g, '')
+        .split(/<li>|<\/li>/)
+        .map(b => b.trim())
+        .filter(Boolean);
+    }
+    bulletsArr.splice(index, 1);
+    const bulletsHtml = `<ul>${bulletsArr.map(b => `<li>${b}</li>`).join('')}</ul>`;
     setEditedSlide({
       ...editedSlide,
       content: {
         ...editedSlide.content,
-        columnRight: value,
+        bullets: bulletsHtml,
       },
     });
   };
 
-  const handleImageChange = (image: SlideImage) => {
+  const handleColumnLeftChange = (content: string) => {
+    setEditedSlide({
+      ...editedSlide,
+      content: {
+        ...editedSlide.content,
+        columnLeft: content,
+      },
+    });
+  };
+
+  const handleColumnRightChange = (content: string) => {
+    setEditedSlide({
+      ...editedSlide,
+      content: {
+        ...editedSlide.content,
+        columnRight: content,
+      },
+    });
+  };
+
+  // Fix: useCallback for handleImageChange to avoid lint warning
+  const handleImageChange = useCallback((image: SlideImage) => {
     setEditedSlide((prev) => ({
       ...prev,
       content: {
@@ -224,17 +294,16 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
         image,
       },
     }));
-  };
+  }, []);
 
-  const handleImageGenerate = useCallback(async (prompt: string) => {
-    if (!onImageGenerate) return;
-    try {
-      console.log('SlideEditDialog - Generating image with prompt:', prompt);
-      const image = await onImageGenerate(prompt, 'dalle');
-      handleImageChange(image);
-    } catch (err) {
-      console.error('Failed to generate image:', err);
+  // Correctly type handleImageGenerate to match the expected prop signature
+  const handleImageGenerate = useCallback(async (prompt: string, service: ImageService = 'dalle'): Promise<SlideImage> => {
+    if (!onImageGenerate) {
+      throw new Error('onImageGenerate is not defined');
     }
+    const image = await onImageGenerate(prompt, service);
+    handleImageChange(image);
+    return image;
   }, [onImageGenerate, handleImageChange]);
 
   useEffect(() => {
@@ -277,6 +346,17 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
 
   const currentLayout = layoutOptions.find(option => option.value === editedSlide.layout) ? editedSlide.layout : 'title-bullets';
 
+  // Priority: editedSlide.content.image_prompt > topic?.image_prompt > slide.content.image_prompt
+  const defaultImagePrompt = editedSlide.content.image_prompt || topic?.image_prompt || slide.content.image_prompt || '';
+
+  // Helper to ensure content is a string before using startsWith
+  const getHtmlContent = (content: any): string => {
+    if (!content) return '';
+    if (typeof content !== 'string') return '';
+    if (content.startsWith('<')) return content;
+    return `<p>${content}</p>`;
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Edit Slide</DialogTitle>
@@ -298,11 +378,10 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
             </Select>
           </FormControl>
 
-          <TextField
-            label="Title"
-            fullWidth
-            value={editedSlide.content.title || ''}
+          <TiptapEditor
+            content={getHtmlContent(editedSlide.content.title)}
             onChange={handleTitleChange}
+            placeholder="Enter slide title..."
           />
 
           <TextField
@@ -313,44 +392,42 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
           />
 
           {(editedSlide.layout === 'title-body' || editedSlide.layout === 'title-body-image') && (
-            <TextField
-              fullWidth
-              label="Body"
-              multiline
-              rows={4}
-              value={editedSlide.content.body || ''}
+            <TiptapEditor
+              content={getHtmlContent(editedSlide.content.body)}
               onChange={handleBodyChange}
+              placeholder="Enter slide body..."
             />
           )}
 
           {(editedSlide.layout === 'title-bullets' || editedSlide.layout === 'title-bullets-image') && (
             <Box>
               <Typography variant="h6" gutterBottom>Bullet Points</Typography>
-              {editedSlide.content.bullets?.map((bullet, index) => (
-                <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                  <TextField
-                    fullWidth
-                    value={bullet.text}
-                    onChange={(e) => handleBulletChange(index, e.target.value)}
-                    placeholder={`Bullet point ${index + 1}`}
-                  />
-                  <IconButton 
-                    onClick={() => handleBulletDelete(index)}
-                    color="error"
-                    size="small"
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
-              ))}
-              <Button
-                startIcon={<AddIcon />}
-                onClick={handleBulletAdd}
-                variant="outlined"
-                size="small"
-                sx={{ mt: 1 }}
-              >
-                Add Bullet Point
+              {(() => {
+                // Parse HTML to array for editing
+                let bulletsArr: string[] = [];
+                if (typeof editedSlide.content.bullets === 'string') {
+                  bulletsArr = editedSlide.content.bullets
+                    .replace(/<ul>|<\/ul>/g, '')
+                    .split(/<li>|<\/li>/)
+                    .map(b => b.trim())
+                    .filter(Boolean);
+                }
+                return bulletsArr.map((bullet, index) => (
+                  <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                    <TextField
+                      fullWidth
+                      value={bullet}
+                      onChange={e => handleBulletChange(index, e.target.value)}
+                      placeholder={`Bullet point ${index + 1}`}
+                    />
+                    <IconButton onClick={() => handleBulletDelete(index)}>
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                ));
+              })()}
+              <Button onClick={handleBulletAdd} variant="outlined" sx={{ mt: 1 }}>
+                Add Bullet
               </Button>
             </Box>
           )}
@@ -358,23 +435,17 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
           {editedSlide.layout === 'two-column' && (
             <Grid container spacing={2}>
               <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Left Column"
-                  multiline
-                  rows={4}
-                  value={editedSlide.content.columnLeft || ''}
-                  onChange={(e) => handleColumnLeftChange(e.target.value)}
+                <TiptapEditor
+                  content={getHtmlContent(editedSlide.content.columnLeft)}
+                  onChange={handleColumnLeftChange}
+                  placeholder="Enter left column content..."
                 />
               </Grid>
               <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Right Column"
-                  multiline
-                  rows={4}
-                  value={editedSlide.content.columnRight || ''}
-                  onChange={(e) => handleColumnRightChange(e.target.value)}
+                <TiptapEditor
+                  content={getHtmlContent(editedSlide.content.columnRight)}
+                  onChange={handleColumnRightChange}
+                  placeholder="Enter right column content..."
                 />
               </Grid>
             </Grid>
@@ -389,7 +460,8 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
                 image={editedSlide.content.image}
                 onImageChange={handleImageChange}
                 onImageUpload={onImageUpload}
-                onImageGenerate={onImageGenerate}
+                onImageGenerate={handleImageGenerate}
+                prompt={defaultImagePrompt}
               />
               {imageError && (
                 <Typography color="warning" variant="body2" sx={{ mt: 1 }}>{imageError}</Typography>

@@ -3,13 +3,13 @@ import TitleBulletsLayout from '../layouts/TitleBulletsLayout';
 import TitleBodyLayout from '../layouts/TitleBodyLayout';
 import TitleImageLayout from '../layouts/TitleImageLayout';
 import TwoColumnLayout from '../layouts/TwoColumnLayout';
-import type { Slide, SlideLayout, SlideImage } from '../types';
+import type { Slide, SlideLayout, SlideImage, ImageService } from '../types';
 
 interface SlideLayoutRendererProps {
   slide: Slide;
   onChange?: (slide: Slide) => void;
   onImageUpload?: (file: File) => Promise<string>;
-  onImageGenerate?: (prompt: string, service?: string) => Promise<SlideImage>;
+  onImageGenerate?: (prompt: string, service?: ImageService) => Promise<SlideImage>;
 }
 
 const SlideLayoutRenderer: React.FC<SlideLayoutRendererProps> = ({ slide, onChange = () => {}, onImageUpload, onImageGenerate }) => {
@@ -21,7 +21,7 @@ const SlideLayoutRenderer: React.FC<SlideLayoutRendererProps> = ({ slide, onChan
     case 'title-image':
       return <TitleImageLayout slide={slide} onChange={onChange} onImageUpload={onImageUpload} onImageGenerate={onImageGenerate} />;
     case 'title-body-image':
-      return <TitleBodyLayout slide={slide} onChange={onChange} onImageUpload={onImageUpload} onImageGenerate={onImageGenerate} />;
+      return <TitleBodyLayout slide={slide} onChange={onChange} />;
     case 'two-column':
       return <TwoColumnLayout slide={slide} onChange={onChange} />;
     default:
