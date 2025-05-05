@@ -95,6 +95,18 @@ const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', edit
           ring: 2px;
           ring-color: #4f46e5;
         }
+        .tiptap-editor .ProseMirror {
+          font-size: 16px !important;
+        }
+        .tiptap-editor .ProseMirror h1 {
+          font-size: 20px !important;
+        }
+        .tiptap-editor .ProseMirror h2 {
+          font-size: 18px !important;
+        }
+        .tiptap-editor .ProseMirror h3 {
+          font-size: 16px !important;
+        }
         .ProseMirror {
           > * + * {
             margin-top: 0.75em;

@@ -6,15 +6,20 @@ import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
+import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../store/store';
 import { setSlides, setActiveSlide } from '../../store/presentationSlice';
 import SlideSorter from './components/SlideSorter';
 import SavePresentation from './components/SavePresentation';
 import SlideEditDialog from './components/SlideEditDialog';
-import { Slide, ImageService, SlideImage, SlideTopic } from './types';
+import { Slide, ImageService, SlideImage, SlideTopic, BackendSlideLayout } from './types';
 import SlideLayoutRenderer from './components/SlideLayoutRenderer';
-import { backendSlideToFrontend } from './utils';
+import { backendSlideToFrontend, convertLayoutToFrontend, convertLayoutToBackend } from './utils';
+import EditorControls from './components/EditorControls';
+
+const DEFAULT_BG_COLOR = '#fff';
+const DEFAULT_FONT_COLOR = '#222';
 
 const SlideEditor: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -23,11 +28,37 @@ const SlideEditor: React.FC = () => {
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
-  // Redux selectors
   const slides = useSelector((state: RootState) => state.presentation.slides);
   const activeSlideId = useSelector((state: RootState) => state.presentation.activeSlideId);
+  const activeSlideIdx = slides.findIndex(s => s.id === activeSlideId);
 
-  // Find the active slide if any
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (["ArrowRight", "ArrowDown", " ", "Enter"].includes(e.key)) {
+        if (activeSlideIdx < slides.length - 1) {
+          dispatch(setActiveSlide(slides[activeSlideIdx + 1].id));
+        }
+        e.preventDefault();
+      } else if (["ArrowLeft", "ArrowUp"].includes(e.key)) {
+        if (activeSlideIdx > 0) {
+          dispatch(setActiveSlide(slides[activeSlideIdx - 1].id));
+        }
+        e.preventDefault();
+      } else if (e.key === "Escape") {
+        document.exitFullscreen();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFullscreen, activeSlideIdx, slides, dispatch]);
+
+  useEffect(() => {
+    if (slides.length > 0 && !activeSlideId) {
+      dispatch(setActiveSlide(slides[0].id));
+    }
+  }, [slides, activeSlideId, dispatch]);
+
   const activeSlide = slides.find(slide => slide.id === activeSlideId);
 
   const handleSlideSelect = async (slideId: string) => {
@@ -35,14 +66,12 @@ const SlideEditor: React.FC = () => {
   };
 
   const handleSlidesReorder = (newSlides: Slide[]) => {
-    // If setSlides expects Slide[], dispatch newSlides directly.
     dispatch(setSlides(newSlides));
   };
 
   const handleSlideDelete = (slideId: string) => {
     const newSlides = slides.filter(slide => slide.id !== slideId);
     dispatch(setSlides(newSlides));
-    // If the deleted slide was active, set the next available slide as active
     if (activeSlideId === slideId && newSlides.length > 0) {
       dispatch(setActiveSlide(newSlides[0].id));
     } else if (newSlides.length === 0) {
@@ -58,16 +87,13 @@ const SlideEditor: React.FC = () => {
   };
 
   const handleImageUpload = async (file: File): Promise<string> => {
-    // TODO: Implement actual file upload
     return URL.createObjectURL(file);
   };
 
-  // Enhance prompts for better image quality
   const IMAGE_PROMPT_QUALITY_TEMPLATE = 'highly detailed, photorealistic, trending on ArtStation, 4k, vibrant colors, dramatic lighting';
 
   const enhancePrompt = (prompt: string) => {
     if (!prompt) return IMAGE_PROMPT_QUALITY_TEMPLATE;
-    // Avoid duplicating the template if user already added it
     if (prompt.toLowerCase().includes('artstation') || prompt.toLowerCase().includes('photorealistic')) {
       return prompt;
     }
@@ -76,7 +102,6 @@ const SlideEditor: React.FC = () => {
 
   const handleImageGenerate = async (prompt: string, service: ImageService = 'dalle'): Promise<SlideImage> => {
     try {
-      // Enhance the prompt before sending to backend
       const enhancedPrompt = enhancePrompt(prompt);
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/generate/image`, {
         method: 'POST',
@@ -88,17 +113,12 @@ const SlideEditor: React.FC = () => {
           context: { service }
         }),
       });
-      console.log('[SlideEditor] Image API response:', response);
-
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.detail || 'Failed to generate image');
       }
-
       const data = await response.json();
-      // Support both imageUrl (old Flask) and image_url (FastAPI)
       let url = data.imageUrl || data.image_url || '';
-      // If url is a relative path, prepend backend base URL
       if (url && url.startsWith('/static/')) {
         const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '');
         url = baseUrl ? `${baseUrl}${url}` : url;
@@ -130,13 +150,8 @@ const SlideEditor: React.FC = () => {
     }
   };
 
-  const handleNextSlide = () => {
-    // Removed setActiveSlide call
-  };
-
-  const handlePreviousSlide = () => {
-    // Removed setActiveSlide call
-  };
+  const handleNextSlide = () => {};
+  const handlePreviousSlide = () => {};
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -147,87 +162,80 @@ const SlideEditor: React.FC = () => {
   }, []);
 
   const [topics, setTopics] = useState<SlideTopic[]>([]);
-
   useEffect(() => {
     const interval = setInterval(() => {
       if (typeof window !== 'undefined' && (window as any).topicsToGenerate) {
         setTopics((window as any).topicsToGenerate);
       }
-    }, 200); // check every 200ms
+    }, 200);
     return () => clearInterval(interval);
   }, []);
 
   const getTopicForSlide = (slide: Slide): SlideTopic | undefined => {
     if (!slide || !slide.content || !slide.content.title) return undefined;
-    // Fuzzy match: ignore punctuation and spaces, match lowercased
     const normalize = (str: string) => str.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-    console.log('Normalized topic title:', normalize(slide.content.title));
-    console.log('Normalized topic titles:', topics.map(t => normalize(t.title)));
     return topics.find(
       (topic: SlideTopic) =>
         normalize(topic.title) === normalize(slide.content.title)
     );
   };
 
-  // Debug logs for topic matching
-  console.log('topics:', topics);
-  console.log('activeSlide:', activeSlide);
-  if (activeSlide) {
-    console.log('activeSlide.content.title:', activeSlide.content.title);
-    console.log('All topic titles:', topics.map(t => t.title));
-  }
-  if (activeSlide) {
-    console.log('getTopicForSlide(activeSlide):', getTopicForSlide(activeSlide));
-  }
-
-  if (!activeSlide) return null;
+  const handleLayoutChange = (slideId: string, newLayout: BackendSlideLayout) => {
+    const newSlides = slides.map(slide =>
+      slide.id === slideId ? { ...slide, layout: newLayout } : slide
+    );
+    dispatch(setSlides(newSlides));
+  };
 
   return (
     <Box ref={editorRef} sx={{ 
       height: '100%', 
       display: 'flex', 
       flexDirection: 'column',
-      position: 'relative'
+      position: 'relative',
+      overflowY: 'hidden',
     }}>
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'flex-end', 
-        gap: 1, 
-        p: 1,
-        bgcolor: 'background.paper',
-        borderBottom: 1,
-        borderColor: 'divider'
-      }}>
-        <Tooltip title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}>
-          <span>
-            <IconButton onClick={toggleFullScreen} size="large">
-              {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
-            </IconButton>
-          </span>
-        </Tooltip>
-        <Tooltip title="Edit Slide">
-          <span>
-            <IconButton
-              onClick={() => setEditDialogOpen(true)}
-              disabled={!activeSlide}
-              size="large"
-            >
-              <EditIcon />
-            </IconButton>
-          </span>
-        </Tooltip>
-        <Tooltip title="Save Presentation">
-          <span>
-            <IconButton
-              onClick={() => setSaveDialogOpen(true)}
-              disabled={false} 
-              size="large"
-            >
-              <SaveIcon />
-            </IconButton>
-          </span>
-        </Tooltip>
-      </Box>
+      {!isFullscreen && (
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'flex-end', 
+          gap: 1, 
+          p: 1,
+          bgcolor: 'background.paper',
+          borderBottom: 1,
+          borderColor: 'divider'
+        }}>
+          <Tooltip title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}>
+            <span>
+              <IconButton onClick={toggleFullScreen} size="large">
+                {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title="Edit Slide">
+            <span>
+              <IconButton
+                onClick={() => setEditDialogOpen(true)}
+                disabled={!activeSlide}
+                size="large"
+              >
+                <EditIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title="Save Presentation">
+            <span>
+              <IconButton
+                onClick={() => setSaveDialogOpen(true)}
+                disabled={false} 
+                size="large"
+              >
+                <SaveIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </Box>
+      )}
       <Box sx={{ 
         display: 'flex', 
         height: '100%',
@@ -261,29 +269,67 @@ const SlideEditor: React.FC = () => {
             />
           </Box>
         )}
-
-        <Box sx={{ 
-          flex: 1, 
-          p: 3, 
-          overflow: 'auto',
-          position: 'relative'
-        }}>
-          {activeSlide ? (
-            <SlideLayoutRenderer
-              slide={activeSlide}
-              onChange={updated => dispatch(setSlides(slides.map(s => s.id === updated.id ? updated : s)))}
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          {!isFullscreen && activeSlide && (
+            <EditorControls
+              onAddSlide={() => {}}
+              onDuplicateSlide={undefined}
+              onDeleteSlide={undefined}
+              onStartPresentation={undefined}
             />
-          ) : null}
+          )}
+          <Box sx={{ p: 2 }} />
+          <Box sx={{ 
+            flex: 1, 
+            p: 3, 
+            overflow: 'auto',
+            position: 'relative',
+            display: 'block',
+            minHeight: '80vh',
+            minWidth: 0,
+          }}>
+            {activeSlide && (
+              <Box
+                sx={{
+                  width: '100%',
+                  background: DEFAULT_BG_COLOR,
+                  p: 0,
+                  minHeight: 400,
+                  position: 'relative',
+                  zIndex: 1000,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    height: '100%',
+                    background: '#fffbe7',
+                    margin: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                  }}
+                >
+                  {activeSlide && (
+                    <SlideLayoutRenderer
+                      slide={activeSlide}
+                      onChange={handleSlideChange}
+                      onImageUpload={handleImageUpload}
+                      onImageGenerate={handleImageGenerate}
+                    />
+                  )}
+                </Box>
+              </Box>
+            )}
+          </Box>
         </Box>
       </Box>
-
       <SavePresentation
         open={saveDialogOpen}
         onClose={() => setSaveDialogOpen(false)}
         onSave={handleSave}
         slides={slides}
       />
-
       {activeSlide && topics.length > 0 && (
         <SlideEditDialog
           open={editDialogOpen}

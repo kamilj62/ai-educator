@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, Typography, Box, IconButton, Tooltip } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
 import { Slide } from '../types';
-import Image from 'next/image';
+import SlideLayoutRenderer from './SlideLayoutRenderer';
 
 interface SortableSlideProps {
   slide: Slide;
@@ -36,56 +36,20 @@ const SortableSlide: React.FC<SortableSlideProps> = ({
                   e.stopPropagation();
                   onDelete();
                 }}
-                sx={{ 
-                  opacity: 0,
-                  transition: 'opacity 0.2s',
-                  '&:hover': { opacity: 1 },
-                  '.MuiCard-root:hover &': { opacity: 0.7 }
-                }}
+                sx={{ ml: 0.5 }}
               >
                 <DeleteIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           )}
         </Box>
-        <Typography
-          variant="body2"
-          sx={{
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            lineHeight: 1.4,
-            fontWeight: isActive ? 500 : 400,
-            color: isActive ? 'primary.main' : 'text.primary',
-          }}
-        >
-          {slide.content.title || 'Untitled Slide'}
-        </Typography>
-
-        {slide.content.image?.url && (
-          <Box
-            sx={{
-              mt: 1,
-              width: '100%',
-              height: '60px',
-              borderRadius: 1,
-              overflow: 'hidden',
-              position: 'relative',
-              bgcolor: 'action.hover',
-            }}
-          >
-            <Image
-              src={slide.content.image.url}
-              alt={slide.content.image.alt || ''}
-              layout="fill"
-              objectFit="cover"
-              style={{ borderRadius: '4px' }}
-              sizes="(max-width: 600px) 100vw, 332px"
-              priority={index === 0}
-            />
+        {/* Only show the title for slide 1 (index 0) in the sorter, otherwise show full preview */}
+        {index === 0 ? (
+          <Box sx={{ textAlign: 'center', fontWeight: 700, fontSize: '1.2rem', color: '#222', py: 2 }}>
+            {slide.content.title}
           </Box>
+        ) : (
+          <SlideLayoutRenderer slide={slide} preview />
         )}
       </Box>
     );

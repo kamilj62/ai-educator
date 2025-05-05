@@ -68,20 +68,6 @@ export const LayoutSelector: React.FC<LayoutSelectorProps> = ({
       features: addLegacyFeatureKeys(getLayoutFeatures('title-image')),
     },
     {
-      layout: 'title-body',
-      title: 'Title and Body',
-      description: 'Classic layout with a title and text content',
-      preview: '📝',
-      features: addLegacyFeatureKeys(getLayoutFeatures('title-body')),
-    },
-    {
-      layout: 'title-body-image',
-      title: 'Title, Body, and Image',
-      description: 'Layout with a title, text content, and an image',
-      preview: '📝🖼️',
-      features: addLegacyFeatureKeys(getLayoutFeatures('title-body-image')),
-    },
-    {
       layout: 'title-bullets',
       title: 'Title and Bullets',
       description: 'Title slide with bullet points',

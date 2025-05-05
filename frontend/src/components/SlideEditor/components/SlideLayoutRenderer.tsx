@@ -3,6 +3,7 @@ import TitleBulletsLayout from '../layouts/TitleBulletsLayout';
 import TitleBodyLayout from '../layouts/TitleBodyLayout';
 import TitleImageLayout from '../layouts/TitleImageLayout';
 import TwoColumnLayout from '../layouts/TwoColumnLayout';
+import TitleOnlyLayout from '../layouts/TitleOnlyLayout';
 import type { Slide, SlideLayout, SlideImage, ImageService } from '../types';
 
 interface SlideLayoutRendererProps {
@@ -10,12 +11,22 @@ interface SlideLayoutRendererProps {
   onChange?: (slide: Slide) => void;
   onImageUpload?: (file: File) => Promise<string>;
   onImageGenerate?: (prompt: string, service?: ImageService) => Promise<SlideImage>;
+  preview?: boolean;
+  slides?: Slide[];
 }
 
-const SlideLayoutRenderer: React.FC<SlideLayoutRendererProps> = ({ slide, onChange = () => {}, onImageUpload, onImageGenerate }) => {
+const SlideLayoutRenderer: React.FC<SlideLayoutRendererProps> = ({ slide, onChange = () => {}, onImageUpload, onImageGenerate, preview, slides }) => {
   switch (slide.layout) {
-    case 'title-bullets':
-      return <TitleBulletsLayout slide={slide} onChange={onChange} />;
+    case 'title-only':
+      return <TitleOnlyLayout slide={slide} onChange={onChange} />;
+    case 'title-bullets': {
+      // Find the index of the current slide in the slides array if available
+      let slideIndex = 0;
+      if (Array.isArray(slides)) {
+        slideIndex = slides.findIndex(s => s.id === slide.id);
+      }
+      return <TitleBulletsLayout slide={slide} index={slideIndex} onChange={onChange} />;
+    }
     case 'title-body':
       return <TitleBodyLayout slide={slide} onChange={onChange} />;
     case 'title-image':
@@ -23,9 +34,9 @@ const SlideLayoutRenderer: React.FC<SlideLayoutRendererProps> = ({ slide, onChan
     case 'title-body-image':
       return <TitleBodyLayout slide={slide} onChange={onChange} />;
     case 'two-column':
-      return <TwoColumnLayout slide={slide} onChange={onChange} />;
+      return <TwoColumnLayout slide={slide} onChange={onChange} preview={preview} />;
     default:
-      return <TitleBulletsLayout slide={slide} onChange={onChange} />;
+      return <TitleOnlyLayout slide={slide} onChange={onChange} />;
   }
 };
 

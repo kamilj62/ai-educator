@@ -10,7 +10,10 @@ import {
   CircularProgress,
   Typography,
   SelectChangeEvent,
+  Paper,
+  InputAdornment
 } from '@mui/material';
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import { useDispatch, useSelector } from 'react-redux';
 import { generateOutline, selectPresentation, selectLoading, selectError } from '../store/presentationSlice';
 import { RootState } from '../store/store';
@@ -51,11 +54,22 @@ const InputSection: React.FC = () => {
   };
 
   return (
-    <Box component="form" sx={{ p: 2 }}>
-      <Typography variant="h6" gutterBottom>
-        Generate Presentation
+    <Paper elevation={6} sx={{
+      p: { xs: 3, md: 4 },
+      borderRadius: 5,
+      background: 'rgba(24,24,27,0.75)',
+      boxShadow: '0 8px 32px 0 rgba(99,102,241,0.12)',
+      backdropFilter: 'blur(8px)',
+      border: '1.5px solid rgba(99,102,241,0.18)',
+      maxWidth: 480,
+      mx: 'auto',
+    }}>
+      <Typography variant="h5" fontWeight={800} sx={{ mb: 2, letterSpacing: 0.5, textAlign: 'center', color: '#fff' }}>
+        <span style={{ color: '#fff' }}>Generate Presentation</span>
       </Typography>
-      {/* Show error message if present */}
+      <Typography variant="body2" sx={{ textAlign: 'center', mb: 3, color: '#a5b4fc', fontWeight: 500 }}>
+        Instantly create a professional outline for your slides
+      </Typography>
       <ErrorDisplay error={error} />
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <TextField
@@ -64,6 +78,11 @@ const InputSection: React.FC = () => {
           onChange={(e) => setContextInput(e.target.value)}
           fullWidth
           required
+          InputProps={{
+            sx: { borderRadius: 3, background: 'rgba(36,37,41,0.85)', color: '#fff', input: { color: '#fff' } },
+            startAdornment: <InputAdornment position="start">📝</InputAdornment>
+          }}
+          InputLabelProps={{ style: { color: '#a5b4fc' } }}
         />
         <TextField
           label="Number of Slides"
@@ -73,13 +92,19 @@ const InputSection: React.FC = () => {
           inputProps={{ min: 1, max: 20 }}
           fullWidth
           required
+          InputProps={{
+            sx: { borderRadius: 3, background: 'rgba(36,37,41,0.85)', color: '#fff', input: { color: '#fff' } },
+            startAdornment: <InputAdornment position="start">#</InputAdornment>
+          }}
+          InputLabelProps={{ style: { color: '#a5b4fc' } }}
         />
         <FormControl fullWidth>
-          <InputLabel>Instructional Level</InputLabel>
+          <InputLabel sx={{ color: '#a5b4fc' }}>Instructional Level</InputLabel>
           <Select
             value={instructionalLevelInput}
             onChange={handleLevelChange}
             label="Instructional Level"
+            sx={{ borderRadius: 3, background: 'rgba(36,37,41,0.85)', color: '#fff', '.MuiSelect-icon': { color: '#a5b4fc' } }}
           >
             <MenuItem value="elementary_school">Elementary School</MenuItem>
             <MenuItem value="middle_school">Middle School</MenuItem>
@@ -91,8 +116,25 @@ const InputSection: React.FC = () => {
         <Button
           onClick={handleGenerateOutline}
           variant="contained"
+          size="large"
           disabled={loading}
-          sx={{ minWidth: 150 }}
+          sx={{
+            minHeight: 54,
+            borderRadius: 3,
+            fontWeight: 800,
+            fontSize: '1.1rem',
+            background: 'linear-gradient(90deg, #6366f1 0%, #0ea5e9 100%)',
+            boxShadow: '0 2px 16px 0 #6366f188',
+            textTransform: 'none',
+            letterSpacing: 0.5,
+            transition: 'box-shadow 0.2s, transform 0.2s',
+            '&:hover': {
+              background: 'linear-gradient(90deg, #6366f1 10%, #a855f7 80%)',
+              boxShadow: '0 4px 24px 0 #6366f1cc',
+              transform: 'scale(1.03)',
+            },
+          }}
+          startIcon={<RocketLaunchIcon sx={{ fontSize: 28 }} />}
         >
           {loading ? (
             <>
@@ -104,7 +146,7 @@ const InputSection: React.FC = () => {
           )}
         </Button>
       </Box>
-    </Box>
+    </Paper>
   );
 };
 

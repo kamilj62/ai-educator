@@ -65,6 +65,8 @@ export type Slide = {
   id: string;
   layout: SlideLayout;
   content: SlideContent;
+  backgroundColor?: string;
+  fontColor?: string;
 };
 
 // Layout conversion utilities

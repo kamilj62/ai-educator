@@ -31,18 +31,6 @@ export const slideLayouts: SlideLayout[] = [
     image: '/title-image.png'
   },
   {
-    id: 'title-body',
-    name: 'Title and Body',
-    description: 'Title with detailed paragraph text',
-    image: '/title-body.png'
-  },
-  {
-    id: 'title-body-image',
-    name: 'Title, Body, and Image',
-    description: 'Title with text and a supporting image',
-    image: '/title-body-image.png'
-  },
-  {
     id: 'title-bullets',
     name: 'Title with Bullets',
     description: 'Title with key points as bullet points',

@@ -5,9 +5,6 @@ import {
   FormatItalic,
   FormatListBulleted,
   FormatListNumbered,
-  FormatQuote,
-  Title,
-  Image as ImageIcon,
 } from '@mui/icons-material';
 import { Editor } from '@tiptap/react';
 
@@ -57,25 +54,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor, onImageClick }) =
       isActive: () => editor?.isActive('orderedList') ?? false,
     },
     { type: 'divider' },
-    {
-      icon: <Title />,
-      title: 'Heading',
-      action: () => editor?.chain().focus().toggleHeading({ level: 2 }).run(),
-      isActive: () => editor?.isActive('heading', { level: 2 }) ?? false,
-    },
-    {
-      icon: <FormatQuote />,
-      title: 'Blockquote',
-      action: () => editor?.chain().focus().toggleBlockquote().run(),
-      isActive: () => editor?.isActive('blockquote') ?? false,
-    },
-    { type: 'divider' },
-    {
-      icon: <ImageIcon />,
-      title: 'Insert Image',
-      action: () => onImageClick?.(),
-      isActive: () => false,
-    },
   ];
 
   return (
