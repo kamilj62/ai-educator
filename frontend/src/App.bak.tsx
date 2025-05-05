@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAppSelector } from './store/hooks';
 import InputSection from './components/InputSection';
@@ -9,28 +8,36 @@ const App: React.FC = () => {
   const slides = useAppSelector(state => state.presentation.slides);
   
   return (
-    <div className="min-h-screen bg-gray-100 py-6 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
+    <div
+      style={{
+        minHeight: '100vh',
+        minWidth: '100vw',
+        background: '#1976d2',
+        margin: 0,
+        padding: 0,
+        borderRadius: 0,
+        boxSizing: 'border-box',
+      }}
+    >
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <h1 style={{ fontSize: 32, fontWeight: 700, color: '#212121' }}>
             Marvel AI Presentation Generator
           </h1>
-          <p className="mt-2 text-gray-600">
+          <p style={{ marginTop: 8, color: '#616161' }}>
             Create engaging presentations with AI-powered content generation
           </p>
         </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-6">
-            <div className="bg-white shadow rounded-lg p-6">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div style={{ background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.12)', borderRadius: 8, padding: 24 }}>
               <InputSection />
             </div>
-            <div className="bg-white shadow rounded-lg p-6">
+            <div style={{ background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.12)', borderRadius: 8, padding: 24 }}>
               <OutlineDisplay />
             </div>
           </div>
-          
-          <div className="bg-white shadow rounded-lg p-6">
+          <div style={{ background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.12)', borderRadius: 8, padding: 24 }}>
             <SlideEditor />
           </div>
         </div>

@@ -61,7 +61,7 @@ const Column = styled(Box)(({ theme }) => ({
   flexDirection: 'column',
   justifyContent: 'flex-start',
   background: '#fff',
-  borderRadius: 6,
+  borderRadius: 0,
   boxShadow: '0 1px 8px rgba(0,0,0,0.05)',
   // border: '1px dashed #d0d', // debug - commented out
   alignItems: 'flex-start',

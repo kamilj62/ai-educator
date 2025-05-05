@@ -17,6 +17,7 @@ import { Slide, ImageService, SlideImage, SlideTopic, BackendSlideLayout } from 
 import SlideLayoutRenderer from './components/SlideLayoutRenderer';
 import { backendSlideToFrontend, convertLayoutToFrontend, convertLayoutToBackend } from './utils';
 import EditorControls from './components/EditorControls';
+import AddIcon from '@mui/icons-material/Add';
 
 const DEFAULT_BG_COLOR = '#fff';
 const DEFAULT_FONT_COLOR = '#222';
@@ -27,6 +28,7 @@ const SlideEditor: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [pendingNewSlide, setPendingNewSlide] = useState(null);
 
   const slides = useSelector((state: RootState) => state.presentation.slides);
   const activeSlideId = useSelector((state: RootState) => state.presentation.activeSlideId);
@@ -201,7 +203,7 @@ const SlideEditor: React.FC = () => {
           justifyContent: 'flex-end', 
           gap: 1, 
           p: 1,
-          bgcolor: 'background.paper',
+          bgcolor: 'primary.light',
           borderBottom: 1,
           borderColor: 'divider'
         }}>
@@ -248,17 +250,20 @@ const SlideEditor: React.FC = () => {
             borderRight: 1, 
             borderColor: 'divider',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            bgcolor: 'primary.main',
+            color: 'white',
           }}>
             <Box sx={{ 
               p: 2, 
               borderBottom: 1, 
               borderColor: 'divider',
+              bgcolor: 'primary.main', // blue background
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center'
             }}>
-              <Typography variant="h6">Slides</Typography>
+              <Typography variant="h6" sx={{ color: 'inherit', fontWeight: 700 }}>Slides</Typography>
             </Box>
             <SlideSorter
               slides={slides}
@@ -269,10 +274,33 @@ const SlideEditor: React.FC = () => {
             />
           </Box>
         )}
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ 
+          flex: 1, 
+          display: 'flex', 
+          flexDirection: 'column',
+          bgcolor: 'primary.light',
+          minHeight: 0, 
+          minWidth: 0, 
+          overflow: 'hidden', 
+        }}>
           {!isFullscreen && activeSlide && (
             <EditorControls
-              onAddSlide={() => {}}
+              onAddSlide={() => {
+                // Prepare a new slide but do not add it yet
+                const { v4: uuidv4 } = require('uuid');
+                const blankSlide = {
+                  id: uuidv4(),
+                  layout: 'title-body',
+                  content: {
+                    title: '',
+                    subtitle: '',
+                    body: '',
+                    bullets: '',
+                  },
+                };
+                setPendingNewSlide(blankSlide);
+                setEditDialogOpen(true);
+              }}
               onDuplicateSlide={undefined}
               onDeleteSlide={undefined}
               onStartPresentation={undefined}
@@ -287,6 +315,7 @@ const SlideEditor: React.FC = () => {
             display: 'block',
             minHeight: '80vh',
             minWidth: 0,
+            bgcolor: 'primary.light',
           }}>
             {activeSlide && (
               <Box
@@ -330,13 +359,25 @@ const SlideEditor: React.FC = () => {
         onSave={handleSave}
         slides={slides}
       />
-      {activeSlide && topics.length > 0 && (
+      {(pendingNewSlide || (activeSlide && topics.length > 0)) && (
         <SlideEditDialog
           open={editDialogOpen}
-          onClose={() => setEditDialogOpen(false)}
-          slide={activeSlide}
-          topic={getTopicForSlide(activeSlide)}
-          onSave={handleSlideChange}
+          onClose={() => {
+            setEditDialogOpen(false);
+            setPendingNewSlide(null);
+          }}
+          slide={pendingNewSlide || activeSlide}
+          topic={pendingNewSlide ? undefined : getTopicForSlide(activeSlide)}
+          onSave={(slide) => {
+            if (pendingNewSlide) {
+              dispatch(setSlides([...slides, slide]));
+              dispatch(setActiveSlide(slide.id));
+              setPendingNewSlide(null);
+            } else {
+              handleSlideChange(slide);
+            }
+            setEditDialogOpen(false);
+          }}
           onImageUpload={handleImageUpload}
           onImageGenerate={handleImageGenerate}
         />

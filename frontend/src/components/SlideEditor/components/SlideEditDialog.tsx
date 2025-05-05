@@ -22,6 +22,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import ImageIcon from '@mui/icons-material/Image';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { Slide, SlideLayout, BulletPoint, ImageService, SlideImage, SlideTopic } from '../types';
 import { convertLayoutToFrontend, convertLayoutToBackend } from '../utils';
 import ImageUploader from './ImageUploader';
@@ -369,6 +370,56 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     console.log('SlideEditDialog image:', editedSlide.content.image);
   }, [editedSlide.content.image]);
 
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const handleAIGenerate = async () => {
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      // Use the current title or topic as prompt, fallback to 'Generate slide content'
+      const prompt = editedSlide.content.title || topic?.title || 'Generate slide content';
+      // Prepare the topic object for the backend
+      const topicForBackend = topic || {
+        title: prompt,
+        description: '',
+        key_points: [],
+        image_prompt: prompt,
+        subtopics: []
+      };
+      // Use slide layout or fallback
+      const layout = editedSlide.layout || 'title-bullets';
+      const instructional_level = (topic && (topic as any).instructionalLevel) || 'high_school';
+      const response = await fetch('/api/generate/slide', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: topicForBackend,
+          instructional_level,
+          layout
+        }),
+      });
+      if (!response.ok) throw new Error(await response.text());
+      const result = await response.json();
+      // The backend returns { data: { slide: { ...fields } } }
+      const data = result.data?.slide || result.slide || result.data || result;
+      setEditedSlide(prev => ({
+        ...prev,
+        content: {
+          ...prev.content,
+          title: data.title || prev.content.title,
+          subtitle: data.subtitle || prev.content.subtitle,
+          body: data.body || prev.content.body,
+          bullets: data.bullet_points ? normalizeBulletsForDialog(data.bullet_points.map((bp: any) => bp.text)) : prev.content.bullets,
+        },
+      }));
+    } catch (err: any) {
+      setAiError(err.message || 'Failed to generate slide');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const handleSave = () => {
     onSave({
       ...editedSlide,
@@ -396,6 +447,19 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Edit Slide</DialogTitle>
       <DialogContent>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+          <Button
+            onClick={handleAIGenerate}
+            startIcon={<AutoAwesomeIcon />}
+            disabled={aiLoading}
+            variant="outlined"
+            color="secondary"
+            sx={{ minWidth: 180 }}
+          >
+            {aiLoading ? 'Generating...' : 'AI Generate Slide'}
+          </Button>
+          {aiError && <Typography color="error" variant="body2">{aiError}</Typography>}
+        </Box>
         <Box sx={{
           position: 'sticky',
           top: 0,
@@ -528,7 +592,13 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
               <Grid item xs={6}>
                 <TiptapEditor
                   content={getHtmlContent(editedSlide.content.bullets)}
-                  onChange={handleBulletChange}
+                  onChange={(content: string) => {
+                    // Accept HTML from Tiptap and set as bullets
+                    setEditedSlide({
+                      ...editedSlide,
+                      content: { ...editedSlide.content, bullets: content },
+                    });
+                  }}
                   placeholder="Enter bullet points..."
                 />
               </Grid>

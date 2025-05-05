@@ -43,13 +43,15 @@ const SortableSlide: React.FC<SortableSlideProps> = ({
             </Tooltip>
           )}
         </Box>
-        {/* Only show the title for slide 1 (index 0) in the sorter, otherwise show full preview */}
+        {/* Only show the title for all slides in the sorter */}
         {index === 0 ? (
           <Box sx={{ textAlign: 'center', fontWeight: 700, fontSize: '1.2rem', color: '#222', py: 2 }}>
             {slide.content.title}
           </Box>
         ) : (
-          <SlideLayoutRenderer slide={slide} preview />
+          <Box sx={{ textAlign: 'center', fontWeight: 700, fontSize: '1.1rem', color: '#222', py: 2 }}>
+            {slide.content.title}
+          </Box>
         )}
       </Box>
     );
@@ -63,13 +65,16 @@ const SortableSlide: React.FC<SortableSlideProps> = ({
         transition: 'all 0.2s',
         transform: isDragging ? 'scale(1.02)' : 'none',
         '&:hover': {
-          boxShadow: 2,
+          boxShadow: 4,
+          background: 'rgba(33, 150, 243, 0.08)', // blue highlight on hover
         },
         ...(isActive && {
           borderColor: 'primary.main',
           borderWidth: 2,
           borderStyle: 'solid',
+          background: 'rgba(33, 150, 243, 0.16)', // blue background for active
         }),
+        background: 'rgba(33, 150, 243, 0.06)', // default card background (light blue)
       }}
     >
       <CardContent sx={{ p: 0 }}>{renderThumbnail()}</CardContent>
