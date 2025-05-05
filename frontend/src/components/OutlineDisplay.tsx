@@ -82,6 +82,8 @@ const OutlineDisplay: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const error = useSelector((state: RootState) => state.presentation.error);
   const outline = useSelector((state: RootState) => state.presentation.outline);
+  const slides = useSelector((state: RootState) => state.presentation.slides);
+  const hasSlides = slides && slides.length > 0;
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingPoint, setEditingPoint] = useState<{ topicId: string; index: number; text: string } | null>(null);
 
@@ -154,26 +156,25 @@ const OutlineDisplay: React.FC = () => {
   };
 
   const renderTopic = (topic: SlideTopic, index: number) => (
-    <Paper key={topic.id || `topic-${index}`} sx={{ mb: 2, p: 2 }}>
-      <Typography variant="h6">{topic.title}</Typography>
-      
+    <Paper key={topic.id || `topic-${index}`} sx={{ mb: 2, p: 2, bgcolor: '#18181b', borderRadius: 4 }}>
+      <Typography variant="h6" sx={{ color: '#60a5fa' }}>{topic.title}</Typography>
       {topic.description && (
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <DescriptionIcon sx={{ mr: 1, color: 'text.secondary' }} />
-          <Typography variant="body2" color="text.secondary">
+          <DescriptionIcon sx={{ mr: 1, color: '#60a5fa' }} />
+          <Typography variant="body2" sx={{ color: '#60a5fa' }}>
             {topic.description}
           </Typography>
         </Box>
       )}
-  
       <List dense>
         {topic.key_points.map((point: string | BulletPoint, i) => (
           <ListItem key={`point-${index}-${i}`}>
             <ListItemIcon sx={{ minWidth: 32 }}>
-              <ArrowRightIcon color="primary" />
+              <ArrowRightIcon sx={{ color: '#fff' }} />
             </ListItemIcon>
             <ListItemText 
               primary={typeof point === 'string' ? point : point.text} 
+              primaryTypographyProps={{ sx: { color: '#fff' } }}
             />
             <ListItemSecondaryAction>
               <IconButton 
@@ -184,7 +185,7 @@ const OutlineDisplay: React.FC = () => {
                   i, 
                   typeof point === 'string' ? point : point.text
                 )}
-                sx={{ mr: 1 }}
+                sx={{ mr: 1, color: '#60a5fa' }}
               >
                 <EditIcon />
               </IconButton>
@@ -192,6 +193,7 @@ const OutlineDisplay: React.FC = () => {
                 edge="end" 
                 aria-label="delete"
                 onClick={() => handleDeletePoint(topic.id!, i)}
+                sx={{ color: '#60a5fa' }}
               >
                 <DeleteIcon />
               </IconButton>
@@ -200,24 +202,22 @@ const OutlineDisplay: React.FC = () => {
         ))}
         <ListItem>
           <Button
-            startIcon={<AddIcon />}
+            startIcon={<AddIcon sx={{ color: '#60a5fa' }} />}
             onClick={() => handleAddPoint(topic.id!)}
-            sx={{ mt: 1 }}
+            sx={{ mt: 1, color: '#60a5fa' }}
           >
             Add Point
           </Button>
         </ListItem>
       </List>
-  
       {topic.image_prompt && (
         <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-          <ImageIcon sx={{ mr: 1, color: 'text.secondary' }} />
-          <Typography variant="body2" color="text.secondary">
+          <ImageIcon sx={{ mr: 1, color: '#60a5fa' }} />
+          <Typography variant="body2" sx={{ color: '#60a5fa' }}>
             Image: {topic.image_prompt}
           </Typography>
         </Box>
       )}
-  
       {topic.subtopics && topic.subtopics.length > 0 && (
         <Box sx={{ ml: 3, mt: 2 }}>
           {topic.subtopics.map((subtopic, subIndex) => renderTopic(subtopic, subIndex))}
@@ -228,21 +228,24 @@ const OutlineDisplay: React.FC = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Button
-          variant="contained"
-          startIcon={<PresentationIcon />}
-          onClick={handleGenerateSlides}
-          sx={{ minWidth: 200 }}
-        >
-          Generate All Slides
-        </Button>
-        {error && (
-          <Typography color="error" variant="body2">
-            {error}
-          </Typography>
-        )}
-      </Box>
+      {/* Show Generate All Slides button if there is an outline and no slides yet */}
+      {outline && outline.length > 0 && !hasSlides && (
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
+          <Button
+            variant="contained"
+            startIcon={<PresentationIcon />}
+            onClick={handleGenerateSlides}
+            sx={{ minWidth: 200, fontWeight: 700, fontSize: '1.05rem', borderRadius: 3, background: 'linear-gradient(90deg, #6366f1 0%, #0ea5e9 100%)', boxShadow: '0 2px 16px 0 #6366f188', textTransform: 'none', letterSpacing: 0.5, '&:hover': { background: 'linear-gradient(90deg, #6366f1 10%, #a855f7 80%)', boxShadow: '0 4px 24px 0 #6366f1cc', transform: 'scale(1.03)' } }}
+          >
+            Generate All Slides
+          </Button>
+        </Box>
+      )}
+      {error && (
+        <Typography color="error" variant="body2" sx={{ mb: 2 }}>
+          {error}
+        </Typography>
+      )}
       {outline && outline.map((topic, index) => renderTopic(topic, index))}
       <EditDialog
         open={editDialogOpen}

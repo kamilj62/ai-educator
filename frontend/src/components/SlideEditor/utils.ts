@@ -46,6 +46,17 @@ export const convertLayoutToBackend = (layout: SlideLayout): BackendSlideLayout 
   }
 };
 
+// Remove all font-size declarations from inline style attributes in HTML
+export function stripFontSizeStyles(html: string): string {
+  if (!html) return html;
+  // Remove font-size from any style attribute (even if there are other styles)
+  return html.replace(/style=("|')([^"']*?)(font-size\s*:[^;"']+;?)([^"']*)("|')/gi, (match, p1, before, fontSize, after, p5) => {
+    // Remove just the font-size declaration, keep other styles
+    let newStyle = (before + after).replace(/;;+/g, ';').replace(/^;|;$/g, '');
+    return newStyle.trim() ? `style=${p1}${newStyle}${p5}` : '';
+  });
+}
+
 // Convert backend slide API response to frontend Slide object
 export function backendSlideToFrontend(raw: any): Slide {
   return {

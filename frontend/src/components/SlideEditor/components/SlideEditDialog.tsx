@@ -26,6 +26,7 @@ import { Slide, SlideLayout, BulletPoint, ImageService, SlideImage, SlideTopic }
 import { convertLayoutToFrontend, convertLayoutToBackend } from '../utils';
 import ImageUploader from './ImageUploader';
 import TiptapEditor from './TiptapEditor'; // Import TiptapEditor
+import { HexColorPicker } from 'react-colorful';
 
 interface SlideEditDialogProps {
   open: boolean;
@@ -39,6 +40,11 @@ interface SlideEditDialogProps {
 
 const layoutOptions: { value: SlideLayout; label: string; description: string }[] = [
   {
+    value: 'title-only',
+    label: 'Title Only',
+    description: 'A single title, no subtitle or bullets',
+  },
+  {
     value: 'title-bullets',
     label: 'Title & Bullets',
     description: 'A title with bullet points below',
@@ -49,25 +55,31 @@ const layoutOptions: { value: SlideLayout; label: string; description: string }[
     description: 'A title with bullet points and an image below',
   },
   {
-    value: 'title-body',
-    label: 'Title & Body',
-    description: 'A title with a text body below',
-  },
-  {
     value: 'title-image',
     label: 'Title & Image',
     description: 'A title with an image below',
-  },
-  {
-    value: 'title-body-image',
-    label: 'Title, Body & Image',
-    description: 'A title with a text body and an image below',
   },
   {
     value: 'two-column',
     label: 'Two Columns',
     description: 'Content split into two columns',
   },
+];
+
+const backgroundColors = [
+  { label: 'White', value: '#fff' },
+  { label: 'Blue', value: '#6366f1' },
+  { label: 'Black', value: '#18181b' },
+  { label: 'Gray', value: '#e5e7eb' },
+  { label: 'Custom...', value: 'custom' },
+];
+
+const fontColors = [
+  { label: 'Black', value: '#222' },
+  { label: 'White', value: '#fff' },
+  { label: 'Blue', value: '#6366f1' },
+  { label: 'Gray', value: '#888' },
+  { label: 'Custom...', value: 'custom' },
 ];
 
 const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
@@ -160,26 +172,19 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   const [bodyError, setBodyError] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
 
-  const handleLayoutChange = (newLayout: SlideLayout) => {
-    setEditedSlide((prev) => {
-      // Remove image if switching to a layout that does not support images
-      const imageLayouts = [
-        'title-body-image',
-        'title-bullets-image',
-        'title-image',
-        'two-column-image',
-      ];
-      const shouldKeepImage = imageLayouts.includes(newLayout);
-      return {
-        ...prev,
-        layout: newLayout,
-        content: {
-          ...prev.content,
-          image: shouldKeepImage ? prev.content.image : undefined,
-        },
-      };
-    });
-  };
+  const [bgColor, setBgColor] = useState(slide.backgroundColor || '#fff');
+  const [fontColor, setFontColor] = useState(slide.fontColor || '#222');
+  const [customBg, setCustomBg] = useState('');
+  const [customFont, setCustomFont] = useState('');
+
+  useEffect(() => {
+    if (open) {
+      setBgColor(slide.backgroundColor || '#fff');
+      setFontColor(slide.fontColor || '#222');
+      setCustomBg(slide.backgroundColor && !backgroundColors.some(opt => opt.value === slide.backgroundColor) ? slide.backgroundColor : '');
+      setCustomFont(slide.fontColor && !fontColors.some(opt => opt.value === slide.fontColor) ? slide.fontColor : '');
+    }
+  }, [open, slide.backgroundColor, slide.fontColor]);
 
   const handleTitleChange = (content: string) => {
     setEditedSlide({
@@ -306,19 +311,47 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     return image;
   }, [onImageGenerate, handleImageChange]);
 
+  const handleBgColorChange = (color: string) => {
+    setBgColor(color);
+    if (color !== 'custom') setCustomBg('');
+  };
+
+  const handleFontColorChange = (color: string) => {
+    setFontColor(color);
+    if (color !== 'custom') setCustomFont('');
+  };
+
+  const handleLayoutChange = (newLayout: SlideLayout) => {
+    setEditedSlide((prev) => {
+      // Remove image if switching to a layout that does not support images
+      const imageLayouts = [
+        'title-bullets-image',
+        'title-image',
+        'two-column-image',
+      ];
+      const shouldKeepImage = imageLayouts.includes(newLayout);
+      return {
+        ...prev,
+        layout: newLayout,
+        content: {
+          ...prev.content,
+          image: shouldKeepImage ? prev.content.image : undefined,
+        },
+      };
+    });
+  };
+
   useEffect(() => {
-    if ((editedSlide.layout === 'title-body' || editedSlide.layout === 'title-body-image')) {
-      if (!editedSlide.content.body || editedSlide.content.body.trim() === '') {
-        setBodyError('Body content is empty or missing.');
-      } else if (!editedSlide.content.body.startsWith('<')) {
-        setBodyError('Body content is not HTML.');
+    if ((editedSlide.layout === 'title-bullets' || editedSlide.layout === 'title-bullets-image')) {
+      if (!editedSlide.content.bullets || editedSlide.content.bullets.trim() === '') {
+        setBodyError('Bullet points are empty or missing.');
       } else {
         setBodyError(null);
       }
     } else {
       setBodyError(null);
     }
-  }, [editedSlide.layout, editedSlide.content.body]);
+  }, [editedSlide.layout, editedSlide.content.bullets]);
 
   useEffect(() => {
     if (editedSlide.layout.includes('image')) {
@@ -339,7 +372,9 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   const handleSave = () => {
     onSave({
       ...editedSlide,
-      layout: convertLayoutToBackend(editedSlide.layout)
+      backgroundColor: bgColor === 'custom' ? customBg : bgColor,
+      fontColor: fontColor === 'custom' ? customFont : fontColor,
+      layout: convertLayoutToBackend(editedSlide.layout),
     });
     onClose();
   };
@@ -361,6 +396,64 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Edit Slide</DialogTitle>
       <DialogContent>
+        <Box sx={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 2,
+          bgcolor: 'background.paper',
+          pb: 1,
+          pt: 1,
+          mb: 2,
+          borderBottom: 1,
+          borderColor: 'divider',
+        }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <InputLabel id="bg-color-label">Slide Background</InputLabel>
+              <Select
+                labelId="bg-color-label"
+                value={bgColor.startsWith('#') ? bgColor : ''}
+                label="Slide Background"
+                onChange={e => {
+                  if (e.target.value === 'custom') return handleBgColorChange('custom');
+                  handleBgColorChange(e.target.value as string);
+                }}
+              >
+                {backgroundColors.map(opt => (
+                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                ))}
+              </Select>
+              {bgColor === 'custom' && (
+                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <HexColorPicker color={customBg || '#ffffff'} onChange={setCustomBg} style={{ width: 160, height: 120, borderRadius: 8, boxShadow: '0 2px 8px #0002' }} aria-label="Pick custom background color" />
+                  <Box sx={{ ml: 1, minWidth: 56, px: 1, py: 0.5, borderRadius: 1, bgcolor: customBg || '#fff', border: '1px solid #ccc', fontSize: 13, fontFamily: 'monospace', color: '#222', textAlign: 'center' }}>{customBg || '#ffffff'}</Box>
+                </Box>
+              )}
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <InputLabel id="font-color-label">Font Color</InputLabel>
+              <Select
+                labelId="font-color-label"
+                value={fontColor.startsWith('#') ? fontColor : ''}
+                label="Font Color"
+                onChange={e => {
+                  if (e.target.value === 'custom') return handleFontColorChange('custom');
+                  handleFontColorChange(e.target.value as string);
+                }}
+              >
+                {fontColors.map(opt => (
+                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                ))}
+              </Select>
+              {fontColor === 'custom' && (
+                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <HexColorPicker color={customFont || '#222222'} onChange={setCustomFont} style={{ width: 160, height: 120, borderRadius: 8, boxShadow: '0 2px 8px #0002' }} aria-label="Pick custom font color" />
+                  <Box sx={{ ml: 1, minWidth: 56, px: 1, py: 0.5, borderRadius: 1, bgcolor: customFont || '#222', border: '1px solid #ccc', fontSize: 13, fontFamily: 'monospace', color: '#222', textAlign: 'center' }}>{customFont || '#222222'}</Box>
+                </Box>
+              )}
+            </FormControl>
+          </Stack>
+        </Box>
         <Stack spacing={3} sx={{ mt: 1 }}>
           <FormControl fullWidth sx={{ mb: 2 }}>
             <InputLabel id="layout-label">Layout</InputLabel>
@@ -377,28 +470,19 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
               ))}
             </Select>
           </FormControl>
-
           <TiptapEditor
             content={getHtmlContent(editedSlide.content.title)}
             onChange={handleTitleChange}
             placeholder="Enter slide title..."
           />
-
-          <TextField
-            label="Subtitle"
-            fullWidth
-            value={editedSlide.content.subtitle || ''}
-            onChange={(e) => handleSubtitleChange(e.target.value)}
-          />
-
-          {(editedSlide.layout === 'title-body' || editedSlide.layout === 'title-body-image') && (
-            <TiptapEditor
-              content={getHtmlContent(editedSlide.content.body)}
-              onChange={handleBodyChange}
-              placeholder="Enter slide body..."
+          {(editedSlide.layout !== 'title-only') && (
+            <TextField
+              label="Subtitle"
+              fullWidth
+              value={editedSlide.content.subtitle || ''}
+              onChange={(e) => handleSubtitleChange(e.target.value)}
             />
           )}
-
           {(editedSlide.layout === 'title-bullets' || editedSlide.layout === 'title-bullets-image') && (
             <Box>
               <Typography variant="h6" gutterBottom>Bullet Points</Typography>
@@ -436,24 +520,23 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
             <Grid container spacing={2}>
               <Grid item xs={6}>
                 <TiptapEditor
-                  content={getHtmlContent(editedSlide.content.columnLeft)}
-                  onChange={handleColumnLeftChange}
-                  placeholder="Enter left column content..."
+                  content={getHtmlContent(editedSlide.content.title)}
+                  onChange={handleTitleChange}
+                  placeholder="Enter slide title..."
                 />
               </Grid>
               <Grid item xs={6}>
                 <TiptapEditor
-                  content={getHtmlContent(editedSlide.content.columnRight)}
-                  onChange={handleColumnRightChange}
-                  placeholder="Enter right column content..."
+                  content={getHtmlContent(editedSlide.content.bullets)}
+                  onChange={handleBulletChange}
+                  placeholder="Enter bullet points..."
                 />
               </Grid>
             </Grid>
           )}
 
           {(editedSlide.layout === 'title-image' || 
-            editedSlide.layout === 'title-bullets-image' || 
-            editedSlide.layout === 'title-body-image') && (
+            editedSlide.layout === 'title-bullets-image') && (
             <Box>
               <Typography variant="h6" gutterBottom>Image</Typography>
               <ImageUploader

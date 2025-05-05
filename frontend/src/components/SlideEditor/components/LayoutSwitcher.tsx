@@ -1,141 +1,99 @@
 import React, { useState } from 'react';
-import { Box, Button, Dialog, DialogTitle, DialogContent, Grid, Card, CardContent, Typography, IconButton } from '@mui/material';
-import { LayoutOption, SlideLayout, layoutOptions } from '../types';
+import { Box, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../store/store';
 import { setSlides } from '../../../store/presentationSlice';
-import ViewQuiltIcon from '@mui/icons-material/ViewQuilt';
-import CloseIcon from '@mui/icons-material/Close';
+import { SlideLayout, layoutOptions } from '../types';
 
-interface LayoutSwitcherProps {
-  layout: SlideLayout;
-  onLayoutChange: (layout: SlideLayout) => void;
+interface ColorOption {
+  label: string;
+  value: string;
 }
 
-const layoutTitles: Record<SlideLayout, string> = {
-  'title-only': 'Title Only',
-  'title-image': 'Title with Image',
-  'title-body': 'Title with Body',
-  'title-body-image': 'Title with Body and Image',
-  'title-bullets': 'Title with Bullets',
-  'title-bullets-image': 'Title with Bullets and Image',
-  'two-column': 'Two Columns',
-  'two-column-image': 'Two Columns with Image'
-};
+const backgroundColors: ColorOption[] = [
+  { label: 'White', value: '#fff' },
+  { label: 'Blue', value: '#6366f1' },
+  { label: 'Black', value: '#18181b' },
+  { label: 'Gray', value: '#e5e7eb' },
+  { label: 'Custom...', value: 'custom' },
+];
 
-const LayoutSwitcher: React.FC<LayoutSwitcherProps> = ({ layout, onLayoutChange }) => {
-  const [open, setOpen] = useState(false);
-  const [selectedLayout, setSelectedLayout] = useState<SlideLayout>(layout);
-  const dispatch = useDispatch();
+const fontColors: ColorOption[] = [
+  { label: 'Black', value: '#222' },
+  { label: 'White', value: '#fff' },
+  { label: 'Blue', value: '#6366f1' },
+  { label: 'Gray', value: '#888' },
+  { label: 'Custom...', value: 'custom' },
+];
 
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+interface LayoutSwitcherProps {
+  backgroundColor: string;
+  fontColor: string;
+  onBackgroundColorChange: (color: string) => void;
+  onFontColorChange: (color: string) => void;
+}
 
-  const handleLayoutSelect = async (newLayout: SlideLayout) => {
-    setSelectedLayout(newLayout);
-    
-    try {
-      // Validate the layout change
-      const response = await fetch('/api/layout/validate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: newLayout,
-          type: 'slide',
-          content: {}
-        })
-      });
-      console.log('[LayoutSwitcher] Layout validate API response:', response);
-
-      if (!response.ok) {
-        console.error('Failed to validate layout:', await response.text());
-        return;
-      }
-
-      // Update the layout
-      dispatch(setSlides([])); // Pass an empty array of SlideContent
-
-      onLayoutChange(newLayout);
-      handleClose();
-    } catch (error) {
-      console.error('Error switching layout:', error);
-    }
-  };
-
-  const getLayoutPreview = (layout: LayoutOption) => {
-    return (
-      <Box sx={{ textAlign: 'center', p: 1 }}>
-        <Typography variant="h3" sx={{ fontSize: '2rem', mb: 1 }}>
-          {layout.preview}
-        </Typography>
-        <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
-          {layout.title}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {layout.description}
-        </Typography>
-      </Box>
-    );
-  };
+const LayoutSwitcher: React.FC<LayoutSwitcherProps> = ({ backgroundColor, fontColor, onBackgroundColorChange, onFontColorChange }) => {
+  const [customBg, setCustomBg] = useState('');
+  const [customFont, setCustomFont] = useState('');
 
   return (
-    <>
-      <Button
-        onClick={handleOpen}
-        startIcon={<ViewQuiltIcon />}
-        variant="outlined"
-        size="small"
-      >
-        Change Layout
-      </Button>
-
-      <Dialog 
-        open={open} 
-        onClose={handleClose}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle sx={{ m: 0, p: 2 }}>
-          Choose Layout
-          <IconButton
-            onClick={handleClose}
-            sx={{
-              position: 'absolute',
-              right: 8,
-              top: 8,
+    <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', py: 1 }}>
+      <FormControl size="small">
+        <InputLabel id="bg-color-label">Slide Background</InputLabel>
+        <Select
+          labelId="bg-color-label"
+          value={backgroundColor.startsWith('#') ? backgroundColor : ''}
+          label="Slide Background"
+          onChange={e => {
+            if (e.target.value === 'custom') return;
+            onBackgroundColorChange(e.target.value as string);
+          }}
+        >
+          {backgroundColors.map(opt => (
+            <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+          ))}
+        </Select>
+        {backgroundColor === 'custom' && (
+          <input
+            type="color"
+            value={customBg}
+            onChange={e => {
+              setCustomBg(e.target.value);
+              onBackgroundColorChange(e.target.value);
             }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2}>
-            {layoutOptions.map((layout) => (
-              <Grid item xs={12} sm={6} md={4} key={layout.layout}>
-                <Card 
-                  sx={{ 
-                    cursor: 'pointer',
-                    bgcolor: layout.layout === selectedLayout ? 'primary.light' : 'background.paper',
-                    '&:hover': {
-                      bgcolor: layout.layout === selectedLayout 
-                        ? 'primary.light' 
-                        : 'action.hover'
-                    }
-                  }}
-                  onClick={() => handleLayoutSelect(layout.layout)}
-                >
-                  <CardContent>
-                    {getLayoutPreview(layout)}
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </DialogContent>
-      </Dialog>
-    </>
+            style={{ marginTop: 8 }}
+          />
+        )}
+      </FormControl>
+      <FormControl size="small">
+        <InputLabel id="font-color-label">Font Color</InputLabel>
+        <Select
+          labelId="font-color-label"
+          value={fontColor.startsWith('#') ? fontColor : ''}
+          label="Font Color"
+          onChange={e => {
+            if (e.target.value === 'custom') return;
+            onFontColorChange(e.target.value as string);
+          }}
+        >
+          {fontColors.map(opt => (
+            <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+          ))}
+        </Select>
+        {fontColor === 'custom' && (
+          <input
+            type="color"
+            value={customFont}
+            onChange={e => {
+              setCustomFont(e.target.value);
+              onFontColorChange(e.target.value);
+            }}
+            style={{ marginTop: 8 }}
+          />
+        )}
+      </FormControl>
+    </Box>
   );
 };
 

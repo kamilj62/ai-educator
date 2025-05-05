@@ -1,0 +1,34 @@
+/* Bulletproof: force all text in slide body/title to be small, regardless of tag or inline style */
+.slide-title, .slide-title *,
+.slide-title h1, .slide-title h2, .slide-title h3, .slide-title h4, .slide-title h5, .slide-title h6 {
+  font-size: 28px !important;
+  font-weight: bold !important;
+  line-height: 1.1 !important;
+  margin-top: 40px !important;
+  text-align: center !important;
+}
+.slide-body, .slide-body *,
+.slide-body h1, .slide-body h2, .slide-body h3, .slide-body h4, .slide-body h5, .slide-body h6,
+.slide-body p, .slide-body li {
+  font-size: 16px !important;
+  font-weight: normal !important;
+  line-height: 1.3 !important;
+}
+
+/* Force all text inside the slide preview area to be small, regardless of tag or inline style */
+.css-1fzr4x2, .css-1fzr4x2 * {
+  font-size: 16px !important;
+  line-height: 1.3 !important;
+}
+
+/* Ensure title is visible and prominent */
+.css-1fzr4x2 h1,
+.css-1fzr4x2 .slide-title,
+.css-1fzr4x2 .MuiTypography-root,
+.css-1fzr4x2 .MuiBox-root[style*="font-weight: 700"] {
+  font-size: 28px !important;
+  font-weight: bold !important;
+  margin-top: 40px !important;
+  text-align: center !important;
+  line-height: 1.1 !important;
+}
