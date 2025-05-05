@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import List, Optional, Dict, Any, Union
-from pydantic import BaseModel, Field, validator, root_validator, ConfigDict
+from pydantic import BaseModel, Field, field_validator, root_validator, ConfigDict
 
 class InstructionalLevel(str, Enum):
     ELEMENTARY = "elementary"
@@ -22,17 +22,17 @@ class SlideTopic(BaseModel):
     id: Optional[str] = Field(default=None, description="Unique identifier for the topic")
     title: str = Field(..., description="Title of the topic")
     description: Optional[str] = Field(None, description="Optional detailed description")
-    key_points: List[str] = Field(..., min_items=3, max_items=5, description="List of 3-5 key points")
+    key_points: List[str] = Field(..., min_length=3, max_length=5, description="List of 3-5 key points")
     image_prompt: str = Field(..., min_length=1, description="Non-empty prompt for generating an image")
     subtopics: Optional[List['SlideTopic']] = Field(default_factory=list, description="Optional list of subtopics")
 
-    @validator('key_points')
+    @field_validator('key_points')
     def check_key_points(cls, v):
         if not all(isinstance(kp, str) and kp.strip() for kp in v):
             raise ValueError('All key_points must be non-empty strings')
         return v
 
-    @validator('image_prompt')
+    @field_validator('image_prompt')
     def check_image_prompt(cls, v):
         if not isinstance(v, str) or not v.strip():
             raise ValueError('image_prompt must be a non-empty string')

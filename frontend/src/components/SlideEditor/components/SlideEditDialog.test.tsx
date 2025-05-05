@@ -1,4 +1,5 @@
 import React from 'react';
+import '@testing-library/jest-dom';
 import { render, fireEvent, getAllByText } from '@testing-library/react';
 import SlideEditDialog from './SlideEditDialog';
 import { Slide, BackendSlideLayout } from '../types';

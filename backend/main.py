@@ -32,6 +32,8 @@ from backend.exceptions import (
 from datetime import datetime
 from pptx import Presentation as pptx_Presentation
 from pptx.util import Inches
+from contextlib import asynccontextmanager
+import asyncio
 
 # Configure logging with more detail
 logging.basicConfig(
@@ -69,7 +71,44 @@ STATIC_DIR.mkdir(exist_ok=True)
 IMAGES_DIR.mkdir(exist_ok=True)
 logger.info(f"Static directories created: {STATIC_DIR}, {IMAGES_DIR}")
 
-app = FastAPI(title="MarvelAI Presentation Generator")
+# Replace deprecated startup event with lifespan context
+@asynccontextmanager
+def lifespan(app):
+    global ai_service
+    try:
+        ai_service = AIService(rate_limiter)
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        loop.run_until_complete(ai_service.initialize())
+        loop.run_until_complete(ai_service.test_openai_connection())
+        logger.info("AI service initialized (lifespan)")
+    except Exception as e:
+        logger.error(f"Failed to initialize AI service (lifespan): {e}")
+        logger.error(traceback.format_exc())
+        raise
+    yield
+    # (Optional: add shutdown/cleanup code here)
+
+app = FastAPI(title="MarvelAI Presentation Generator", lifespan=lifespan)
+
+import sys
+if ("pytest" in sys.modules or "PYTEST_CURRENT_TEST" in os.environ) and ai_service is None:
+    try:
+        ai_service = AIService(rate_limiter)
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        loop.run_until_complete(ai_service.initialize())
+        loop.run_until_complete(ai_service.test_openai_connection())
+        logger.info("AI service initialized for testing (pytest hack)")
+    except Exception as e:
+        logger.error(f"Failed to initialize AI service for testing: {e}")
+        logger.error(traceback.format_exc())
 
 # Configure CORS
 origins = [
@@ -167,18 +206,19 @@ async def generate_outline(input_data: PresentationInput) -> OutlineResponse:
 async def generate_slide_content(request: SlideGenerationRequest):
     try:
         logger.info(f"Received slide generation request for topic: {request.topic.title}")
-        logger.debug(f"Request data: {request.dict()}")
+        logger.debug(f"Request data: {request.model_dump()}")
         try:
             slide_content = await ai_service.generate_slide_content(
                 request.topic,
-                request.instructional_level
+                request.instructional_level,
+                request.layout
             )
             logger.info(f"Successfully generated content for topic: {request.topic.title}")
-            logger.debug(f"Slide content: {slide_content.dict()}")
+            logger.debug(f"Slide content: {slide_content.model_dump()}")
             # Return slide content in a consistent format
             return {
                 "data": {
-                    "slide": slide_content.dict(),
+                    "slide": slide_content.model_dump(),
                     "warnings": []  # Add any warnings if needed
                 }
             }
@@ -219,7 +259,7 @@ async def generate_slide_content(request: SlideGenerationRequest):
 async def generate_slides(request: SlideGenerationRequest):
     """Generate presentation slides from an outline."""
     try:
-        logger.debug(f"Received slide request: {request.dict()}")
+        logger.debug(f"Received slide request: {request.model_dump()}")
         topic = request.topic
         layout = request.layout or "title-bullets"
         response = {
@@ -366,21 +406,6 @@ def is_sensitive_topic(context: str) -> bool:
         "middle east conflict"
     ]
     return any(topic in context_lower for topic in SENSITIVE_TOPICS)
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize services on startup."""
-    global ai_service
-    try:
-        ai_service = AIService(rate_limiter)
-        await ai_service.initialize()  # Initialize async components
-        # Test OpenAI connection
-        await ai_service.test_openai_connection()
-        logger.info("AI service initialized")
-    except Exception as e:
-        logger.error(f"Failed to initialize AI service: {e}")
-        logger.error(traceback.format_exc())
-        raise
 
 if __name__ == "__main__":
     import os

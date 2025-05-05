@@ -28,7 +28,7 @@ const SlideEditor: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [pendingNewSlide, setPendingNewSlide] = useState(null);
+  const [pendingNewSlide, setPendingNewSlide] = useState<Slide | null>(null);
 
   const slides = useSelector((state: RootState) => state.presentation.slides);
   const activeSlideId = useSelector((state: RootState) => state.presentation.activeSlideId);
@@ -298,7 +298,7 @@ const SlideEditor: React.FC = () => {
                     bullets: '',
                   },
                 };
-                setPendingNewSlide(blankSlide);
+                setPendingNewSlide(blankSlide as Slide);
                 setEditDialogOpen(true);
               }}
               onDuplicateSlide={undefined}
@@ -366,8 +366,8 @@ const SlideEditor: React.FC = () => {
             setEditDialogOpen(false);
             setPendingNewSlide(null);
           }}
-          slide={pendingNewSlide || activeSlide}
-          topic={pendingNewSlide ? undefined : getTopicForSlide(activeSlide)}
+          slide={pendingNewSlide || activeSlide!}
+          topic={pendingNewSlide ? undefined : getTopicForSlide(activeSlide!)}
           onSave={(slide) => {
             if (pendingNewSlide) {
               dispatch(setSlides([...slides, slide]));

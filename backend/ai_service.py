@@ -486,7 +486,8 @@ class AIService:
                 'title-bullets': "Create a title slide with a title and key points as bullet points.",
                 'title-bullets-image': "Create a slide with a title, bullet points, and a supporting image.",
                 'two-column': "Create a slide with a title and content split into two columns.",
-                'two-column-image': "Create a slide with a title, two columns of content, and an image."
+                'two-column-image': "Create a slide with a title, two columns of content, and an image.",
+                'title-only': "Create a title slide with only a title. Do not include a subtitle, body, or bullet points."
             }
 
             # Validate layout
