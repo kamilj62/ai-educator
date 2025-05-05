@@ -18,8 +18,15 @@
   -webkit-text-size-adjust: 100%;
 }
 
-body {
+html, body, #root {
+  height: 100%;
   margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: #1976d2;
+}
+
+body {
   min-width: 320px;
   min-height: 100vh;
 }

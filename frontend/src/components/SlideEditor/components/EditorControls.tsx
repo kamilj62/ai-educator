@@ -29,7 +29,7 @@ const EditorControls: React.FC<EditorControlsProps> = ({
     }}>
       <Box sx={{ flex: 1 }} />
       <Tooltip title="Add Slide">
-        <IconButton onClick={onAddSlide}>
+        <IconButton onClick={onAddSlide} sx={{ color: 'white', bgcolor: 'primary.main', '&:hover': { bgcolor: 'primary.dark' } }}>
           <AddIcon />
         </IconButton>
       </Tooltip>

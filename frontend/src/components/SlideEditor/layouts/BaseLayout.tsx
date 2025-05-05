@@ -15,11 +15,11 @@ const BaseLayout = ({ children, error, onErrorClose, backgroundColor, fontColor 
       elevation={5}
       sx={{
         aspectRatio: '16/9',
-        width: '100%',
-        maxWidth: '100%',
+        width: '100vw',
+        maxWidth: '100vw',
         height: '100%',
         margin: 0,
-        borderRadius: 2,
+        borderRadius: 0,
         boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
         position: 'relative',
         overflow: 'hidden',
