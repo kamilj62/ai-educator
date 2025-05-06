@@ -3,7 +3,7 @@ import { Box, Typography, Paper, CircularProgress, Button } from '@mui/material'
 
 const LOGS_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL
   ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/logs/openai`
-  : 'https://ai-powerpoint-f44a1d57b590.herokuapp.com/api/logs/openai';
+  : 'https://ai-powerpoint.herokuapp.com/api/logs/openai';
 
 const LogViewer: React.FC = () => {
   const [logs, setLogs] = useState<any[]>([]);
