@@ -27,7 +27,11 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import PresentationIcon from '@mui/icons-material/Slideshow';
+<<<<<<< HEAD
 import { generateSlides, setOutline } from '../store/presentationSlice';
+=======
+import { generateSlides } from '../store/presentationSlice';
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 
 interface EditDialogProps {
   open: boolean;
@@ -93,6 +97,7 @@ const OutlineDisplay: React.FC = () => {
   };
 
   const handleSavePoint = (newText: string) => {
+<<<<<<< HEAD
     if (editingPoint && outline) {
       // Find the topic and update the point
       const updatedOutline = outline.map(topic => {
@@ -104,10 +109,15 @@ const OutlineDisplay: React.FC = () => {
         return topic;
       });
       dispatch(setOutline(updatedOutline));
+=======
+    if (editingPoint) {
+      // Removed updateTopicPoint call
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
     }
   };
 
   const handleDeletePoint = (topicId: string, index: number) => {
+<<<<<<< HEAD
     if (outline) {
       const updatedOutline = outline.map(topic => {
         if (topic.id === topicId) {
@@ -130,6 +140,13 @@ const OutlineDisplay: React.FC = () => {
       });
       dispatch(setOutline(updatedOutline));
     }
+=======
+    // Removed deleteTopicPoint call
+  };
+
+  const handleAddPoint = (topicId: string) => {
+    // Removed addTopicPoint call
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
   };
 
   const handleGenerateSlides = () => {
@@ -228,6 +245,7 @@ const OutlineDisplay: React.FC = () => {
 
   return (
     <Box sx={{ p: 3 }}>
+<<<<<<< HEAD
       {/* Show Generate All Slides button if there is an outline and no slides yet */}
       {outline && outline.length > 0 && !hasSlides && (
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
@@ -240,6 +258,24 @@ const OutlineDisplay: React.FC = () => {
             Generate All Slides
           </Button>
         </Box>
+=======
+      {outline.length > 0 && (
+        <>
+          <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Button
+              variant="contained"
+              startIcon={<PresentationIcon />}
+              onClick={handleGenerateSlides}
+              disabled={isGeneratingSlides}
+              sx={{ minWidth: 200 }}
+            >
+              Generate All Slides
+            </Button>
+            <ErrorDisplay error={error} />
+          </Box>
+          {outline.map((topic, index) => renderTopic(topic, index))}
+        </>
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
       )}
       {error && (
         <Typography color="error" variant="body2" sx={{ mb: 2 }}>

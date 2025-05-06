@@ -1,6 +1,7 @@
 import React from 'react';
 import { ReactNode } from 'react';
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { Box, styled, Alert, Paper } from '@mui/material';
 
 interface BaseLayoutProps {
@@ -8,27 +9,20 @@ interface BaseLayoutProps {
   error?: string | null;
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 import { Box, styled, Alert } from '@mui/material';
-import type { APIError } from '../../../store/presentationSlice';
 
 const SlideContainer = styled(Box)(({ theme }) => ({
   width: '100%',
   maxWidth: '960px',  // Standard 16:9 width
   height: 'calc(960px * 9/16)',  // 16:9 aspect ratio
-=======
-import { Box, styled } from '@mui/material';
-
-const SlideContainer = styled(Box)(({ theme }) => ({
-  width: '100%',
-  height: '100%',
->>>>>>> dd7ecbd (added imagen images)
   display: 'flex',
   flexDirection: 'column',
   padding: theme.spacing(4),
-  backgroundColor: '#ffffff',
+  backgroundColor: theme.palette.background.paper,
   borderRadius: theme.spacing(1),
   boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
-<<<<<<< HEAD
   position: 'relative',
   overflow: 'auto',
   margin: '0 auto',
@@ -37,15 +31,17 @@ const SlideContainer = styled(Box)(({ theme }) => ({
     height: 'calc(100vw * 9/16)',
     maxHeight: 'calc(100vh - 200px)',
   },
-=======
->>>>>>> dd7ecbd (added imagen images)
 }));
 
 interface BaseLayoutProps {
   children: ReactNode;
 <<<<<<< HEAD
+<<<<<<< HEAD
   error?: APIError | null;
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
+=======
+  error?: string | null;
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
   onErrorClose?: () => void;
   backgroundColor?: string;
   fontColor?: string;
@@ -53,6 +49,7 @@ interface BaseLayoutProps {
 
 const BaseLayout = ({ children, error, onErrorClose, backgroundColor, fontColor }: BaseLayoutProps) => {
   return (
+<<<<<<< HEAD
     <Paper
       elevation={5}
       sx={{
@@ -95,13 +92,23 @@ const BaseLayout = ({ children, error, onErrorClose, backgroundColor, fontColor 
         {children}
       </Box>
     </Paper>
-  );
 =======
-}
-
-const BaseLayout = ({ children }: BaseLayoutProps) => {
-  return <SlideContainer>{children}</SlideContainer>;
->>>>>>> dd7ecbd (added imagen images)
+    <SlideContainer>
+      {error && (
+        <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1 }}>
+          <Alert 
+            severity="error"
+            onClose={onErrorClose}
+            sx={{ m: 1 }}
+          >
+            {error}
+          </Alert>
+        </Box>
+      )}
+      {children}
+    </SlideContainer>
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
+  );
 };
 
 export default BaseLayout;

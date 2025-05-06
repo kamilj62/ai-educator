@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React from 'react';
 import { useCallback, useEffect } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
@@ -8,18 +9,20 @@ import Image from '@tiptap/extension-image';
 <<<<<<< HEAD
 import { useCallback, useEffect } from 'react';
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
+=======
+import React, { useCallback, useEffect } from 'react';
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Image from '@tiptap/extension-image';
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 import EditorToolbar from './EditorToolbar';
 import { Box } from '@mui/material';
-=======
-import { useCallback } from 'react';
->>>>>>> dd7ecbd (added imagen images)
 
 interface TiptapEditorProps {
   content: string;
   onChange: (content: string) => void;
   placeholder?: string;
   editable?: boolean;
-<<<<<<< HEAD
   onMount?: (editor: any) => void;
   bulletList?: boolean;
   type?: 'body' | 'slide' | 'bullet';
@@ -29,38 +32,34 @@ interface TiptapEditorProps {
 const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', editable = true, onMount, bulletList, type, ...rest }: TiptapEditorProps) => {
 =======
 const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', editable = true, onMount, bulletList }: TiptapEditorProps) => {
+<<<<<<< HEAD
 =======
 }
 
 const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', editable = true }: TiptapEditorProps) => {
 >>>>>>> dd7ecbd (added imagen images)
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
         heading: {
           levels: [1, 2, 3],
         },
-<<<<<<< HEAD
         bulletList: {
           keepMarks: true,
           keepAttributes: true,
         },
         orderedList: {},
         blockquote: {},
-=======
->>>>>>> dd7ecbd (added imagen images)
       }),
       Image.configure({
         inline: true,
         allowBase64: true,
       }),
     ],
-<<<<<<< HEAD
     content: bulletList && !content ? '<ul><li></li></ul>' : content,
-=======
-    content,
->>>>>>> dd7ecbd (added imagen images)
     editable,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
@@ -68,7 +67,6 @@ const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', edit
     editorProps: {
       attributes: {
         class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
-<<<<<<< HEAD
         placeholder,
       },
     },
@@ -89,12 +87,6 @@ const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', edit
     }
   }, [editor, onMount]);
 
-=======
-      },
-    },
-  });
-
->>>>>>> dd7ecbd (added imagen images)
   const addImage = useCallback((url: string, alt: string) => {
     if (editor) {
       editor.chain().focus().setImage({ src: url, alt }).run();
@@ -103,9 +95,12 @@ const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', edit
 
   return (
 <<<<<<< HEAD
+<<<<<<< HEAD
     <Box className="tiptap-editor-container" {...rest}>
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
     <Box className="tiptap-editor-container">
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
       {editor && <EditorToolbar editor={editor} />}
@@ -120,16 +115,12 @@ const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', edit
           border-radius: 0.375rem;
           overflow: hidden;
         }
-=======
-    <div className="tiptap-editor">
-      <EditorContent editor={editor} />
-      <style jsx global>{`
->>>>>>> dd7ecbd (added imagen images)
         .tiptap-editor {
           position: relative;
           width: 100%;
           min-height: 100px;
           padding: 1rem;
+<<<<<<< HEAD
 <<<<<<< HEAD
           border: 1px solid #e2e8f0;
           border-radius: 0.375rem;
@@ -140,6 +131,10 @@ const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', edit
           border-radius: 0.375rem;
 >>>>>>> dd7ecbd (added imagen images)
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
+=======
+          border: 1px solid #e2e8f0;
+          border-radius: 0.375rem;
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
         }
         .tiptap-editor:focus-within {
           border-color: #4f46e5;
@@ -165,7 +160,6 @@ const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', edit
           &:focus {
             outline: none;
           }
-<<<<<<< HEAD
           ul, ol {
             padding-left: 1.5em;
           }
@@ -201,11 +195,6 @@ const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', edit
         }
       `}</style>
     </Box>
-=======
-        }
-      `}</style>
-    </div>
->>>>>>> dd7ecbd (added imagen images)
   );
 };
 

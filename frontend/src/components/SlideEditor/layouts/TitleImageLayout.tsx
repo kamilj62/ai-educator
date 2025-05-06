@@ -1,9 +1,12 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import React from 'react';
 import { useCallback, useState, useEffect } from 'react';
 import { Box, styled, Typography } from '@mui/material';
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 import React, { useCallback } from 'react';
 import { Box, Paper, styled, Typography } from '@mui/material';
 import { TiptapSlideEditor as TiptapEditor } from '../components/TiptapSlideEditor';
@@ -65,6 +68,7 @@ const ImageArea = styled(Box)(({ theme }) => ({
     maxHeight: '100%',
     objectFit: 'contain',
   },
+<<<<<<< HEAD
 =======
 import { Box, styled } from '@mui/material';
 import BaseLayout from './BaseLayout';
@@ -79,12 +83,15 @@ const ContentContainer = styled(Box)(({ theme }) => ({
   height: '100%',
 >>>>>>> dd7ecbd (added imagen images)
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 }));
 
 interface TitleImageLayoutProps {
   slide: Slide;
   onChange: (slide: Slide) => void;
   onImageUpload?: (file: File) => Promise<string>;
+<<<<<<< HEAD
 <<<<<<< HEAD
   onImageGenerate?: (prompt: string, service?: ImageService) => Promise<SlideImage>;
 }
@@ -108,6 +115,8 @@ const TitleImageLayout: React.FC<TitleImageLayoutProps> = ({ slide, onChange }) 
       content: { ...slide.content, title },
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
   onImageGenerate?: (prompt: string, service?: ImageService) => Promise<string>;
 }
 
@@ -118,36 +127,20 @@ const TitleImageLayout: React.FC<TitleImageLayoutProps> = ({
   onImageGenerate,
 }) => {
   const handleTitleChange = useCallback((title: string) => {
-=======
-}
-
-const TitleImageLayout = ({ slide, onChange, onImageUpload }: TitleImageLayoutProps) => {
-  const handleTitleChange = (content: string) => {
->>>>>>> dd7ecbd (added imagen images)
     onChange({
       ...slide,
       content: {
         ...slide.content,
-<<<<<<< HEAD
         title,
       },
     });
   }, [slide, onChange]);
 
   const handleImageChange = useCallback((image: SlideImage) => {
-=======
-        title: content,
-      },
-    });
-  };
-
-  const handleImageChange = (imageUrl: string) => {
->>>>>>> dd7ecbd (added imagen images)
     onChange({
       ...slide,
       content: {
         ...slide.content,
-<<<<<<< HEAD
         image,
       },
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
@@ -285,6 +278,7 @@ const TitleImageLayout = ({ slide, onChange, onImageUpload }: TitleImageLayoutPr
         </Box>
       </ContentArea>
     </LayoutContainer>
+<<<<<<< HEAD
 =======
         image: {
           url: imageUrl,
@@ -329,6 +323,8 @@ const TitleImageLayout = ({ slide, onChange, onImageUpload }: TitleImageLayoutPr
     </BaseLayout>
 >>>>>>> dd7ecbd (added imagen images)
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
   );
 };
 

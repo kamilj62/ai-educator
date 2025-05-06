@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import React, { useEffect, useState, useRef } from 'react';
 import { Box, Typography, Button, IconButton, Tooltip } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
@@ -16,12 +15,16 @@ import SavePresentation from './components/SavePresentation';
 import SlideEditDialog from './components/SlideEditDialog';
 import { Slide, ImageService, SlideImage, SlideTopic, BackendSlideLayout } from './types';
 import SlideLayoutRenderer from './components/SlideLayoutRenderer';
+<<<<<<< HEAD
 import { backendSlideToFrontend, convertLayoutToFrontend, convertLayoutToBackend } from './utils';
 import EditorControls from './components/EditorControls';
 import AddIcon from '@mui/icons-material/Add';
 
 const DEFAULT_BG_COLOR = '#fff';
 const DEFAULT_FONT_COLOR = '#222';
+=======
+import { backendSlideToFrontend } from './utils';
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 
 const SlideEditor: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -389,6 +392,7 @@ const SlideEditor: React.FC = () => {
 
 export default SlideEditor;
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
 import { useState, useCallback } from 'react';
@@ -574,3 +578,5 @@ const SlideEditor = ({ slides, onChange, onImageUpload }: SlideEditorProps) => {
 export default SlideEditor;
 >>>>>>> dd7ecbd (added imagen images)
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)

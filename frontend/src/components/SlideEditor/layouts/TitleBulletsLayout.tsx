@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import React from 'react';
 import { styled } from '@mui/material/styles';
 import { Box, Typography } from '@mui/material';
@@ -11,10 +12,13 @@ import TiptapEditor from '../components/TiptapEditor';
 import { useState, useEffect } from 'react';
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 import { styled } from '@mui/material/styles';
 import { Box, Typography } from '@mui/material';
 import BaseLayout from './BaseLayout';
 import type { Slide } from '../types';
+<<<<<<< HEAD
 =======
 import { Box, styled } from '@mui/material';
 import BaseLayout from './BaseLayout';
@@ -44,6 +48,8 @@ const BulletList = styled(Box)(({ theme }) => ({
 }));
 >>>>>>> dd7ecbd (added imagen images)
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 
 interface TitleBulletsLayoutProps {
   slide: Slide;
@@ -51,9 +57,12 @@ interface TitleBulletsLayoutProps {
   onChange: (slide: Slide) => void;
   onImageUpload?: (file: File) => Promise<string>;
 <<<<<<< HEAD
+<<<<<<< HEAD
   onImageGenerate?: ((prompt: string) => Promise<string>) | ((prompt: string, service?: any) => Promise<SlideImage>);
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
   onImageGenerate?: (prompt: string) => Promise<string>;
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
 }
@@ -268,81 +277,6 @@ const TitleBulletsLayout: React.FC<TitleBulletsLayoutProps> = ({
                 }}
               />
             </ImageContainer>
-=======
-}
-
-const TitleBulletsLayout = ({ slide, onChange, onImageUpload }: TitleBulletsLayoutProps) => {
-  const handleTitleChange = (content: string) => {
-    onChange({
-      ...slide,
-      content: {
-        ...slide.content,
-        title: content,
-      },
-    });
-  };
-
-  const handleBulletsChange = (content: string) => {
-    // Convert HTML bullet points to array
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = content;
-    const bullets = Array.from(tempDiv.querySelectorAll('li')).map(li => li.textContent || '');
-
-    onChange({
-      ...slide,
-      content: {
-        ...slide.content,
-        bullets,
-      },
-    });
-  };
-
-  const handleImageChange = (imageUrl: string) => {
-    onChange({
-      ...slide,
-      content: {
-        ...slide.content,
-        image: {
-          url: imageUrl,
-          alt: 'Slide image',
-        },
-      },
-    });
-  };
-
-  // Convert bullet array to HTML content
-  const getBulletsContent = () => {
-    if (!slide.content.bullets?.length) return '';
-    return `<ul>${slide.content.bullets.map(bullet => `<li>${bullet}</li>`).join('')}</ul>`;
-  };
-
-  return (
-    <BaseLayout>
-      <ContentContainer>
-        <Box>
-          <TiptapEditor
-            content={slide.content.title || ''}
-            onChange={handleTitleChange}
-            placeholder="Enter title..."
-          />
-        </Box>
-        <BulletsContainer>
-          <BulletList>
-            <TiptapEditor
-              content={getBulletsContent()}
-              onChange={handleBulletsChange}
-              placeholder="Enter bullet points..."
-            />
-          </BulletList>
-          {slide.layout === 'title-bullets-image' && (
-            <Box width="40%">
-              <ImageUploader
-                imageUrl={slide.content.image?.url}
-                onImageChange={handleImageChange}
-                onImageUpload={onImageUpload}
-              />
-            </Box>
->>>>>>> dd7ecbd (added imagen images)
           )}
         </BulletsContainer>
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
@@ -351,7 +285,6 @@ const TitleBulletsLayout = ({ slide, onChange, onImageUpload }: TitleBulletsLayo
   );
 };
 
-<<<<<<< HEAD
 const ContentContainer = styled(Box)(({ theme }) => ({
   padding: theme.spacing(4),
   height: '100%',
@@ -396,7 +329,10 @@ const ImageContainer = styled(Box)(({ theme }) => ({
   backgroundColor: theme.palette.background.paper
 }));
 
+<<<<<<< HEAD
 =======
 >>>>>>> dd7ecbd (added imagen images)
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 export default TitleBulletsLayout;

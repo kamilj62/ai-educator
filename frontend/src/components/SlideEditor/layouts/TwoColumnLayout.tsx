@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import React from 'react';
 import { Box, styled } from '@mui/material';
 import BaseLayout from './BaseLayout';
@@ -75,10 +76,13 @@ const Column = styled(Box)(({ theme }) => ({
 }));
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 import { Box, styled, Typography } from '@mui/material';
 import BaseLayout from './BaseLayout';
 import ImageUploader from '../components/ImageUploader';
 import type { Slide, SlideImage } from '../types';
+<<<<<<< HEAD
 =======
 import { Box, styled } from '@mui/material';
 import BaseLayout from './BaseLayout';
@@ -107,16 +111,21 @@ const Column = styled(Box)(({ theme }) => ({
 }));
 >>>>>>> dd7ecbd (added imagen images)
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 
 interface TwoColumnLayoutProps {
   slide: Slide;
   onChange: (slide: Slide) => void;
   onImageUpload?: (file: File) => Promise<string>;
 <<<<<<< HEAD
+<<<<<<< HEAD
   onImageGenerate?: (prompt: string, service?: ImageService) => Promise<SlideImage>;
   preview?: boolean;
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
   onImageGenerate?: (prompt: string) => Promise<string>;
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
 }
@@ -168,63 +177,18 @@ const TwoColumnLayout: React.FC<TwoColumnLayoutProps> = ({
         </Column>
 =======
   const handleImageChange = (image: SlideImage) => {
-=======
-}
-
-const TwoColumnLayout = ({ slide, onChange, onImageUpload }: TwoColumnLayoutProps) => {
-  const handleTitleChange = (content: string) => {
->>>>>>> dd7ecbd (added imagen images)
     onChange({
       ...slide,
       content: {
         ...slide.content,
-<<<<<<< HEAD
         image
       }
-=======
-        title: content,
-      },
-    });
-  };
-
-  const handleLeftColumnChange = (content: string) => {
-    onChange({
-      ...slide,
-      content: {
-        ...slide.content,
-        columnLeft: content,
-      },
-    });
-  };
-
-  const handleRightColumnChange = (content: string) => {
-    onChange({
-      ...slide,
-      content: {
-        ...slide.content,
-        columnRight: content,
-      },
-    });
-  };
-
-  const handleImageChange = (imageUrl: string) => {
-    onChange({
-      ...slide,
-      content: {
-        ...slide.content,
-        image: {
-          url: imageUrl,
-          alt: 'Slide image',
-        },
-      },
->>>>>>> dd7ecbd (added imagen images)
     });
   };
 
   return (
     <BaseLayout>
       <ContentContainer>
-<<<<<<< HEAD
         <TitleContainer>
           {slide.content.title}
         </TitleContainer>
@@ -242,38 +206,6 @@ const TwoColumnLayout = ({ slide, onChange, onImageUpload }: TwoColumnLayoutProp
               maxHeight={1080}
             />
           </RightColumn>
-=======
-        <Box>
-          <TiptapEditor
-            content={slide.content.title || ''}
-            onChange={handleTitleChange}
-            placeholder="Enter title..."
-          />
-        </Box>
-        <ColumnsContainer>
-          <Column>
-            <TiptapEditor
-              content={slide.content.columnLeft || ''}
-              onChange={handleLeftColumnChange}
-              placeholder="Enter left column content..."
-            />
-          </Column>
-          <Column>
-            {slide.layout === 'two-column-image' ? (
-              <ImageUploader
-                imageUrl={slide.content.image?.url}
-                onImageChange={handleImageChange}
-                onImageUpload={onImageUpload}
-              />
-            ) : (
-              <TiptapEditor
-                content={slide.content.columnRight || ''}
-                onChange={handleRightColumnChange}
-                placeholder="Enter right column content..."
-              />
-            )}
-          </Column>
->>>>>>> dd7ecbd (added imagen images)
         </ColumnsContainer>
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
       </ContentContainer>
@@ -282,8 +214,11 @@ const TwoColumnLayout = ({ slide, onChange, onImageUpload }: TwoColumnLayoutProp
 };
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 const ContentContainer = styled(Box)(({ theme }) => ({
   padding: theme.spacing(4),
   height: '100%',
@@ -317,7 +252,10 @@ const RightColumn = styled(Box)(({ theme }) => ({
   alignItems: 'flex-start'
 }));
 
+<<<<<<< HEAD
 =======
 >>>>>>> dd7ecbd (added imagen images)
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 export default TwoColumnLayout;

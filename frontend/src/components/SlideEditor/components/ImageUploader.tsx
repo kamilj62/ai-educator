@@ -1,34 +1,28 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import React from 'react';
 import { useCallback, useState, useEffect } from 'react';
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 import React, { useCallback, useState } from 'react';
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
 import { Box, Button, Typography, styled, CircularProgress, TextField } from '@mui/material';
 import { AddPhotoAlternate as AddPhotoIcon, Refresh as RefreshIcon } from '@mui/icons-material';
+<<<<<<< HEAD
 import type { SlideImage, ImageService } from '../types';
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 
 const UploadContainer = styled('div')(({ theme }) => ({
   width: '100%',
   height: '100%',
   minHeight: 200,
-=======
-import { Box, Button, styled } from '@mui/material';
-import { ChangeEvent, useCallback, useState } from 'react';
-import ImageIcon from '@mui/icons-material/Image';
-
-const ImageContainer = styled(Box)(({ theme }) => ({
-  width: '100%',
-  height: '300px',
-  border: `2px dashed ${theme.palette.grey[300]}`,
-  borderRadius: theme.spacing(1),
->>>>>>> dd7ecbd (added imagen images)
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
-<<<<<<< HEAD
   gap: theme.spacing(2),
   padding: theme.spacing(3),
   border: `2px dashed ${theme.palette.divider}`,
@@ -36,16 +30,10 @@ const ImageContainer = styled(Box)(({ theme }) => ({
   transition: theme.transitions.create(['border-color', 'background-color']),
   '&:hover': {
     backgroundColor: theme.palette.action.hover,
-=======
-  cursor: 'pointer',
-  transition: 'border-color 0.2s ease',
-  '&:hover': {
->>>>>>> dd7ecbd (added imagen images)
     borderColor: theme.palette.primary.main,
   },
 }));
 
-<<<<<<< HEAD
 const ImagePreview = styled('img')({
   maxWidth: '100%',
   maxHeight: '300px',
@@ -54,10 +42,17 @@ const ImagePreview = styled('img')({
 });
 
 export interface ImageUploaderProps {
+<<<<<<< HEAD
   image?: string | SlideImage;
   onImageChange: (image: SlideImage) => void;
   onImageUpload?: (file: File) => Promise<string>;
   onImageGenerate?: (prompt: string, service?: ImageService) => Promise<SlideImage>;
+=======
+  currentImage?: any;
+  onImageChange: (image: any) => void;
+  onImageUpload?: (file: File) => Promise<string>;
+  onImageGenerate?: (prompt: string, service?: any) => Promise<string>;
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
   maxWidth?: number;
   maxHeight?: number;
   acceptedTypes?: string[];
@@ -98,39 +93,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     } catch (err) {
       setError('Failed to upload image. Please try again.');
       console.error('Image upload error:', err);
-=======
-const PreviewImage = styled('img')({
-  maxWidth: '100%',
-  maxHeight: '100%',
-  objectFit: 'contain',
-});
-
-interface ImageUploaderProps {
-  imageUrl?: string;
-  onImageChange: (url: string) => void;
-  onImageUpload?: (file: File) => Promise<string>;
-}
-
-const ImageUploader = ({ imageUrl, onImageChange, onImageUpload }: ImageUploaderProps) => {
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleImageUpload = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !onImageUpload) return;
-
-    try {
-      setIsLoading(true);
-      const url = await onImageUpload(file);
-      onImageChange(url);
-    } catch (error) {
-      console.error('Failed to upload image:', error);
->>>>>>> dd7ecbd (added imagen images)
     } finally {
       setIsLoading(false);
     }
   }, [onImageUpload, onImageChange]);
 
-<<<<<<< HEAD
   const handleImageGenerate = useCallback(async () => {
     if (!onImageGenerate || !prompt.trim()) {
       setError('Please enter a prompt for image generation');
@@ -264,6 +231,7 @@ const ImageUploader = ({ imageUrl, onImageChange, onImageUpload }: ImageUploader
         </UploadContainer>
       )}
 <<<<<<< HEAD
+<<<<<<< HEAD
       {/* Move re-generate button below image preview */}
       {imageUrl && onImageGenerate && !isLoading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
@@ -310,6 +278,8 @@ const ImageUploader = ({ imageUrl, onImageChange, onImageUpload }: ImageUploader
       </label>
 >>>>>>> dd7ecbd (added imagen images)
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
     </Box>
   );
 };

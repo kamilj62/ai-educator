@@ -1,14 +1,11 @@
-<<<<<<< HEAD
 // Slide layout types
-export type SlideLayout = 
-  | 'title-only'
+export type SlideLayout =
+  | 'title'
   | 'title-image'
-  | 'title-body'
-  | 'title-body-image'
   | 'title-bullets'
-  | 'title-bullets-image'
-  | 'two-column'
-  | 'two-column-image';
+  | 'image-bullets'
+  | 'bullets'
+  | 'section-title';
 
 // Error handling types
 export type ErrorType = 
@@ -40,11 +37,14 @@ export interface ImageGenerationError extends APIError {
 }
 
 // Slide type
-export type Slide = {
+export interface Slide {
   id: string;
+  title: string;
+  content: string;
   layout: SlideLayout;
-  content: any;
-};
+  imageUrl?: string;
+  bulletPoints?: string[];
+}
 
 // Presentation type
 export interface Presentation {
@@ -57,37 +57,3 @@ export interface Presentation {
 
 // Re-export types from SlideEditor
 export * from './SlideEditor/types';
-=======
-export type SlideLayout = 
-  | 'title'
-  | 'title-image'
-  | 'title-body'
-  | 'title-body-image'
-  | 'title-bullets'
-  | 'title-bullets-image'
-  | 'two-column'
-  | 'two-column-image';
-
-export interface Slide {
-  id: string;
-  layout: SlideLayout;
-  content: {
-    title?: string;
-    subtitle?: string;
-    body?: string;
-    bullets?: string[];
-    columnLeft?: string;
-    columnRight?: string;
-    image?: {
-      url: string;
-      alt: string;
-    };
-  };
-}
-
-export interface EditorProps {
-  slide: Slide;
-  onChange: (slide: Slide) => void;
-  onImageUpload?: (file: File) => Promise<string>;
-}
->>>>>>> dd7ecbd (added imagen images)

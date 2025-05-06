@@ -72,6 +72,7 @@ export const convertLayoutToBackend = (layout: SlideLayout): BackendSlideLayout 
   }
 };
 
+<<<<<<< HEAD
 // Remove all font-size declarations from inline style attributes in HTML
 export function stripFontSizeStyles(html: string): string {
   if (!html) return html;
@@ -83,6 +84,8 @@ export function stripFontSizeStyles(html: string): string {
   });
 }
 
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 // Convert backend slide API response to frontend Slide object
 export function backendSlideToFrontend(raw: any): Slide {
   return {

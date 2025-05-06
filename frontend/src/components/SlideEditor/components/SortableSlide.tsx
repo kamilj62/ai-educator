@@ -1,9 +1,12 @@
-<<<<<<< HEAD
 import React from 'react';
 import { Card, CardContent, Typography, Box, IconButton, Tooltip } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
 import { Slide } from '../types';
+<<<<<<< HEAD
 import SlideLayoutRenderer from './SlideLayoutRenderer';
+=======
+import Image from 'next/image';
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 
 interface SortableSlideProps {
   slide: Slide;
@@ -44,6 +47,7 @@ const SortableSlide: React.FC<SortableSlideProps> = ({
             </Tooltip>
           )}
         </Box>
+<<<<<<< HEAD
         {/* Only show the title for all slides in the sorter */}
         {index === 0 ? (
           <Box sx={{ textAlign: 'center', fontWeight: 700, fontSize: '1.2rem', color: '#222', py: 2 }}>
@@ -52,6 +56,45 @@ const SortableSlide: React.FC<SortableSlideProps> = ({
         ) : (
           <Box sx={{ textAlign: 'center', fontWeight: 700, fontSize: '1.1rem', color: '#222', py: 2 }}>
             {slide.content.title}
+=======
+        <Typography
+          variant="body2"
+          sx={{
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            lineHeight: 1.4,
+            fontWeight: isActive ? 500 : 400,
+            color: isActive ? 'primary.main' : 'text.primary',
+          }}
+        >
+          {slide.content.title || 'Untitled Slide'}
+        </Typography>
+
+        {slide.content.image?.url && (
+          <Box
+            sx={{
+              mt: 1,
+              width: '100%',
+              height: '60px',
+              borderRadius: 1,
+              overflow: 'hidden',
+              position: 'relative',
+              bgcolor: 'action.hover',
+            }}
+          >
+            <Image
+              src={slide.content.image.url}
+              alt={slide.content.image.alt || ''}
+              layout="fill"
+              objectFit="cover"
+              style={{ borderRadius: '4px' }}
+              sizes="(max-width: 600px) 100vw, 332px"
+              priority={index === 0}
+            />
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
           </Box>
         )}
       </Box>
@@ -84,77 +127,3 @@ const SortableSlide: React.FC<SortableSlideProps> = ({
 };
 
 export default SortableSlide;
-=======
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { Box, Paper, Typography, styled } from '@mui/material';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import { Slide } from './types';
-
-const SlidePreview = styled(Paper, {
-  shouldForwardProp: (prop) => prop !== 'isActive',
-})<{ isActive?: boolean }>(({ theme, isActive }) => ({
-  padding: theme.spacing(2),
-  marginBottom: theme.spacing(1),
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  gap: theme.spacing(1),
-  backgroundColor: isActive ? theme.palette.primary.light : theme.palette.background.paper,
-  '&:hover': {
-    backgroundColor: isActive ? theme.palette.primary.light : theme.palette.grey[100],
-  },
-}));
-
-const PreviewContent = styled(Box)({
-  flex: 1,
-  overflow: 'hidden',
-});
-
-interface SortableSlideProps {
-  slide: Slide;
-  isActive?: boolean;
-  onClick: () => void;
-}
-
-export const SortableSlide = ({ slide, isActive, onClick }: SortableSlideProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: slide.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  const getPreviewText = () => {
-    const title = slide.content.title?.replace(/<[^>]*>/g, '') || 'Untitled Slide';
-    return title.length > 30 ? `${title.substring(0, 30)}...` : title;
-  };
-
-  return (
-    <SlidePreview
-      ref={setNodeRef}
-      style={style}
-      isActive={isActive}
-      onClick={onClick}
-      elevation={isDragging ? 4 : 1}
-    >
-      <Box {...attributes} {...listeners}>
-        <DragIndicatorIcon color="action" />
-      </Box>
-      <PreviewContent>
-        <Typography variant="body2" noWrap>
-          {getPreviewText()}
-        </Typography>
-      </PreviewContent>
-    </SlidePreview>
-  );
-};
->>>>>>> dd7ecbd (added imagen images)

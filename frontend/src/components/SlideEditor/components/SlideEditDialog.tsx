@@ -1,9 +1,13 @@
+<<<<<<< HEAD
 import React from 'react';
 import {
   useState,
   useEffect,
   useCallback
 } from 'react';
+=======
+import React, { useState, useEffect, useCallback } from 'react';
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 import {
   Dialog,
   DialogTitle,
@@ -144,6 +148,7 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     };
   });
 
+<<<<<<< HEAD
   console.log('SlideEditDialog topic:', topic);
   console.log('SlideEditDialog defaultImagePrompt:', editedSlide.content.image_prompt || topic?.image_prompt || slide.content.image_prompt || '');
 
@@ -177,6 +182,19 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
 
   const [bodyError, setBodyError] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+=======
+  const handleLayoutChange = (newLayout: SlideLayout) => {
+    // Create a new content object based on the selected layout
+    const newContent = {
+      title: editedSlide.content.title || '',
+      subtitle: editedSlide.content.subtitle,
+      body: (newLayout === 'title-body' || newLayout === 'title-body-image') ? (editedSlide.content.body || '') : undefined,
+      bullets: (newLayout === 'title-bullets' || newLayout === 'title-bullets-image') ? (editedSlide.content.bullets || []) : undefined,
+      columnLeft: newLayout === 'two-column' ? (editedSlide.content.columnLeft || '') : undefined,
+      columnRight: newLayout === 'two-column' ? (editedSlide.content.columnRight || '') : undefined,
+      image: (newLayout === 'title-image' || newLayout === 'title-bullets-image' || newLayout === 'title-body-image') ? editedSlide.content.image : undefined,
+    };
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 
   const [bgColor, setBgColor] = useState(slide.backgroundColor || '#fff');
   const [fontColor, setFontColor] = useState(slide.fontColor || '#222');
@@ -322,6 +340,7 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     if (color !== 'custom') setCustomBg('');
   };
 
+<<<<<<< HEAD
   const handleFontColorChange = (color: string) => {
     setFontColor(color);
     if (color !== 'custom') setCustomFont('');
@@ -381,6 +400,10 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   const handleAIGenerate = async () => {
     setAiLoading(true);
     setAiError(null);
+=======
+  const handleImageGenerate = useCallback(async (prompt: string) => {
+    if (!onImageGenerate) return;
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
     try {
       // Use the current title or topic as prompt, fallback to 'Generate slide content'
       const prompt = editedSlide.content.title || topic?.title || 'Generate slide content';
@@ -423,7 +446,32 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     } finally {
       setAiLoading(false);
     }
-  };
+  }, [onImageGenerate, handleImageChange]);
+
+  useEffect(() => {
+    const newSlide = {
+      ...slide,
+      layout: convertLayoutToFrontend(slide.layout),
+      content: {
+        ...slide.content,
+        bullets: slide.content.bullets ? [...slide.content.bullets] : [],
+        image: slide.content.image || (slide.content.image_prompt ? {
+          url: '',
+          alt: slide.content.image_prompt,
+          caption: slide.content.image_prompt,
+          prompt: slide.content.image_prompt,
+          service: 'dalle' as ImageService
+        } : undefined)
+      }
+    };
+    setEditedSlide(newSlide);
+
+    // Auto-generate image if needed
+    if (slide.content.image_prompt && (!slide.content.image || !slide.content.image.url)) {
+      console.log('Auto-generating image in edit dialog');
+      handleImageGenerate(slide.content.image_prompt);
+    }
+  }, [slide, handleImageGenerate]);
 
   const handleSave = () => {
     onSave({

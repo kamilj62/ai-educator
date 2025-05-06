@@ -1,9 +1,12 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import React from 'react';
 import { useState } from 'react';
 import { Box, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 import React, { useState } from 'react';
 import { Box, Button, Dialog, DialogTitle, DialogContent, Grid, Card, CardContent, Typography, IconButton } from '@mui/material';
 import { LayoutOption, SlideLayout, layoutOptions } from '../types';
@@ -149,6 +152,7 @@ const LayoutSwitcher: React.FC<LayoutSwitcherProps> = ({ backgroundColor, fontCo
         </DialogContent>
       </Dialog>
     </>
+<<<<<<< HEAD
 =======
 import { Box, Button, Menu, MenuItem, Typography, styled } from '@mui/material';
 import { useState } from 'react';
@@ -284,6 +288,8 @@ const LayoutSwitcher = ({ currentLayout, onLayoutChange }: LayoutSwitcherProps) 
     </Box>
 >>>>>>> dd7ecbd (added imagen images)
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
+=======
+>>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
   );
 };
 
