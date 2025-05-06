@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   Box,
   Typography,
@@ -26,7 +26,7 @@ const SlidePreview: React.FC<SlidePreviewProps> = ({
   onPrevious,
   onNext,
 }) => {
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
   const slideRef = React.useRef<HTMLDivElement>(null);
 
   // Check if fullscreen is supported
@@ -77,7 +77,7 @@ const SlidePreview: React.FC<SlidePreviewProps> = ({
     }
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     const handleFullscreenChange = () => {
       const isInFullscreen = !!(
         document.fullscreenElement ||
