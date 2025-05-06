@@ -98,6 +98,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://ai-educator-eight.vercel.app",
+        "https://ai-educator-one.vercel.app",
         "http://localhost:3000"
     ],
     allow_credentials=True,
