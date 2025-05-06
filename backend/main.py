@@ -111,31 +111,15 @@ if ("pytest" in sys.modules or "PYTEST_CURRENT_TEST" in os.environ) and ai_servi
         logger.error(traceback.format_exc())
 
 # Configure CORS
-origins = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://localhost:3002",
-    "http://localhost:3003",
-    "http://localhost:3004",
-    "http://localhost:3005",
-    "http://localhost:3006",
-    "http://localhost:3007",
-    "http://127.0.0.1:3000",
-    "https://marvelai-frontend-62a80e741e41.herokuapp.com",
-    "https://ai-educator-jfpenqilf-kamilj62s-projects.vercel.app",
-    "https://frontend-303seubxr-kamilj62s-projects.vercel.app",
-    "https://frontend-ql0c9fd82-kamilj62s-projects.vercel.app",
-    "https://ai-educator.windsurf.build",
-    "https://frontend-five-henna-11.vercel.app",
-    "https://frontend-jcu0i4lxt-kamilj62s-projects.vercel.app",
-    "https://ai-educator-1vxhsdwjo-kamilj62s-projects.vercel.app"
-]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,  # Changed to True to allow credentials
+    allow_origins=[
+        "https://ai-educator-1vxhsdwjo-kamilj62s-projects.vercel.app",
+        "http://localhost:3000"
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
 # Mount static files directory
