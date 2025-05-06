@@ -28,9 +28,9 @@ from .models import (
     SlideContentNew,
     SlideNew as Slide
 )
-from ai_service import AIService
-from rate_limiter import RateLimiter
-from exceptions import (
+from .ai_service import AIService
+from .rate_limiter import RateLimiter
+from .exceptions import (
     ImageGenerationError,
     ContentSafetyError,
     ErrorType,
