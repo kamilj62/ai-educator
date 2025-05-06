@@ -38,7 +38,7 @@ from .exceptions import (
     ContentSafetyError
 )
 from dotenv import load_dotenv
-from utils.export_utils import create_presentation
+from .utils.export_utils import create_presentation
 
 # Load environment variables from .env file
 load_dotenv()
