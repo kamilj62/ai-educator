@@ -1,8 +1,7 @@
 import React from 'react';
 import { Button } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import { API_BASE_URL } from '../../config';
-
+import { API_CONFIG } from '../config/api';
 interface ExportButtonProps {
   presentation: any;
 }
@@ -12,7 +11,7 @@ const ExportButton: React.FC<ExportButtonProps> = ({ presentation }) => {
     try {
       // Create a temporary link element
       const link = document.createElement('a');
-      link.href = `${API_BASE_URL}/static/exports/renewable_energy_presentation.pptx`;
+      link.href = `${API_CONFIG.BASE_URL}/static/exports/renewable_energy_presentation.pptx`;
       link.download = 'renewable_energy_presentation.pptx';
       document.body.appendChild(link);
       link.click();

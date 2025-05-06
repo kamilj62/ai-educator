@@ -49,17 +49,21 @@ export const generateOutline = createAsyncThunk(
 
       if (!response.ok) {
         let errorPayload;
+        let errorMessage = 'API Error';
         try {
           errorPayload = await response.json();
+          if (typeof errorPayload === 'object' && errorPayload !== null) {
+            errorMessage = errorPayload.detail || errorPayload.message || JSON.stringify(errorPayload);
+          }
         } catch (e) {
-          errorPayload = await response.text();
-        }
-        // Prefer detail or message if present
-        let errorMessage = 'API Error';
-        if (typeof errorPayload === 'object' && errorPayload !== null) {
-          errorMessage = errorPayload.detail || errorPayload.message || JSON.stringify(errorPayload);
-        } else if (typeof errorPayload === 'string') {
-          errorMessage = errorPayload;
+          try {
+            errorPayload = await response.text();
+            if (typeof errorPayload === 'string') {
+              errorMessage = errorPayload;
+            }
+          } catch (e2) {
+            errorMessage = response.statusText;
+          }
         }
         throw new Error(errorMessage);
       }
@@ -92,14 +96,32 @@ export const generateSlides = createAsyncThunk(
           instructional_level: instructionalLevel,
           layout: defaultLayout,
         };
-        const response = await fetch(`/api/generate/slides`, {
+        // Use environment variable for API base URL
+        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+        const response = await fetch(`${baseUrl}/api/generate/slides`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestBody),
         });
         if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`API Error: ${response.statusText} - ${errorText}`);
+          let errorPayload;
+          let errorMessage = 'API Error';
+          try {
+            errorPayload = await response.json();
+            if (typeof errorPayload === 'object' && errorPayload !== null) {
+              errorMessage = errorPayload.detail || errorPayload.message || JSON.stringify(errorPayload);
+            }
+          } catch (e) {
+            try {
+              errorPayload = await response.text();
+              if (typeof errorPayload === 'string') {
+                errorMessage = errorPayload;
+              }
+            } catch (e2) {
+              errorMessage = response.statusText;
+            }
+          }
+          throw new Error(errorMessage);
         }
 
         const data = await response.json();

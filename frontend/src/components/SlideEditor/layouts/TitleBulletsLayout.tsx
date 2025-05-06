@@ -1,3 +1,4 @@
+import React from 'react';
 import { styled } from '@mui/material/styles';
 import { Box, Typography } from '@mui/material';
 import BaseLayout from './BaseLayout';
