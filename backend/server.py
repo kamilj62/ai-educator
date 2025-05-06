@@ -40,24 +40,8 @@ app = FastAPI()
 # --- CORS MIDDLEWARE SETUP ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # You can restrict this to your frontend domain in production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Or ["*"] for all origins (dev only)
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Configure CORS - Allow all origins in development
-app.add_middleware(
-    CORSMiddleware,
     allow_origins=[
+        "https://ai-educator-1vxhsdwjo-kamilj62s-projects.vercel.app",
         "http://localhost:3000",
         "https://ai-powerpoint-f44a1d57b590.herokuapp.com"
     ],
