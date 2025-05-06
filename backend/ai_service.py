@@ -19,7 +19,7 @@ from google.oauth2 import service_account
 from google.api_core import retry, exceptions
 from fastapi import FastAPI, HTTPException
 import httpx
-from models import (
+from .models import (
     InstructionalLevel,
     SlideContent,
     SlideTopic,

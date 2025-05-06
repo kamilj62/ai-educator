@@ -3,11 +3,7 @@ import time
 from typing import Dict, Optional
 import logging
 from contextlib import asynccontextmanager
-<<<<<<< HEAD
-from backend.models import ImageServiceProvider
-=======
-from models import ImageServiceProvider
->>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
+from .models import ImageServiceProvider
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +136,6 @@ class RateLimiter:
                 await asyncio.sleep(5 * retry_count)
             else:
                 break
-<<<<<<< HEAD
 
     @asynccontextmanager
     async def limit(self, operation_type: str = 'default'):
@@ -154,8 +149,6 @@ class RateLimiter:
             raise
         finally:
             logger.debug(f"Completed rate-limited operation: {operation_type}")
-=======
->>>>>>> dd7ecbd (added imagen images)
 
     def get_current_usage(self) -> Dict[str, Dict[str, float]]:
         """Get current usage statistics for all operation types."""

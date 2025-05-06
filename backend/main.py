@@ -14,7 +14,7 @@ from pptx import Presentation as pptx_Presentation
 from pptx.util import Inches
 from contextlib import asynccontextmanager
 import asyncio
-from models import (
+from .models import (
     PresentationInput, 
     OutlineResponse, 
     Presentation, 
