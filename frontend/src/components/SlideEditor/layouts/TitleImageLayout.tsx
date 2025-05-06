@@ -41,7 +41,7 @@ const ImageArea = styled(Box)(({ theme }) => ({
   height: '100%',
   width: '100%',
   background: '#fffbe7',
-  border: '2px solid blue',
+  /* border: '2px solid blue', */
   margin: '0 auto',
   display: 'block',
 }));

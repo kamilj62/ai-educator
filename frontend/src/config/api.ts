@@ -5,7 +5,7 @@ import type { BackendSlideLayout } from '../components/SlideEditor/types';
 export const DEFAULT_LAYOUT: BackendSlideLayout = 'title-bullets';
 
 export const API_CONFIG: APIConfig = {
-  BASE_URL: '/api',
+  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || '/api',
   ENDPOINTS: {
     GENERATE_OUTLINE: '/api/generate/outline',
     GENERATE_SLIDE: '/api/generate/slide',
