@@ -32,6 +32,13 @@ const TitleBodyLayout: React.FC<TitleBodyLayoutProps> = ({
   slide, 
   onChange
 }) => {
+  // Helper to ensure HTML for TiptapEditor
+  const ensureHtml = (value: string | undefined) => {
+    if (!value) return '';
+    if (typeof value !== 'string') return '';
+    return value.trim().startsWith('<') ? value : `<p>${value}</p>`;
+  };
+
   return (
     <BaseLayout>
       <ContentContainer>
@@ -53,11 +60,7 @@ const TitleBodyLayout: React.FC<TitleBodyLayoutProps> = ({
           }}
         >
           {slide.content.title && typeof slide.content.title === 'string' ? (
-            slide.content.title.trim().startsWith('<') ? (
-              <span dangerouslySetInnerHTML={{ __html: slide.content.title }} />
-            ) : (
-              <span>{slide.content.title}</span>
-            )
+            <span dangerouslySetInnerHTML={{ __html: ensureHtml(slide.content.title) }} />
           ) : (
             <span style={{color:'#bbb'}}>[No Title]</span>
           )}
@@ -113,11 +116,7 @@ const TitleBodyLayout: React.FC<TitleBodyLayoutProps> = ({
           {slide.content.body && typeof slide.content.body === 'string' ? (
             <span
               style={{fontSize:'2rem',fontWeight:400,lineHeight:1.35,letterSpacing:'-0.01em',color:'#222'}}
-              dangerouslySetInnerHTML={{
-                __html: slide.content.body.trim().startsWith('<')
-                  ? slide.content.body
-                  : `<p>${slide.content.body}</p>`
-              }}
+              dangerouslySetInnerHTML={{ __html: ensureHtml(slide.content.body) }}
             />
           ) : (
             <span style={{ color: '#bbb' }}>[No Body Content]</span>

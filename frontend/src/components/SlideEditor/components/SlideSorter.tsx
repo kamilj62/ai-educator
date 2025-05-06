@@ -1,4 +1,5 @@
-import React, { memo } from 'react';
+import React from 'react';
+import { memo } from 'react';
 import { Box } from '@mui/material';
 import SortableSlide from './SortableSlide';
 import { Slide } from '../types';
