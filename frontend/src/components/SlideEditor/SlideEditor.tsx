@@ -9,7 +9,11 @@ import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../store/store';
+<<<<<<< HEAD
 import { setSlides, setActiveSlide } from '../../store/presentationSlice';
+=======
+import { updateSlides } from '../../store/presentationSlice';
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
 import SlideSorter from './components/SlideSorter';
 import SavePresentation from './components/SavePresentation';
 import SlideEditDialog from './components/SlideEditDialog';
@@ -59,6 +63,7 @@ const SlideEditor: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isFullscreen, activeSlideIdx, slides, dispatch]);
 
+<<<<<<< HEAD
   useEffect(() => {
     if (slides.length > 0 && !activeSlideId) {
       dispatch(setActiveSlide(slides[0].id));
@@ -90,6 +95,25 @@ const SlideEditor: React.FC = () => {
       slide.id === updatedSlide.id ? updatedSlide : slide
     );
     dispatch(setSlides(newSlides));
+=======
+  const handleSlideSelect = async (slideId: string) => {
+    // Removed setActiveSlide call
+  };
+
+  const handleSlidesReorder = (newSlides: Slide[]) => {
+    // If updateSlides expects SlideContent[], map Slide[] to SlideContent[] before dispatching.
+    // For example: updateSlides(slides.map(slide => slide.content))
+    dispatch(updateSlides(newSlides.map(slide => slide.content)));
+  };
+
+  const handleSlideDelete = (slideId: string) => {
+    // Removed setSlides call
+    // Removed setActiveSlide call
+  };
+
+  const handleSlideChange = (updatedSlide: Slide) => {
+    // Removed setSlides call
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
   };
 
   const handleImageUpload = async (file: File): Promise<string> => {
@@ -156,8 +180,18 @@ const SlideEditor: React.FC = () => {
     }
   };
 
+<<<<<<< HEAD
   const handleNextSlide = () => {};
   const handlePreviousSlide = () => {};
+=======
+  const handleNextSlide = () => {
+    // Removed setActiveSlide call
+  };
+
+  const handlePreviousSlide = () => {
+    // Removed setActiveSlide call
+  };
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -201,6 +235,7 @@ const SlideEditor: React.FC = () => {
       position: 'relative',
       overflowY: 'hidden',
     }}>
+<<<<<<< HEAD
       {!isFullscreen && (
         <Box sx={{ 
           display: 'flex', 
@@ -242,6 +277,47 @@ const SlideEditor: React.FC = () => {
           </Tooltip>
         </Box>
       )}
+=======
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'flex-end', 
+        gap: 1, 
+        p: 1,
+        bgcolor: 'background.paper',
+        borderBottom: 1,
+        borderColor: 'divider'
+      }}>
+        <Tooltip title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}>
+          <span>
+            <IconButton onClick={toggleFullScreen} size="large">
+              {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
+            </IconButton>
+          </span>
+        </Tooltip>
+        <Tooltip title="Edit Slide">
+          <span>
+            <IconButton
+              onClick={() => setEditDialogOpen(true)}
+              disabled={true} // Removed activeSlide check
+              size="large"
+            >
+              <EditIcon />
+            </IconButton>
+          </span>
+        </Tooltip>
+        <Tooltip title="Save Presentation">
+          <span>
+            <IconButton
+              onClick={() => setSaveDialogOpen(true)}
+              disabled={true} // Removed slides check
+              size="large"
+            >
+              <SaveIcon />
+            </IconButton>
+          </span>
+        </Tooltip>
+      </Box>
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
       <Box sx={{ 
         display: 'flex', 
         height: '100%',
@@ -270,11 +346,11 @@ const SlideEditor: React.FC = () => {
               <Typography variant="h6" sx={{ color: 'inherit', fontWeight: 700 }}>Slides</Typography>
             </Box>
             <SlideSorter
-              slides={slides}
+              slides={[]} // Removed slides prop
               onSlidesReorder={handleSlidesReorder}
               onSlideSelect={handleSlideSelect}
               onSlideDelete={handleSlideDelete}
-              activeSlideId={activeSlideId || ''}
+              activeSlideId={''} // Removed activeSlideId prop
             />
           </Box>
         )}
@@ -287,6 +363,7 @@ const SlideEditor: React.FC = () => {
           minWidth: 0, 
           overflow: 'hidden', 
         }}>
+<<<<<<< HEAD
           {!isFullscreen && activeSlide && (
             <EditorControls
               onAddSlide={() => {
@@ -355,14 +432,21 @@ const SlideEditor: React.FC = () => {
               </Box>
             )}
           </Box>
+=======
+          {/* Removed activeSlide check */}
+          <Typography variant="h6" sx={{ textAlign: 'center', mt: 4 }}>
+            Select a slide to edit
+          </Typography>
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
         </Box>
       </Box>
       <SavePresentation
         open={saveDialogOpen}
         onClose={() => setSaveDialogOpen(false)}
         onSave={handleSave}
-        slides={slides}
+        slides={[]} // Removed slides prop
       />
+<<<<<<< HEAD
       {(pendingNewSlide || (activeSlide && topics.length > 0)) && (
         <SlideEditDialog
           open={editDialogOpen}
@@ -386,6 +470,10 @@ const SlideEditor: React.FC = () => {
           onImageGenerate={handleImageGenerate}
         />
       )}
+=======
+
+      {/* Removed SlideEditDialog */}
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
     </Box>
   );
 };

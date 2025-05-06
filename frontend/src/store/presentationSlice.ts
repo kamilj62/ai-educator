@@ -5,18 +5,7 @@ import { RootState } from './store';
 import { normalizeBullets } from '../components/SlideEditor/components/utils';
 import { API_CONFIG } from '../config';
 
-// TODO: Resolve merge conflict below
-// Choose the correct/desired API Configuration and remove conflict markers
-
 export interface APIError {
-  message: string;
-  type?: 'SAFETY_VIOLATION' | 'RATE_LIMIT' | 'QUOTA_EXCEEDED' | 'NETWORK_ERROR';
-  service?: string;
-  retryAfter?: number;
-  context?: { topic: string };
-}
-
-export interface ErrorData {
   message: string;
   context?: { topic: string };
 }
@@ -41,7 +30,6 @@ const initialState: PresentationState = {
   defaultLayout: 'title-bullets',
 };
 
-// Async thunks
 export const generateOutline = createAsyncThunk(
   'presentation/generateOutline',
   async (params: { topic: string; numSlides: number; instructionalLevel: InstructionalLevel }) => {
@@ -115,13 +103,6 @@ const presentationSlice = createSlice({
     setDefaultLayout(state, action: PayloadAction<SlideLayout>) {
       state.defaultLayout = action.payload;
     },
-    reorderSlides(state, action: PayloadAction<{ oldIndex: number; newIndex: number }>) {
-      const { oldIndex, newIndex } = action.payload;
-      const slides = [...state.slides];
-      const [removed] = slides.splice(oldIndex, 1);
-      slides.splice(newIndex, 0, removed);
-      state.slides = slides;
-    },
   },
   extraReducers: (builder) => {
     builder
@@ -130,9 +111,8 @@ const presentationSlice = createSlice({
         state.error = null;
       })
       .addCase(generateOutline.fulfilled, (state, action) => {
-        state.isGeneratingOutline = false;
         state.outline = action.payload;
-        state.error = null;
+        state.isGeneratingOutline = false;
       })
       .addCase(generateOutline.rejected, (state, action) => {
         state.isGeneratingOutline = false;
@@ -159,7 +139,6 @@ export const {
   setError,
   setInstructionalLevel,
   setDefaultLayout,
-  reorderSlides,
 } = presentationSlice.actions;
 
 // Selectors

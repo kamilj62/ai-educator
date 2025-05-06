@@ -14,7 +14,67 @@ import { Rnd } from 'react-rnd';
 =======
 import TiptapEditor from '../components/TiptapEditor';
 import ImageUploader from '../components/ImageUploader';
+<<<<<<< HEAD
 import type { Slide, ImageService, SlideImage } from '../types';
+=======
+import type { Slide, SlideImage, ImageService } from '../types';
+
+const ContentContainer = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: theme.spacing(2),
+  height: '100%',
+  padding: theme.spacing(4),
+  '& .ProseMirror': {
+    '&:focus': {
+      outline: 'none',
+    },
+  },
+  '& .title-editor': {
+    '& .ProseMirror': {
+      fontSize: '2.5rem',
+      fontWeight: 600,
+      color: theme.palette.text.primary,
+      lineHeight: 1.2,
+      marginBottom: theme.spacing(2),
+    },
+  },
+}));
+
+const BodyContainer = styled(Box)(({ theme }) => ({
+  flex: 1,
+  display: 'flex',
+  gap: theme.spacing(4),
+  minHeight: 0,
+}));
+
+const TextContent = styled(Box)(({ theme }) => ({
+  flex: 1,
+  minWidth: 0,
+  '& .ProseMirror': {
+    fontSize: '1.25rem',
+    color: theme.palette.text.primary,
+    lineHeight: 1.6,
+    '& p': {
+      margin: '0.75em 0',
+      '&:first-child': {
+        marginTop: 0,
+      },
+      '&:last-child': {
+        marginBottom: 0,
+      },
+    },
+  },
+}));
+
+const ImageContainer = styled(Box)(({ theme }) => ({
+  width: '40%',
+  minWidth: 200,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: theme.spacing(1),
+}));
+>>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
 
 interface TitleBodyLayoutProps {
   slide: Slide;
@@ -81,6 +141,7 @@ const TitleBodyLayout: React.FC<TitleBodyLayoutProps> = ({
             bulletList={false}
           />
           {slide.layout.includes('image') && (
+<<<<<<< HEAD
             <ImageUploader
               currentImage={slide.content.image ? {
                 ...slide.content.image,
@@ -90,6 +151,16 @@ const TitleBodyLayout: React.FC<TitleBodyLayoutProps> = ({
               onImageUpload={onImageUpload}
               onImageGenerate={onImageGenerate}
             />
+=======
+            <ImageContainer>
+              <ImageUploader
+                image={slide.content.image?.url}
+                onImageChange={handleImageChange}
+                onImageUpload={onImageUpload}
+                onImageGenerate={onImageGenerate}
+              />
+            </ImageContainer>
+>>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
           )}
         </BodyContainer>
       </ContentContainer>

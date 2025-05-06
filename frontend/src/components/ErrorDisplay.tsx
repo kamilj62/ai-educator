@@ -1,11 +1,21 @@
 import React from 'react';
+<<<<<<< HEAD
 
 interface ErrorDisplayProps {
 <<<<<<< HEAD
   error: string | { message?: string; [key: string]: any } | null;
 =======
   error: string | null;
+<<<<<<< HEAD
 >>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
+=======
+=======
+import { selectError } from '../store/presentationSlice';
+
+interface ErrorDisplayProps {
+  error: any | null;
+>>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
   onClose?: () => void;
 }
 
@@ -14,6 +24,12 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onClose }) => {
 
   // Determine the error message to display
   let errorMessage = typeof error === 'string' ? error : error.message || String(error);
+
+  const renderErrorDetails = (rec: any, index: number) => {
+    return (
+      <li key={index}>{rec}</li>
+    );
+  };
 
   return (
 <<<<<<< HEAD
@@ -35,7 +51,41 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onClose }) => {
           <h3 className="text-lg font-semibold mb-2">
             {getErrorTitle(error ?? '')}
           </h3>
+<<<<<<< HEAD
           <p className="mb-2">{error}</p>
+=======
+          <p className="mb-2">{error.message}</p>
+          
+          {error.service && (
+            <p className="text-sm mb-2">
+              Service: {error.service}
+              {error.retryAfter && ` (retry after ${error.retryAfter} seconds)`}
+            </p>
+          )}
+          
+          {error.context && Object.keys(error.context).length > 0 && (
+            <div className="text-sm mb-2">
+              <p>Context:</p>
+              <ul className="list-disc list-inside pl-2">
+                {error.context.topic && (
+                  <li>Topic: {error.context.topic}</li>
+                )}
+                {error.context.level && (
+                  <li>Level: {error.context.level}</li>
+                )}
+              </ul>
+            </div>
+          )}
+          
+          {error.recommendations && error.recommendations.length > 0 && (
+            <div className="mt-3">
+              <h4 className="font-semibold mb-1">Recommendations:</h4>
+              <ul className="list-disc list-inside text-sm">
+                {error.recommendations.map(renderErrorDetails)}
+              </ul>
+            </div>
+          )}
+>>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
         </div>
         
         {onClose && (

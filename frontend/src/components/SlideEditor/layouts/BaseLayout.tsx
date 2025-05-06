@@ -37,11 +37,18 @@ interface BaseLayoutProps {
   children: ReactNode;
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   error?: APIError | null;
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
 =======
   error?: string | null;
 >>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
+=======
+  error?: string | null;
+=======
+  error?: any | null;
+>>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
   onErrorClose?: () => void;
   backgroundColor?: string;
   fontColor?: string;

@@ -11,9 +11,13 @@ import React, { useCallback, useState } from 'react';
 import { Box, Button, Typography, styled, CircularProgress, TextField } from '@mui/material';
 import { AddPhotoAlternate as AddPhotoIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 <<<<<<< HEAD
+<<<<<<< HEAD
 import type { SlideImage, ImageService } from '../types';
 =======
 >>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
+=======
+import type { SlideImage, ImageService } from '../types';
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
 
 const UploadContainer = styled('div')(({ theme }) => ({
   width: '100%',
@@ -43,6 +47,7 @@ const ImagePreview = styled('img')({
 
 export interface ImageUploaderProps {
 <<<<<<< HEAD
+<<<<<<< HEAD
   image?: string | SlideImage;
   onImageChange: (image: SlideImage) => void;
   onImageUpload?: (file: File) => Promise<string>;
@@ -53,6 +58,12 @@ export interface ImageUploaderProps {
   onImageUpload?: (file: File) => Promise<string>;
   onImageGenerate?: (prompt: string, service?: any) => Promise<string>;
 >>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
+=======
+  image?: string | SlideImage;
+  onImageChange: (image: SlideImage) => void;
+  onImageUpload?: (file: File) => Promise<string>;
+  onImageGenerate?: (prompt: string, service?: ImageService) => Promise<SlideImage>;
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
   maxWidth?: number;
   maxHeight?: number;
   acceptedTypes?: string[];
@@ -71,6 +82,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+<<<<<<< HEAD
   const [prompt, setPrompt] = useState(initialPrompt);
 
   // DEBUG: Log if onImageGenerate is present
@@ -82,6 +94,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   useEffect(() => {
     setPrompt(initialPrompt);
   }, [initialPrompt]);
+=======
+  const [prompt, setPrompt] = useState('');
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
 
   const handleFileUpload = useCallback(async (file: File) => {
     if (!onImageUpload) return;
@@ -142,6 +157,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   return (
     <Box>
       {imageUrl ? (
+<<<<<<< HEAD
         <Box sx={{ textAlign: 'center', position: 'relative', display: 'inline-block', width: '100%' }}>
           <ImagePreview src={imageUrl} alt="Slide image" style={{ opacity: isLoading ? 0.3 : 1, filter: isLoading ? 'blur(2px)' : 'none', transition: 'opacity 0.2s, filter 0.2s' }} />
           {/* Overlay spinner and message when generating */}
@@ -166,6 +182,22 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
               </Typography>
             </Box>
           )}
+=======
+        <Box sx={{ textAlign: 'center' }}>
+          <ImagePreview src={imageUrl} alt="Slide image" />
+          <Box sx={{ mt: 2, display: 'flex', gap: 1, justifyContent: 'center' }}>
+            {onImageGenerate && (
+              <Button
+                variant="outlined"
+                startIcon={<RefreshIcon />}
+                onClick={handleImageGenerate}
+                disabled={isLoading || !prompt.trim()}
+              >
+                Regenerate Image
+              </Button>
+            )}
+          </Box>
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
         </Box>
       ) : (
         <UploadContainer

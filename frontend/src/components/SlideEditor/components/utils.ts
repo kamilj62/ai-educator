@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // Converts from backend dash-case string to frontend SlideLayout (UPPERCASE)
 // export const convertLayoutToFrontend = (layout: string): string => {
 //   switch (layout) {
@@ -26,42 +27,45 @@ export const convertLayoutToFrontend = (layout: BackendSlideLayout): SlideLayout
     case 'title-only':
 >>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
       return 'title-only';
+=======
+import { BackendSlideLayout } from '../types';
+
+// Converts from backend dash-case string to frontend SlideLayout (UPPERCASE)
+export const convertLayoutToFrontend = (layout: string): string => {
+  switch (layout) {
+    case 'title-only':
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
     case 'title-body':
-      return 'title-body';
     case 'title-bullets':
-      return 'title-bullets';
     case 'two-column':
-      return 'two-column';
     case 'title-image':
-      return 'title-image';
     case 'title-body-image':
-      return 'title-body-image';
     case 'title-bullets-image':
-      return 'title-bullets-image';
     case 'two-column-image':
-      return 'two-column-image';
+      return layout;
     default:
       return 'title-only';
   }
 };
 
-export const convertLayoutToBackend = (layout: SlideLayout): BackendSlideLayout => {
+// Converts from frontend SlideLayout (UPPERCASE) to backend dash-case string
+export const convertLayoutToBackend = (layout: string): string => {
   switch (layout) {
-    case 'title-only':
+    case 'TITLE_ONLY':
       return 'title-only';
-    case 'title-body':
+    case 'TITLE_BODY':
       return 'title-body';
-    case 'title-bullets':
+    case 'TITLE_BULLETS':
       return 'title-bullets';
-    case 'two-column':
+    case 'TWO_COLUMN':
       return 'two-column';
-    case 'title-image':
+    case 'TITLE_IMAGE':
       return 'title-image';
-    case 'title-body-image':
+    case 'TITLE_BODY_IMAGE':
       return 'title-body-image';
-    case 'title-bullets-image':
+    case 'TITLE_BULLETS_IMAGE':
       return 'title-bullets-image';
-    case 'two-column-image':
+    case 'TWO_COLUMN_IMAGE':
       return 'two-column-image';
     default:
       return 'title-only';

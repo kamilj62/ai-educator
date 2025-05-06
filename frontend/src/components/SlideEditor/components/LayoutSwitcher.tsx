@@ -13,8 +13,14 @@ import { LayoutOption, SlideLayout, layoutOptions } from '../types';
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../store/store';
+<<<<<<< HEAD
 import { setSlides } from '../../../store/presentationSlice';
 import { SlideLayout, layoutOptions } from '../types';
+=======
+import { updateSlides } from '../../../store/presentationSlice';
+import ViewQuiltIcon from '@mui/icons-material/ViewQuilt';
+import CloseIcon from '@mui/icons-material/Close';
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
 
 <<<<<<< HEAD
 interface ColorOption {
@@ -48,9 +54,12 @@ const LayoutSwitcher: React.FC<LayoutSwitcherProps> = ({ layout, onLayoutChange 
   const [open, setOpen] = useState(false);
   const [selectedLayout, setSelectedLayout] = useState<SlideLayout>(layout);
   const dispatch = useDispatch();
+<<<<<<< HEAD
   const slides = useSelector((state: RootState) => state.presentation.slides);
   const activeSlideId = useSelector((state: RootState) => state.presentation.activeSlideId);
 >>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
+=======
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
 
 interface LayoutSwitcherProps {
   backgroundColor: string;
@@ -59,9 +68,59 @@ interface LayoutSwitcherProps {
   onFontColorChange: (color: string) => void;
 }
 
+<<<<<<< HEAD
 const LayoutSwitcher: React.FC<LayoutSwitcherProps> = ({ backgroundColor, fontColor, onBackgroundColorChange, onFontColorChange }) => {
   const [customBg, setCustomBg] = useState('');
   const [customFont, setCustomFont] = useState('');
+=======
+  const handleLayoutSelect = async (newLayout: SlideLayout) => {
+    setSelectedLayout(newLayout);
+    
+    try {
+      // Validate the layout change
+      const response = await fetch('/api/layout/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newLayout,
+          type: 'slide',
+          content: {}
+        })
+      });
+
+      if (!response.ok) {
+        console.error('Failed to validate layout:', await response.text());
+        return;
+      }
+
+      // Update the layout
+      dispatch(updateSlides([])); // Pass an empty array of SlideContent
+
+      onLayoutChange(newLayout);
+      handleClose();
+    } catch (error) {
+      console.error('Error switching layout:', error);
+    }
+  };
+
+  const getLayoutPreview = (layout: LayoutOption) => {
+    return (
+      <Box sx={{ textAlign: 'center', p: 1 }}>
+        <Typography variant="h3" sx={{ fontSize: '2rem', mb: 1 }}>
+          {layout.preview}
+        </Typography>
+        <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
+          {layout.title}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {layout.description}
+        </Typography>
+      </Box>
+    );
+  };
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
 
   return (
     <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', py: 1 }}>

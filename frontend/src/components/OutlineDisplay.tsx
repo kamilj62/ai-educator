@@ -28,10 +28,17 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import PresentationIcon from '@mui/icons-material/Slideshow';
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { generateSlides, setOutline } from '../store/presentationSlice';
 =======
 import { generateSlides } from '../store/presentationSlice';
 >>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
+=======
+import { generateSlides } from '../store/presentationSlice';
+=======
+import { updateTopics } from '../store/presentationSlice';
+>>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
 
 interface EditDialogProps {
   open: boolean;
@@ -111,12 +118,20 @@ const OutlineDisplay: React.FC = () => {
       dispatch(setOutline(updatedOutline));
 =======
     if (editingPoint) {
+<<<<<<< HEAD
       // Removed updateTopicPoint call
+<<<<<<< HEAD
 >>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
+=======
+=======
+      // Removed dispatch(updateTopics({ topicId: editingPoint.topicId, pointIndex: editingPoint.index, newText }));
+>>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
     }
   };
 
   const handleDeletePoint = (topicId: string, index: number) => {
+<<<<<<< HEAD
 <<<<<<< HEAD
     if (outline) {
       const updatedOutline = outline.map(topic => {
@@ -141,12 +156,24 @@ const OutlineDisplay: React.FC = () => {
       dispatch(setOutline(updatedOutline));
     }
 =======
+=======
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
     // Removed deleteTopicPoint call
   };
 
   const handleAddPoint = (topicId: string) => {
     // Removed addTopicPoint call
+<<<<<<< HEAD
 >>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
+=======
+=======
+    // Removed dispatch(deleteTopicPoint({ topicId, pointIndex: index }));
+  };
+
+  const handleAddPoint = (topicId: string) => {
+    // Removed dispatch(addTopicPoint({ topicId, text: 'New point' }));
+>>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
   };
 
   const handleGenerateSlides = () => {
@@ -161,6 +188,7 @@ const OutlineDisplay: React.FC = () => {
         }
       });
     };
+<<<<<<< HEAD
     if (outline) {
       collectTopics(outline);
       console.log('Topics to generate:', topicsToGenerate);
@@ -170,6 +198,11 @@ const OutlineDisplay: React.FC = () => {
     } else {
       console.warn('No outline found when trying to generate slides.');
     }
+=======
+    
+    // Removed collectTopics(outline);
+    // Removed dispatch(generateSlides(topicsToGenerate));
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
   };
 
   const renderTopic = (topic: SlideTopic, index: number) => (
@@ -246,6 +279,7 @@ const OutlineDisplay: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
 <<<<<<< HEAD
+<<<<<<< HEAD
       {/* Show Generate All Slides button if there is an outline and no slides yet */}
       {outline && outline.length > 0 && !hasSlides && (
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
@@ -259,6 +293,8 @@ const OutlineDisplay: React.FC = () => {
           </Button>
         </Box>
 =======
+=======
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
       {outline.length > 0 && (
         <>
           <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -277,12 +313,32 @@ const OutlineDisplay: React.FC = () => {
         </>
 >>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
       )}
+<<<<<<< HEAD
       {error && (
         <Typography color="error" variant="body2" sx={{ mb: 2 }}>
           {error}
         </Typography>
       )}
       {outline && outline.map((topic, index) => renderTopic(topic, index))}
+=======
+=======
+      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Button
+          variant="contained"
+          startIcon={<PresentationIcon />}
+          onClick={handleGenerateSlides}
+          sx={{ minWidth: 200 }}
+        >
+          Generate All Slides
+        </Button>
+        {error && (
+          <Typography color="error" variant="body2">
+            {error}
+          </Typography>
+        )}
+      </Box>
+>>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
+>>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
       <EditDialog
         open={editDialogOpen}
         text={editingPoint?.text || ''}
