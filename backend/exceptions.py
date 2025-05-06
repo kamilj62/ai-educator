@@ -1,9 +1,5 @@
 from enum import Enum
-<<<<<<< HEAD
-from typing import Optional, Any, Dict, List
-=======
 from typing import Optional, Dict, Any, List
->>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
 
 class ErrorType(str, Enum):
     RATE_LIMIT = "RATE_LIMIT"
@@ -13,9 +9,17 @@ class ErrorType(str, Enum):
     API_ERROR = "API_ERROR"
     NETWORK_ERROR = "NETWORK_ERROR"
 
-class ImageServiceProvider(str, Enum):
+class ImageServiceProvider(Enum):
     OPENAI = "DALL-E"
     GOOGLE = "Imagen"
+
+class ImageGenerationErrorType(Enum):
+    RATE_LIMIT = "RATE_LIMIT"
+    QUOTA_EXCEEDED = "QUOTA_EXCEEDED"
+    SAFETY_VIOLATION = "SAFETY_VIOLATION"
+    INVALID_REQUEST = "INVALID_REQUEST"
+    API_ERROR = "API_ERROR"
+    NETWORK_ERROR = "NETWORK_ERROR"
 
 class ImageGenerationError(Exception):
     def __init__(

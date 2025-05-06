@@ -2,7 +2,7 @@
 export type ImageService = 'dalle' | 'imagen' | 'generated' | 'upload';
 
 // Base types for layouts
-export type BackendSlideLayout = 
+export type SlideLayout =
   | 'title-only'
   | 'title-image'
   | 'title-body'
@@ -11,8 +11,6 @@ export type BackendSlideLayout =
   | 'title-bullets-image'
   | 'two-column'
   | 'two-column-image';
-
-export type SlideLayout = BackendSlideLayout;
 
 // Content types that match the frontend components
 export type BulletPoint = {
@@ -38,11 +36,11 @@ export type SlideImage = {
   height?: number;
 };
 
-export type InstructionalLevel = 
-  | 'elementary_school' 
-  | 'middle_school' 
-  | 'high_school' 
-  | 'university' 
+export type InstructionalLevel =
+  | 'elementary_school'
+  | 'middle_school'
+  | 'high_school'
+  | 'university'
   | 'professional';
 
 export type SlideContent = {
@@ -55,7 +53,6 @@ export type SlideContent = {
   columnLeft?: string;
   columnRight?: string;
   instructionalLevel?: InstructionalLevel;
-  // Add fields for examples and discussion_questions for compatibility with generated slides
   examples?: Array<string | { text: string }>;
   discussion_questions?: string[];
   description?: string;
@@ -107,7 +104,7 @@ export const isSlideLayout = (layout: string): layout is SlideLayout => {
     'title-bullets',
     'title-bullets-image',
     'two-column',
-    'two-column-image'
+    'two-column-image',
   ];
   return validLayouts.includes(layout as SlideLayout);
 };
@@ -127,7 +124,7 @@ export const getLayoutFeatures = (layout: SlideLayout): LayoutFeatures => {
     supportsBody: layout.includes('body'),
     supportsBullets: layout.includes('bullets'),
     supportsSubtitle: layout === 'title-only' || layout === 'title-image',
-    supportsColumns: layout.includes('column')
+    supportsColumns: layout.includes('column'),
   };
 };
 
@@ -145,61 +142,61 @@ export const layoutOptions: LayoutOption[] = [
     title: 'Title Only',
     description: 'Simple title slide with optional subtitle',
     preview: '📝',
-    features: getLayoutFeatures('title-only')
+    features: getLayoutFeatures('title-only'),
   },
   {
     layout: 'title-image',
     title: 'Title with Image',
     description: 'Title slide with an image',
     preview: '🖼️',
-    features: getLayoutFeatures('title-image')
+    features: getLayoutFeatures('title-image'),
   },
   {
     layout: 'title-body',
     title: 'Title with Body',
     description: 'Title with paragraph text',
     preview: '📄',
-    features: getLayoutFeatures('title-body')
+    features: getLayoutFeatures('title-body'),
   },
   {
     layout: 'title-body-image',
     title: 'Title with Body and Image',
     description: 'Title with paragraph text and image',
     preview: '📄🖼️',
-    features: getLayoutFeatures('title-body-image')
+    features: getLayoutFeatures('title-body-image'),
   },
   {
     layout: 'title-bullets',
     title: 'Title with Bullets',
     description: 'Title with bullet points',
     preview: '📋',
-    features: getLayoutFeatures('title-bullets')
+    features: getLayoutFeatures('title-bullets'),
   },
   {
     layout: 'title-bullets-image',
     title: 'Title with Bullets and Image',
     description: 'Title with bullet points and image',
     preview: '📋🖼️',
-    features: getLayoutFeatures('title-bullets-image')
+    features: getLayoutFeatures('title-bullets-image'),
   },
   {
     layout: 'two-column',
     title: 'Two Columns',
     description: 'Title with two text columns',
     preview: '🔲🔲',
-    features: getLayoutFeatures('two-column')
+    features: getLayoutFeatures('two-column'),
   },
   {
     layout: 'two-column-image',
     title: 'Two Columns with Image',
     description: 'Title with two columns and image',
     preview: '🔲🖼️',
-    features: getLayoutFeatures('two-column-image')
-  }
+    features: getLayoutFeatures('two-column-image'),
+  },
 ];
 
 // Image-related types
-export type ErrorType = 
+export type ErrorType =
   | 'RATE_LIMIT'
   | 'QUOTA_EXCEEDED'
   | 'SAFETY_VIOLATION'

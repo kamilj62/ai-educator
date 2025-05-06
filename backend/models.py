@@ -146,7 +146,10 @@ class ExportFormat(str, Enum):
     PPTX = "pptx"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
 class ImageServiceProvider(Enum):
     OPENAI = "openai"
     GOOGLE = "google"
@@ -169,4 +172,16 @@ class SlideGenerationRequestNew(BaseModel):
 class PresentationNew(BaseModel):
     model_config = ConfigDict(extra='forbid')
     slides: List[SlideNew]
+<<<<<<< HEAD
 >>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
+=======
+=======
+class ExportRequest(BaseModel):
+    presentation: Presentation
+    format: ExportFormat
+
+class ImageGenerationRequest(BaseModel):
+    """Request model for image generation."""
+    prompt: str = Field(..., description="The prompt to generate an image from")
+>>>>>>> dd7ecbd (added imagen images)
+>>>>>>> a8dbce3e (Update Procfile for Heroku deployment)

@@ -18,8 +18,12 @@ import { generateOutline, setError } from '../store/presentationSlice';
 import type { InstructionalLevel, SlideTopic, SlideContent } from '../components/types';
 =======
 import { generateOutline, setError, APIError } from '../store/presentationSlice';
+<<<<<<< HEAD
 import { InstructionalLevel } from './SlideEditor/types';
 >>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
+=======
+import type { InstructionalLevel, SlideTopic, SlideContent } from '../components/types';
+>>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
 import { LayoutSelector } from './SlideEditor/components/LayoutSelector';
 import { BackendSlideLayout } from './SlideEditor/types';
 import SlidePreview from './SlidePreview';
@@ -37,7 +41,12 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
   const slides = useAppSelector(state => state.presentation.slides);
 =======
   const error = useAppSelector(state => state.presentation.error) as APIError | null;
+<<<<<<< HEAD
 >>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
+=======
+  const presentation = useAppSelector(state => state.presentation.presentation);
+  const slides = useAppSelector(state => state.presentation.slides);
+>>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
   const [topic, setTopic] = useState('');
   const [numSlides, setNumSlides] = useState(5);
   const [level, setLevel] = useState<InstructionalLevel>('high_school');
@@ -153,6 +162,13 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
       return `Rate limit exceeded. Please try again in ${err.retryAfter} seconds.`;
     }
     return typeof error === 'string' ? error : err.message || 'An error occurred.';
+  };
+
+  const handleSaveTopic = (updatedTopic: SlideTopic, updatedSlide?: SlideContent) => {
+    if (editingTopic && slides) {
+      // Implement logic to update the slide/topic in Redux or local state
+      setEditingTopic(null);
+    }
   };
 
   const handleSaveTopic = (updatedTopic: SlideTopic, updatedSlide?: SlideContent) => {
