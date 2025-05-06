@@ -75,7 +75,7 @@ logger.info(f"Static directories created: {STATIC_DIR}, {IMAGES_DIR}")
 
 # Replace deprecated startup event with lifespan context
 @asynccontextmanager
-def lifespan(app):
+async def lifespan(app):
     global ai_service
     try:
         ai_service = AIService(rate_limiter)
@@ -84,7 +84,7 @@ def lifespan(app):
         except RuntimeError:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-        loop.run_until_complete(ai_service.initialize())
+        await ai_service.initialize()
         yield
     except Exception as e:
         logger.error(f"Failed to initialize AI service for testing: {e}")
