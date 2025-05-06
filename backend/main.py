@@ -3,23 +3,22 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+origins = [
+    "https://ai-educator-six.vercel.app",
+    "https://ai-educator-1vxhsdwjo-kamilj62s-projects.vercel.app",
+    "http://localhost:3000",
+    "https://ai-powerpoint-f44a1d57b590.herokuapp.com"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://ai-educator-1vxhsdwjo-kamilj62s-projects.vercel.app",
-        "http://localhost:3000",
-        "https://ai-powerpoint-f44a1d57b590.herokuapp.com"
-    ],
+    allow_origins=origins,  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-print("CORS origins:", [
-    "https://ai-educator-1vxhsdwjo-kamilj62s-projects.vercel.app",
-    "http://localhost:3000",
-    "https://ai-powerpoint-f44a1d57b590.herokuapp.com"
-])
+print("CORS origins:", origins)
 
 from fastapi import HTTPException, Body
 from fastapi.responses import JSONResponse
