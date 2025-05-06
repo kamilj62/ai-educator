@@ -15,6 +15,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+print("CORS origins:", [
+    "https://ai-educator-1vxhsdwjo-kamilj62s-projects.vercel.app",
+    "http://localhost:3000",
+    "https://ai-powerpoint-f44a1d57b590.herokuapp.com"
+])
+
 from fastapi import HTTPException, Body
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
