@@ -30,8 +30,8 @@ from .models import (
     SlideContentNew,
     SlideLayout
 )
-from rate_limiter import RateLimiter
-from exceptions import (
+from .rate_limiter import RateLimiter
+from .exceptions import (
     ImageGenerationError,
     ImageServiceProvider,
     ErrorType,
