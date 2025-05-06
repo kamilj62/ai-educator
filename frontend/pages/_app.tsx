@@ -6,6 +6,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { store } from '../src/store/store';
 import '../styles/slide-overrides.css';
 import '../src/components/SlideEditor/layouts/SlideEditorImageFix.css';
+import ErrorBoundary from '../src/components/ErrorBoundary';
 
 const theme = createTheme({
   palette: {
@@ -43,7 +44,9 @@ function MyApp({ Component, pageProps }: AppProps) {
     <Provider store={store}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <Component {...pageProps} />
+        <ErrorBoundary>
+          <Component {...pageProps} />
+        </ErrorBoundary>
       </ThemeProvider>
     </Provider>
   );

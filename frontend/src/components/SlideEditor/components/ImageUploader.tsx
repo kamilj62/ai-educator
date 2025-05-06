@@ -1,4 +1,5 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import React from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { Box, Button, Typography, styled, CircularProgress, TextField } from '@mui/material';
 import { AddPhotoAlternate as AddPhotoIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import type { SlideImage, ImageService } from '../types';

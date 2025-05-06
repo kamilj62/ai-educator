@@ -1,4 +1,5 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import React from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { Box, styled, Typography } from '@mui/material';
 import ImageUploader from '../components/ImageUploader';
 import type { Slide, SlideImage, ImageService } from '../types';

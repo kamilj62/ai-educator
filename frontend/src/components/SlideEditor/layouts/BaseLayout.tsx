@@ -1,4 +1,5 @@
-import React, { ReactNode } from 'react';
+import React from 'react';
+import { ReactNode } from 'react';
 import { Box, styled, Alert, Paper } from '@mui/material';
 
 interface BaseLayoutProps {
