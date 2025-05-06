@@ -449,8 +449,6 @@ class AIService:
             logger.error(f"Error validating response format: {str(e)}")
             raise ValueError(f"Invalid response format: {str(e)}")
 
-<<<<<<< HEAD
-=======
     async def generate_image(self, prompt: str, context: Optional[Dict[str, Any]] = None, retry_count: int = 0, max_retries: int = 3) -> str:
         """Generate image with Imagen, falling back to DALL-E if needed.
         
@@ -614,85 +612,6 @@ class AIService:
             # Convert to our custom error format
             raise ImageGenerationError.from_dalle_error(e, context)
 
-    async def _generate_image_url(self, topic: str, level: InstructionalLevel) -> Tuple[str, str]:
-        """Generate an educational image using Imagen with DALL-E fallback."""
-        MAX_IMAGEN_RETRIES = 3
-        RETRY_DELAY = 2  # seconds
-
-        # Sanitize topic for file naming
-        safe_topic = topic.lower().replace('/', '_').replace('\\', '_').replace(' ', '_')
-
-        # Generate the base prompt for both services
-        prompt = f"""Create a detailed, educational illustration for {topic}.
-        Style: Clean, modern, suitable for {level.value.replace('_', ' ')} level education.
-        Type: Diagram or illustration that clearly explains key concepts.
-        Must be: Scientifically accurate, visually engaging, and educational."""
-
-        context = {"topic": topic, "level": level.value}
-
-        try:
-            # Try generating with Imagen first (with retries)
-            try:
-                image_data = await self.generate_image(prompt, context=context, max_retries=MAX_IMAGEN_RETRIES)
-                image_path = self._save_base64_image(image_data, f"slide_{safe_topic}")
-                return image_path, "Generated educational illustration with Imagen"
-            except ImageGenerationError as e:
-                # If Imagen fails, try DALL-E
-                logger.warning(f"Imagen generation failed, trying DALL-E: {e.message}")
-                try:
-                    image_data = await self._generate_image_dalle(prompt, context)
-                    image_path = self._save_base64_image(image_data, f"slide_{safe_topic}")
-                    return image_path, "Generated educational illustration with DALL-E"
-                except ImageGenerationError as dalle_error:
-                    # If both fail, raise the DALL-E error
-                    logger.error(f"Both Imagen and DALL-E failed: {dalle_error.message}")
-                    raise dalle_error
-            except Exception as e:
-                logger.error(f"Unexpected error in image generation: {str(e)}")
-                # Try DALL-E as fallback
-                try:
-                    image_data = await self._generate_image_dalle(prompt, context)
-                    image_path = self._save_base64_image(image_data, f"slide_{safe_topic}")
-                    return image_path, "Generated educational illustration with DALL-E"
-                except ImageGenerationError as dalle_error:
-                    logger.error(f"DALL-E fallback also failed: {dalle_error.message}")
-                    raise dalle_error
-
-        except Exception as e:
-            if isinstance(e, ImageGenerationError):
-                raise e
-            logger.error(f"Failed to generate image: {str(e)}")
-            raise ImageGenerationError(
-                message=str(e),
-                error_type=ImageGenerationErrorType.API_ERROR,
-                service=ImageServiceProvider.IMAGEN
-            )
-
-    def _save_base64_image(self, base64_data: str, name_prefix: str) -> str:
-        """Save a base64 encoded image to the static directory."""
-        try:
-            # Create a hash of the image data for unique naming
-            image_hash = hashlib.md5(base64_data.encode()).hexdigest()[:8]
-            # Sanitize the name prefix to avoid directory path issues
-            safe_prefix = name_prefix.replace('/', '_').replace('\\', '_').lower()
-            image_name = f"{safe_prefix}_{image_hash}.png"
-            image_path = self.images_dir / image_name
-
-            # Decode and save the image
-            image_data = base64.b64decode(base64_data)
-            with open(image_path, "wb") as f:
-                f.write(image_data)
-
-            # Return the URL path (without domain) that will be served by FastAPI's static files
-            return f"static/images/{image_name}"
-        except Exception as e:
-            logger.error(f"Error saving image: {str(e)}")
-            raise ImageGenerationError(
-                message=f"Failed to save generated image: {str(e)}",
-                error_type=ImageGenerationErrorType.API_ERROR,
-                service=ImageServiceProvider.IMAGEN
-            )
-
     async def generate_outline(self, context: str, num_slides: int, level: InstructionalLevel, sensitive: bool = False) -> dict:
         """Generate a presentation outline based on context and parameters."""
         try:
@@ -845,7 +764,6 @@ class AIService:
             logger.error(traceback.format_exc())
             raise ValueError(f"Failed to generate slide content: {str(e)}")
 
->>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
     async def enhance_content(self, slide_content: SlideContent) -> SlideContent:
         """Enhance slide content with Gemini Pro (optional enhancement)."""
         try:
