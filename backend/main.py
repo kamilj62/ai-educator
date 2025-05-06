@@ -1,6 +1,22 @@
-from fastapi import FastAPI, HTTPException, Body
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://ai-educator-1vxhsdwjo-kamilj62s-projects.vercel.app",
+        "http://localhost:3000",
+        "https://ai-powerpoint-f44a1d57b590.herokuapp.com"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+from fastapi import HTTPException, Body
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 import os
@@ -92,20 +108,7 @@ def lifespan(app):
     yield
     # (Optional: add shutdown/cleanup code here)
 
-app = FastAPI(title="MarvelAI Presentation Generator", lifespan=lifespan)
-
-from fastapi.middleware.cors import CORSMiddleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://ai-educator-1vxhsdwjo-kamilj62s-projects.vercel.app",
-        "http://localhost:3000",
-        "https://ai-powerpoint-f44a1d57b590.herokuapp.com"
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.lifespan_context = lifespan
 
 import sys
 if ("pytest" in sys.modules or "PYTEST_CURRENT_TEST" in os.environ) and ai_service is None:
