@@ -3,20 +3,20 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins for testing
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 origins = [
     "https://ai-educator-six.vercel.app",
     "https://ai-educator-1vxhsdwjo-kamilj62s-projects.vercel.app",
     "http://localhost:3000",
     "https://ai-powerpoint-f44a1d57b590.herokuapp.com"
 ]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,  
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 print("CORS origins:", origins)
 
