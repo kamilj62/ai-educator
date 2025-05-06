@@ -1,10 +1,6 @@
 from enum import Enum
 from typing import List, Optional, Dict, Any, Union
-<<<<<<< HEAD
 from pydantic import BaseModel, Field, field_validator, root_validator, ConfigDict
-=======
-from pydantic import BaseModel, Field, ConfigDict
->>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
 
 class InstructionalLevel(str, Enum):
     ELEMENTARY = "elementary"
@@ -23,7 +19,6 @@ class Example(BaseModel):
 
 class SlideTopic(BaseModel):
     model_config = ConfigDict(extra='forbid')
-<<<<<<< HEAD
     id: Optional[str] = Field(default=None, description="Unique identifier for the topic")
     title: str = Field(..., description="Title of the topic")
     description: Optional[str] = Field(None, description="Optional detailed description")
@@ -42,22 +37,6 @@ class SlideTopic(BaseModel):
         if not isinstance(v, str) or not v.strip():
             raise ValueError('image_prompt must be a non-empty string')
         return v
-=======
-    title: str
-    key_points: List[str]
-    image_prompt: Optional[str] = None
-    description: Optional[str] = None
-
-class SlideLayout(str, Enum):
-    TITLE_ONLY = "title-only"
-    TITLE_IMAGE = "title-image"
-    TITLE_BODY = "title-body"
-    TITLE_BODY_IMAGE = "title-body-image"
-    TITLE_BULLETS = "title-bullets"
-    TITLE_BULLETS_IMAGE = "title-bullets-image"
-    TWO_COLUMN = "two-column"
-    TWO_COLUMN_IMAGE = "two-column-image"
->>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
 
 class SlideLayout(str, Enum):
     TITLE_ONLY = "title-only"
@@ -129,13 +108,10 @@ class ExportRequest(BaseModel):
     presentation: Presentation
     format: str = "pptx"  # Only pptx supported for now
 
-<<<<<<< HEAD
 class ImageServiceProvider(Enum):
     OPENAI = "openai"
     GOOGLE = "google"
 
-=======
->>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
 class ImageGenerationRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
     prompt: str
@@ -145,43 +121,8 @@ class ExportFormat(str, Enum):
     PDF = "pdf"
     PPTX = "pptx"
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
-class ImageServiceProvider(Enum):
-    OPENAI = "openai"
-    GOOGLE = "google"
-
->>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
 class PresentationInput(BaseModel):
     model_config = ConfigDict(extra='forbid')
     context: str = Field(..., min_length=1)
     num_slides: int = Field(..., ge=1, le=20)
     instructional_level: InstructionalLevel
-<<<<<<< HEAD
-=======
-
-class SlideGenerationRequestNew(BaseModel):
-    model_config = ConfigDict(extra='forbid')
-    topic: str
-    level: InstructionalLevel
-    slides: List[SlideNew]
-
-class PresentationNew(BaseModel):
-    model_config = ConfigDict(extra='forbid')
-    slides: List[SlideNew]
-<<<<<<< HEAD
->>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
-=======
-=======
-class ExportRequest(BaseModel):
-    presentation: Presentation
-    format: ExportFormat
-
-class ImageGenerationRequest(BaseModel):
-    """Request model for image generation."""
-    prompt: str = Field(..., description="The prompt to generate an image from")
->>>>>>> dd7ecbd (added imagen images)
->>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
