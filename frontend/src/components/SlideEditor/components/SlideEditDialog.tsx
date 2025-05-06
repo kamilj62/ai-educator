@@ -32,11 +32,15 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import ImageIcon from '@mui/icons-material/Image';
 <<<<<<< HEAD
+<<<<<<< HEAD
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { Slide, SlideLayout, BulletPoint, ImageService, SlideImage, SlideTopic } from '../types';
 =======
 import { Slide, SlideLayout, BulletPoint, ImageService, SlideImage } from '../types';
 >>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
+=======
+import { Slide, SlideLayout, BulletPoint, ImageService, SlideImage, SlideTopic } from '../types';
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
 import { convertLayoutToFrontend, convertLayoutToBackend } from '../utils';
 import ImageUploader from './ImageUploader';
 import TiptapEditor from './TiptapEditor'; // Import TiptapEditor
@@ -106,6 +110,9 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   onImageGenerate,
 }) => {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
   // DEBUG: Log if onImageGenerate is present
   console.log('[SlideEditDialog] onImageGenerate present:', typeof onImageGenerate === 'function');
 
@@ -126,12 +133,16 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     return '';
   }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
+=======
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
   // Only update editedSlide when the dialog is opened or the slide changes (not on every render)
   const [editedSlide, setEditedSlide] = useState<Slide>(() => {
     const baseContent = {
       ...slide.content,
+<<<<<<< HEAD
 <<<<<<< HEAD
       // Normalize bullets for all possible input types
       bullets: normalizeBulletsForDialog(slide.content.bullets),
@@ -148,6 +159,16 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     console.log('SlideEditDialog INIT layout:', layout, 'baseContent:', baseContent);
     // TEMP: Force fallback for all layouts if image missing
 >>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
+=======
+      // Normalize bullets for all possible input types
+      bullets: normalizeBulletsForDialog(slide.content.bullets),
+    };
+    const layout = convertLayoutToFrontend(slide.layout);
+    // Ensure image_prompt is present from slide.content if missing
+    if (!('image_prompt' in baseContent) && 'image_prompt' in slide.content) {
+      baseContent.image_prompt = slide.content.image_prompt;
+    }
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
     if (!baseContent.image) {
       baseContent.image = {
         url: '',
@@ -165,16 +186,23 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   console.log('SlideEditDialog topic:', topic);
   console.log('SlideEditDialog defaultImagePrompt:', editedSlide.content.image_prompt || topic?.image_prompt || slide.content.image_prompt || '');
 
 =======
 >>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
+=======
+  console.log('SlideEditDialog topic:', topic);
+  console.log('SlideEditDialog defaultImagePrompt:', editedSlide.content.image_prompt || topic?.image_prompt || slide.content.image_prompt || '');
+
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
   useEffect(() => {
     if (open) {
       const validLayout = convertLayoutToFrontend(slide.layout);
       const baseContent = {
         ...slide.content,
+<<<<<<< HEAD
 <<<<<<< HEAD
         // Normalize bullets for all possible input types
         bullets: normalizeBulletsForDialog(slide.content.bullets),
@@ -188,6 +216,14 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
       console.log('SlideEditDialog EFFECT layout:', validLayout, 'baseContent:', baseContent);
       // TEMP: Force fallback for all layouts if image missing
 >>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
+=======
+        // Normalize bullets for all possible input types
+        bullets: normalizeBulletsForDialog(slide.content.bullets),
+      };
+      if (!('image_prompt' in baseContent) && 'image_prompt' in slide.content) {
+        baseContent.image_prompt = slide.content.image_prompt;
+      }
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
       if (!baseContent.image) {
         baseContent.image = {
           url: '',
@@ -209,6 +245,7 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   const [imageError, setImageError] = useState<string | null>(null);
 =======
   const handleLayoutChange = (newLayout: SlideLayout) => {
+<<<<<<< HEAD
     // Create a new content object based on the selected layout
     const newContent = {
       title: editedSlide.content.title || '',
@@ -235,6 +272,28 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     }
   }, [open, slide.backgroundColor, slide.fontColor]);
 
+=======
+    setEditedSlide((prev) => {
+      // Remove image if switching to a layout that does not support images
+      const imageLayouts = [
+        'title-body-image',
+        'title-bullets-image',
+        'title-image',
+        'two-column-image',
+      ];
+      const shouldKeepImage = imageLayouts.includes(newLayout);
+      return {
+        ...prev,
+        layout: newLayout,
+        content: {
+          ...prev.content,
+          image: shouldKeepImage ? prev.content.image : undefined,
+        },
+      };
+    });
+  };
+
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
   const handleTitleChange = (content: string) => {
     setEditedSlide({
       ...editedSlide,
@@ -349,6 +408,7 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
       },
     }));
   }, []);
+<<<<<<< HEAD
 
   // Correctly type handleImageGenerate to match the expected prop signature
   const handleImageGenerate = useCallback(async (prompt: string, service: ImageService = 'dalle'): Promise<SlideImage> => {
@@ -478,7 +538,17 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     } catch (err) {
       console.error('Failed to generate image:', err);
 >>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
+=======
+
+  // Correctly type handleImageGenerate to match the expected prop signature
+  const handleImageGenerate = useCallback(async (prompt: string, service: ImageService = 'dalle'): Promise<SlideImage> => {
+    if (!onImageGenerate) {
+      throw new Error('onImageGenerate is not defined');
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
     }
+    const image = await onImageGenerate(prompt, service);
+    handleImageChange(image);
+    return image;
   }, [onImageGenerate, handleImageChange]);
 
   useEffect(() => {
@@ -550,6 +620,9 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   const currentLayout = layoutOptions.find(option => option.value === editedSlide.layout) ? editedSlide.layout : 'title-bullets';
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
   // Priority: editedSlide.content.image_prompt > topic?.image_prompt > slide.content.image_prompt
   const defaultImagePrompt = editedSlide.content.image_prompt || topic?.image_prompt || slide.content.image_prompt || '';
 
@@ -561,8 +634,11 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     return `<p>${content}</p>`;
   };
 
+<<<<<<< HEAD
 =======
 >>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
+=======
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Edit Slide</DialogTitle>
@@ -654,17 +730,37 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
               ))}
             </Select>
           </FormControl>
+<<<<<<< HEAD
+=======
+
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
           <TiptapEditor
             content={getHtmlContent(editedSlide.content.title)}
             onChange={handleTitleChange}
             placeholder="Enter slide title..."
           />
+<<<<<<< HEAD
           {(editedSlide.layout !== 'title-only') && (
             <TextField
               label="Subtitle"
               fullWidth
               value={editedSlide.content.subtitle || ''}
               onChange={(e) => handleSubtitleChange(e.target.value)}
+=======
+
+          <TextField
+            label="Subtitle"
+            fullWidth
+            value={editedSlide.content.subtitle || ''}
+            onChange={(e) => handleSubtitleChange(e.target.value)}
+          />
+
+          {(editedSlide.layout === 'title-body' || editedSlide.layout === 'title-body-image') && (
+            <TiptapEditor
+              content={getHtmlContent(editedSlide.content.body)}
+              onChange={handleBodyChange}
+              placeholder="Enter slide body..."
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
             />
           )}
           {(editedSlide.layout === 'title-bullets' || editedSlide.layout === 'title-bullets-image') && (
@@ -704,13 +800,20 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
             <Grid container spacing={2}>
               <Grid item xs={6}>
                 <TiptapEditor
+<<<<<<< HEAD
                   content={getHtmlContent(editedSlide.content.title)}
                   onChange={handleTitleChange}
                   placeholder="Enter slide title..."
+=======
+                  content={getHtmlContent(editedSlide.content.columnLeft)}
+                  onChange={handleColumnLeftChange}
+                  placeholder="Enter left column content..."
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
                 />
               </Grid>
               <Grid item xs={6}>
                 <TiptapEditor
+<<<<<<< HEAD
                   content={getHtmlContent(editedSlide.content.bullets)}
                   onChange={(content: string) => {
                     // Accept HTML from Tiptap and set as bullets
@@ -720,6 +823,11 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
                     });
                   }}
                   placeholder="Enter bullet points..."
+=======
+                  content={getHtmlContent(editedSlide.content.columnRight)}
+                  onChange={handleColumnRightChange}
+                  placeholder="Enter right column content..."
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
                 />
               </Grid>
             </Grid>

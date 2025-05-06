@@ -1,44 +1,28 @@
-// API Configuration
+// Most recent, conflict-free API config for frontend
 export const API_CONFIG = {
-<<<<<<< HEAD
-  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || '/api',  // Use relative path for API requests or NEXT_PUBLIC_API_BASE_URL if set
+  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || '/api',
   ENDPOINTS: {
     GENERATE_OUTLINE: '/api/generate/outline',
     GENERATE_SLIDE: '/api/generate/slide',
     GENERATE_SLIDES: '/api/generate/slides',
+    GENERATE_IMAGE: '/api/generate/image',
     EXPORT: '/api/export',
     LAYOUTS: '/api/layouts',
     LAYOUT_VALIDATE: '/api/layout/validate',
     LAYOUT_SWITCH: '/api/layout/switch',
     UPLOAD_IMAGE: '/api/upload/image',
-    HEALTH: '/api/health'
-  }
+    HEALTH: '/api/health',
+  },
 } as const;
 
 // DEBUG: Log API base URL for troubleshooting
 console.log('[config] API_CONFIG.BASE_URL:', API_CONFIG.BASE_URL);
 
-=======
-  BASE_URL: '/api',  // Use relative path for API requests
-  ENDPOINTS: {
-    GENERATE_OUTLINE: '/generate/outline',
-    GENERATE_SLIDE: '/generate/slide',
-    GENERATE_SLIDES: '/generate/slides',
-    EXPORT: '/export',
-    LAYOUTS: '/layouts',
-    LAYOUT_VALIDATE: '/layout/validate',
-    LAYOUT_SWITCH: '/layout/switch',
-    UPLOAD_IMAGE: '/upload/image',
-    HEALTH: '/health'
-  }
-} as const;
-
->>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
 // Retry configuration for API calls
 export const API_RETRY_CONFIG = {
   maxRetries: 3,
   retryDelay: 1000,
-  timeout: 30000
+  timeout: 30000,
 } as const;
 
 // Utility function to check API health

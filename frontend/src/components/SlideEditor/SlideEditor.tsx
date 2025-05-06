@@ -24,8 +24,12 @@ import { setSlides, setActiveSlide } from '../../store/presentationSlice';
 import SlideSorter from './components/SlideSorter';
 import SavePresentation from './components/SavePresentation';
 import SlideEditDialog from './components/SlideEditDialog';
+<<<<<<< HEAD
 import { Slide, ImageService, SlideImage } from './types';
 >>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
+=======
+import { Slide, ImageService, SlideImage, SlideTopic } from './types';
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
 import SlideLayoutRenderer from './components/SlideLayoutRenderer';
 <<<<<<< HEAD
 import { backendSlideToFrontend, convertLayoutToFrontend, convertLayoutToBackend } from './utils';
@@ -151,16 +155,25 @@ const SlideEditor: React.FC = () => {
   };
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+  // Enhance prompts for better image quality
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
   const IMAGE_PROMPT_QUALITY_TEMPLATE = 'highly detailed, photorealistic, trending on ArtStation, 4k, vibrant colors, dramatic lighting';
 
   const enhancePrompt = (prompt: string) => {
     if (!prompt) return IMAGE_PROMPT_QUALITY_TEMPLATE;
+<<<<<<< HEAD
+=======
+    // Avoid duplicating the template if user already added it
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
     if (prompt.toLowerCase().includes('artstation') || prompt.toLowerCase().includes('photorealistic')) {
       return prompt;
     }
     return `${prompt}, ${IMAGE_PROMPT_QUALITY_TEMPLATE}`;
   };
 
+<<<<<<< HEAD
   const handleImageGenerate = async (prompt: string, service: ImageService = 'dalle'): Promise<SlideImage> => {
     try {
       const enhancedPrompt = enhancePrompt(prompt);
@@ -170,6 +183,13 @@ const SlideEditor: React.FC = () => {
     try {
       const response = await fetch('http://localhost:8000/api/generate-image', {
 >>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
+=======
+  const handleImageGenerate = async (prompt: string, service: ImageService = 'dalle'): Promise<SlideImage> => {
+    try {
+      // Enhance the prompt before sending to backend
+      const enhancedPrompt = enhancePrompt(prompt);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/generate/image`, {
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -185,11 +205,18 @@ const SlideEditor: React.FC = () => {
       }
       const data = await response.json();
 <<<<<<< HEAD
+<<<<<<< HEAD
       let url = data.imageUrl || data.image_url || '';
+=======
+      // Support both imageUrl (old Flask) and image_url (FastAPI)
+      let url = data.imageUrl || data.image_url || '';
+      // If url is a relative path, prepend backend base URL
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
       if (url && url.startsWith('/static/')) {
         const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '');
         url = baseUrl ? `${baseUrl}${url}` : url;
       }
+<<<<<<< HEAD
       return {
         url,
         alt: enhancedPrompt,
@@ -200,6 +227,12 @@ const SlideEditor: React.FC = () => {
         alt: prompt,
         prompt,
 >>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
+=======
+      return {
+        url,
+        alt: enhancedPrompt,
+        prompt: enhancedPrompt,
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
         service,
       };
     } catch (error) {
@@ -245,30 +278,60 @@ const SlideEditor: React.FC = () => {
   }, []);
 
   const [topics, setTopics] = useState<SlideTopic[]>([]);
+<<<<<<< HEAD
+=======
+
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
   useEffect(() => {
     const interval = setInterval(() => {
       if (typeof window !== 'undefined' && (window as any).topicsToGenerate) {
         setTopics((window as any).topicsToGenerate);
       }
+<<<<<<< HEAD
     }, 200);
+=======
+    }, 200); // check every 200ms
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
     return () => clearInterval(interval);
   }, []);
 
   const getTopicForSlide = (slide: Slide): SlideTopic | undefined => {
     if (!slide || !slide.content || !slide.content.title) return undefined;
+<<<<<<< HEAD
     const normalize = (str: string) => str.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+=======
+    // Fuzzy match: ignore punctuation and spaces, match lowercased
+    const normalize = (str: string) => str.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    console.log('Normalized topic title:', normalize(slide.content.title));
+    console.log('Normalized topic titles:', topics.map(t => normalize(t.title)));
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
     return topics.find(
       (topic: SlideTopic) =>
         normalize(topic.title) === normalize(slide.content.title)
     );
   };
 
+<<<<<<< HEAD
   const handleLayoutChange = (slideId: string, newLayout: BackendSlideLayout) => {
     const newSlides = slides.map(slide =>
       slide.id === slideId ? { ...slide, layout: newLayout } : slide
     );
     dispatch(setSlides(newSlides));
   };
+=======
+  // Debug logs for topic matching
+  console.log('topics:', topics);
+  console.log('activeSlide:', activeSlide);
+  if (activeSlide) {
+    console.log('activeSlide.content.title:', activeSlide.content.title);
+    console.log('All topic titles:', topics.map(t => t.title));
+  }
+  if (activeSlide) {
+    console.log('getTopicForSlide(activeSlide):', getTopicForSlide(activeSlide));
+  }
+
+  if (!activeSlide) return null;
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
 
   return (
     <Box ref={editorRef} sx={{ 
@@ -352,7 +415,7 @@ const SlideEditor: React.FC = () => {
           <span>
             <IconButton
               onClick={() => setSaveDialogOpen(true)}
-              disabled={true} // Removed slides check
+              disabled={false} 
               size="large"
             >
               <SaveIcon />
@@ -484,6 +547,7 @@ const SlideEditor: React.FC = () => {
 >>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
 =======
           {activeSlide ? (
+<<<<<<< HEAD
             <SlideLayoutRenderer slide={activeSlide} />
           ) : (
             <Typography variant="h6" sx={{ textAlign: 'center', mt: 4 }}>
@@ -491,6 +555,13 @@ const SlideEditor: React.FC = () => {
             </Typography>
           )}
 >>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
+=======
+            <SlideLayoutRenderer
+              slide={activeSlide}
+              onChange={updated => dispatch(setSlides(slides.map(s => s.id === updated.id ? updated : s)))}
+            />
+          ) : null}
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
         </Box>
       </Box>
       <SavePresentation
@@ -526,14 +597,19 @@ const SlideEditor: React.FC = () => {
 =======
 
 <<<<<<< HEAD
+<<<<<<< HEAD
       {/* Removed SlideEditDialog */}
 >>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
 =======
       {activeSlide && (
+=======
+      {activeSlide && topics.length > 0 && (
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
         <SlideEditDialog
           open={editDialogOpen}
           onClose={() => setEditDialogOpen(false)}
           slide={activeSlide}
+          topic={getTopicForSlide(activeSlide)}
           onSave={handleSlideChange}
           onImageUpload={handleImageUpload}
           onImageGenerate={handleImageGenerate}

@@ -136,7 +136,14 @@ const Home: React.FC = () => {
 const Home: React.FC = () => {
   return (
     <Provider store={store}>
+<<<<<<< HEAD
       <App />
+=======
+      <main>
+        <App />
+        {/* <LogViewer /> */}
+      </main>
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
     </Provider>
   );
 };

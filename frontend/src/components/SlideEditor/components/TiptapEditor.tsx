@@ -29,6 +29,7 @@ interface TiptapEditorProps {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', editable = true, onMount, bulletList, type, ...rest }: TiptapEditorProps) => {
 =======
 const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', editable = true, onMount, bulletList }: TiptapEditorProps) => {
@@ -41,6 +42,9 @@ const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', edit
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
 =======
 >>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
+=======
+const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', editable = true, onMount, bulletList, type, ...rest }: TiptapEditorProps) => {
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -96,6 +100,7 @@ const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', edit
   return (
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     <Box className="tiptap-editor-container" {...rest}>
 =======
 <<<<<<< HEAD
@@ -103,6 +108,9 @@ const TiptapEditor = ({ content, onChange, placeholder = 'Start typing...', edit
 >>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
     <Box className="tiptap-editor-container">
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
+=======
+    <Box className="tiptap-editor-container" {...rest}>
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
       {editor && <EditorToolbar editor={editor} />}
       <Box className="tiptap-editor">
         <EditorContent editor={editor} />

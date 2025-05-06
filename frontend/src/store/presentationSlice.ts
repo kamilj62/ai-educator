@@ -2,8 +2,13 @@ import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { v4 as uuidv4 } from 'uuid';
 import { Slide, SlideContent, SlideLayout, SlideImage, SlideTopic, BulletPoint, InstructionalLevel } from '../components/SlideEditor/types';
 import { RootState } from './store';
+<<<<<<< HEAD
 import { normalizeBullets } from '../components/SlideEditor/components/utils';
 import { API_CONFIG } from '../config';
+=======
+import type { SlideContent } from '../components/SlideEditor/types';
+import { normalizeBullets } from '../components/SlideEditor/components/utils'; // Import the normalizeBullets utility
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
 
 export interface APIError {
   message: string;
@@ -142,9 +147,9 @@ export const generateSlides = createAsyncThunk(
             title: data.title || '',
             subtitle: data.subtitle || '',
             body: data.body || '',
-            bullets: (data.bullet_points && data.bullet_points.length > 0)
-              ? data.bullet_points.map((text: string) => ({ text }))
-              : (topic.key_points ? topic.key_points.map(text => ({ text })) : []),
+            bullets: normalizeBullets((data.bullet_points && data.bullet_points.length > 0)
+              ? data.bullet_points
+              : (topic.key_points ? topic.key_points : [])),
             image: data.image_url ? {
               url: data.image_url,
               alt: data.image_alt || '',
@@ -203,6 +208,12 @@ const presentationSlice = createSlice({
       .addCase(generateSlides.fulfilled, (state, action) => {
         state.slides = action.payload;
         state.isGeneratingSlides = false;
+        // Ensure activeSlideId is set to the first slide if slides exist
+        if (action.payload.length > 0) {
+          state.activeSlideId = action.payload[0].id;
+        } else {
+          state.activeSlideId = null;
+        }
       })
       .addCase(generateSlides.rejected, (state, action) => {
         state.isGeneratingSlides = false;

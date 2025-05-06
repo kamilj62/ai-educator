@@ -3,6 +3,7 @@ import { memo } from 'react';
 import { Box } from '@mui/material';
 import SortableSlide from './SortableSlide';
 import { Slide } from '../types';
+<<<<<<< HEAD
 import {
   DndContext,
   closestCenter,
@@ -17,6 +18,67 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+=======
+
+const grid = 8;
+
+const getItemStyle = (isDragging: boolean) => ({
+  userSelect: 'none' as const,
+  padding: grid * 2,
+  margin: `0 0 ${grid}px 0`,
+  background: isDragging ? '#e3f2fd' : 'white',
+  border: isDragging ? '2px solid #1976d2' : '1px solid #e0e0e0',
+  boxShadow: isDragging ? '0 4px 24px rgba(25, 118, 210, 0.12)' : 'none',
+  borderRadius: '6px',
+  cursor: isDragging ? 'grabbing' : 'grab',
+  opacity: isDragging ? 0.85 : 1,
+  transition: 'background 0.2s, border 0.2s, box-shadow 0.2s, opacity 0.2s',
+});
+
+interface DraggableItemProps {
+  slide: Slide;
+  index: number;
+  isActive: boolean;
+  onSelect: (id: string) => void;
+  onDelete: (id: string) => void;
+  onDragStart: (index: number) => void;
+  onDragEnd: () => void;
+  onDragOver: (index: number) => void;
+}
+
+const DraggableItem = memo(({
+  slide,
+  index,
+  isActive,
+  onSelect,
+  onDelete,
+  onDragStart,
+  onDragEnd,
+  onDragOver
+}: DraggableItemProps) => {
+  const [isDragging, setIsDragging] = useState(false);
+
+  return (
+    <div
+      draggable
+      onDragStart={() => { onDragStart(index); setIsDragging(true); }}
+      onDragEnd={() => { onDragEnd(); setIsDragging(false); }}
+      onDragOver={(e) => { e.preventDefault(); onDragOver(index); }}
+      style={getItemStyle(isDragging)}
+    >
+      <SortableSlide
+        slide={slide}
+        index={index}
+        isActive={isActive}
+        onClick={() => onSelect(slide.id)}
+        onDelete={() => onDelete(slide.id)}
+      />
+    </div>
+  );
+});
+
+DraggableItem.displayName = 'DraggableItem';
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
 
 interface SlideSorterProps {
   slides: Slide[];

@@ -226,11 +226,14 @@ const OutlineDisplay: React.FC = () => {
       console.log('Topics to generate:', topicsToGenerate);
       // Set topicsToGenerate on window so SlideEditor can access it
       (window as any).topicsToGenerate = topicsToGenerate;
+<<<<<<< HEAD
 =======
     if (outline) {
       collectTopics(outline);
       console.log('Topics to generate:', topicsToGenerate);
 >>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
+=======
+>>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
       dispatch(generateSlides(topicsToGenerate));
     } else {
       console.warn('No outline found when trying to generate slides.');
