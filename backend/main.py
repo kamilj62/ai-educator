@@ -98,10 +98,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://ai-educator-eight.vercel.app",
-        "http://localhost:3000",
-        "https://marvelai-frontend-62a80e741e41.herokuapp.com",
-        "https://ai-educator-jfpenqilf-kamilj62s-projects.vercel.app",
-        "https://frontend-303seubxr-kamilj62s-projects.vercel.app"
+        "http://localhost:3000"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -216,57 +213,6 @@ async def generate_slide_content(request: SlideGenerationRequest):
         )
 
 @app.post("/api/generate-image")
-async def generate_image(request: ImageGenerationRequest):
-    try:
-        if not request.prompt:
-            raise HTTPException(status_code=400, detail="Prompt is required")
-        logger.info(f"Generating image with prompt: {request.prompt}")
-        response = client.images.generate(
-            model="dall-e-3",
-            prompt=request.prompt,
-            n=1,
-            size="1024x1024"
-        )
-        image_url = response.data[0].url
-        logger.info(f"Generated image URL: {image_url}")
-        return {"imageUrl": image_url}
-    except Exception as e:
-        logger.error(f"Error generating image: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/generate/slides")
-async def generate_slides(request: SlideGenerationRequest):
-    try:
-        logger.debug(f"Received slide request: {request.model_dump()}")
-        topic = request.topic
-        layout = request.layout or "title-bullets"
-        response = {
-            "title": topic.title,
-            "subtitle": "",
-            "body": topic.description or "",
-            "bullet_points": topic.key_points,
-            "image": {
-                "url": getattr(topic, "image_url", None) or "",
-                "alt": topic.image_prompt,
-                "caption": getattr(topic, "image_caption", None) or "",
-                "service": getattr(topic, "image_service", None) or "generated"
-            }
-        }
-        return response
-    except Exception as e:
-        logger.error(f"Error generating slides: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "type": "API_ERROR",
-                "message": f"Failed to generate slides: {str(e)}",
-                "context": {"error": str(e)}
-            }
-        )
-
-<<<<<<< HEAD
-=======
-@app.post("/api/generate/image")
 async def generate_image(request: dict):
     try:
         logger.info(f"Received image generation request: {request}")
@@ -315,7 +261,36 @@ async def generate_image(request: dict):
             detail=f"Unexpected error: {str(e)}"
         )
 
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
+@app.post("/api/generate/slides")
+async def generate_slides(request: SlideGenerationRequest):
+    try:
+        logger.debug(f"Received slide request: {request.model_dump()}")
+        topic = request.topic
+        layout = request.layout or "title-bullets"
+        response = {
+            "title": topic.title,
+            "subtitle": "",
+            "body": topic.description or "",
+            "bullet_points": topic.key_points,
+            "image": {
+                "url": getattr(topic, "image_url", None) or "",
+                "alt": topic.image_prompt,
+                "caption": getattr(topic, "image_caption", None) or "",
+                "service": getattr(topic, "image_service", None) or "generated"
+            }
+        }
+        return response
+    except Exception as e:
+        logger.error(f"Error generating slides: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "type": "API_ERROR",
+                "message": f"Failed to generate slides: {str(e)}",
+                "context": {"error": str(e)}
+            }
+        )
+
 @app.post("/export")
 async def export_presentation(request: ExportRequest):
     try:

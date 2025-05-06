@@ -2,13 +2,8 @@ import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { v4 as uuidv4 } from 'uuid';
 import { Slide, SlideContent, SlideLayout, SlideImage, SlideTopic, BulletPoint, InstructionalLevel } from '../components/SlideEditor/types';
 import { RootState } from './store';
-<<<<<<< HEAD
 import { normalizeBullets } from '../components/SlideEditor/components/utils';
 import { API_CONFIG } from '../config';
-=======
-import type { SlideContent } from '../components/SlideEditor/types';
-import { normalizeBullets } from '../components/SlideEditor/components/utils'; // Import the normalizeBullets utility
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
 
 export interface APIError {
   message: string;
@@ -38,7 +33,6 @@ const initialState: PresentationState = {
 export const generateOutline = createAsyncThunk(
   'presentation/generateOutline',
   async (params: { topic: string; numSlides: number; instructionalLevel: InstructionalLevel }) => {
-<<<<<<< HEAD
     const requestBody = {
       context: params.topic,
       num_slides: params.numSlides,
@@ -51,38 +45,6 @@ export const generateOutline = createAsyncThunk(
     });
     if (!response.ok) {
       throw new Error('Failed to generate outline');
-=======
-    try {
-      const requestBody = {
-        context: params.topic,
-        num_slides: params.numSlides,
-        instructional_level: params.instructionalLevel,
-      };
-
-      // Use absolute URL for API call
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-      const response = await fetch(`${baseUrl}/api/generate/outline`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API Error: ${response.statusText} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      return (Array.isArray(data.topics) ? data.topics : [data.topics]).map((topic: any) => ({
-        id: uuidv4(),
-        title: typeof topic === 'string' ? topic : topic.title,
-        key_points: Array.isArray(topic.key_points) ? topic.key_points : [],
-        image_prompt: topic.image_prompt || '',
-        description: topic.description || ''
-      }));
-    } catch (error: any) {
-      throw error;
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
     }
     const data = await response.json();
     return data.topics.map((topic: any) => ({
@@ -95,7 +57,6 @@ export const generateOutline = createAsyncThunk(
 
 export const generateSlides = createAsyncThunk(
   'presentation/generateSlides',
-<<<<<<< HEAD
   async (topics: SlideTopic[], { getState }) => {
     const state = getState() as RootState;
     const requestBody = {
@@ -115,50 +76,6 @@ export const generateSlides = createAsyncThunk(
         errorMessage = errorData.message || errorMessage;
       } catch (e2) {
         errorMessage = response.statusText;
-=======
-  async (topics: SlideTopic[], { getState, rejectWithValue }) => {
-    try {
-      const state: any = getState();
-      const instructionalLevel: InstructionalLevel = state.presentation.instructionalLevel;
-      const defaultLayout: SlideLayout = state.presentation.defaultLayout;
-      const slides: Slide[] = [];
-      for (const topic of topics) {
-        const requestBody = {
-          topic: topic, // Wrap the topic in an object field
-          instructional_level: instructionalLevel,
-          layout: defaultLayout,
-        };
-        const response = await fetch(`/api/generate/slides`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody),
-        });
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`API Error: ${response.statusText} - ${errorText}`);
-        }
-
-        const data = await response.json();
-        // Map backend response to frontend Slide type
-        slides.push({
-          id: uuidv4(),
-          layout: defaultLayout,
-          content: {
-            title: data.title || '',
-            subtitle: data.subtitle || '',
-            body: data.body || '',
-            bullets: normalizeBullets((data.bullet_points && data.bullet_points.length > 0)
-              ? data.bullet_points
-              : (topic.key_points ? topic.key_points : [])),
-            image: data.image_url ? {
-              url: data.image_url,
-              alt: data.image_alt || '',
-              caption: data.image_caption || '',
-              service: data.image_service || '',
-            } : undefined,
-          }
-        });
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
       }
       throw new Error(errorMessage);
     }
@@ -208,12 +125,6 @@ const presentationSlice = createSlice({
       .addCase(generateSlides.fulfilled, (state, action) => {
         state.slides = action.payload;
         state.isGeneratingSlides = false;
-        // Ensure activeSlideId is set to the first slide if slides exist
-        if (action.payload.length > 0) {
-          state.activeSlideId = action.payload[0].id;
-        } else {
-          state.activeSlideId = null;
-        }
       })
       .addCase(generateSlides.rejected, (state, action) => {
         state.isGeneratingSlides = false;
