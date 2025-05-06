@@ -264,6 +264,58 @@ async def generate_slides(request: SlideGenerationRequest):
             }
         )
 
+<<<<<<< HEAD
+=======
+@app.post("/api/generate/image")
+async def generate_image(request: dict):
+    try:
+        logger.info(f"Received image generation request: {request}")
+        try:
+            # Ensure prompt is present and valid
+            prompt = request.get('prompt') if isinstance(request, dict) else None
+            if not prompt or not isinstance(prompt, str) or not prompt.strip():
+                logger.error("Image generation request missing valid 'prompt'")
+                return JSONResponse(
+                    status_code=400,
+                    content={
+                        "status": "error",
+                        "message": "Image generation request must include a non-empty 'prompt' field.",
+                        "error_type": "INVALID_REQUEST"
+                    }
+                )
+            image_url = await ai_service.generate_image(request)
+            logger.info(f"Generated image URL: {image_url}")
+            return {"image_url": image_url}
+        except ImageGenerationError as e:
+            logger.error(f"Image generation error: {e.message} ({e.error_type.value})")
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "message": e.message,
+                    "error_type": e.error_type.value,
+                    "service": e.service.value if e.service else None,
+                    "retry_after": e.retry_after
+                }
+            )
+        except Exception as e:
+            logger.error(f"Error in generate_image: {str(e)}")
+            logger.error(traceback.format_exc())
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error generating image: {str(e)}"
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in generate_image endpoint: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unexpected error: {str(e)}"
+        )
+
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
 @app.post("/export")
 async def export_presentation(request: ExportRequest):
     try:

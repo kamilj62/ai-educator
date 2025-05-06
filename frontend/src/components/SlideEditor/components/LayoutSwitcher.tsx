@@ -14,10 +14,14 @@ import { LayoutOption, SlideLayout, layoutOptions } from '../types';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../store/store';
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { setSlides } from '../../../store/presentationSlice';
 import { SlideLayout, layoutOptions } from '../types';
 =======
 import { updateSlides } from '../../../store/presentationSlice';
+=======
+import { setSlides } from '../../../store/presentationSlice';
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
 import ViewQuiltIcon from '@mui/icons-material/ViewQuilt';
 import CloseIcon from '@mui/icons-material/Close';
 >>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
@@ -96,7 +100,7 @@ const LayoutSwitcher: React.FC<LayoutSwitcherProps> = ({ backgroundColor, fontCo
       }
 
       // Update the layout
-      dispatch(updateSlides([])); // Pass an empty array of SlideContent
+      dispatch(setSlides([])); // Pass an empty array of SlideContent
 
       onLayoutChange(newLayout);
       handleClose();

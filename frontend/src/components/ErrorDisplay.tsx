@@ -1,7 +1,7 @@
 import React from 'react';
-<<<<<<< HEAD
 
 interface ErrorDisplayProps {
+<<<<<<< HEAD
 <<<<<<< HEAD
   error: string | { message?: string; [key: string]: any } | null;
 =======
@@ -16,6 +16,9 @@ interface ErrorDisplayProps {
   error: any | null;
 >>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
 >>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
+=======
+  error: string | { message?: string; [key: string]: any } | null;
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
   onClose?: () => void;
 }
 
@@ -24,6 +27,7 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onClose }) => {
 
   // Determine the error message to display
   let errorMessage = typeof error === 'string' ? error : error.message || String(error);
+<<<<<<< HEAD
 
   const renderErrorDetails = (rec: any, index: number) => {
     return (
@@ -34,6 +38,10 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onClose }) => {
   return (
 <<<<<<< HEAD
 <<<<<<< HEAD
+=======
+
+  return (
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
     <div style={{ color: 'red', margin: '1rem 0' }}>
       <strong>Error:</strong> {errorMessage}
       {onClose && (
@@ -41,6 +49,7 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onClose }) => {
           Close
         </button>
       )}
+<<<<<<< HEAD
 =======
     <div className={`rounded-lg border p-4 mb-4 ${getErrorColor(error.type ?? '')}`}>
 =======
@@ -105,6 +114,8 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onClose }) => {
         )}
       </div>
 >>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
+=======
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
     </div>
   );
 };

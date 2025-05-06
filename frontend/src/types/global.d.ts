@@ -1,3 +1,5 @@
+// Most recent, conflict-free global type definitions
+
 interface FileSystemHandle {
   kind: 'file' | 'directory';
   name: string;
@@ -24,9 +26,21 @@ interface SaveFilePickerOptions {
 }
 
 interface Window {
-<<<<<<< HEAD
-  showSaveFilePicker?: <T>(options?: SaveFilePickerOptions) => Promise<T>;
-=======
   showSaveFilePicker(options?: SaveFilePickerOptions): Promise<FileSystemFileHandle>;
->>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
+  __REDUX_DEVTOOLS_EXTENSION_COMPOSE__?: typeof compose;
+}
+
+declare module '*.svg' {
+  const content: any;
+  export default content;
+}
+
+declare module '*.png' {
+  const content: any;
+  export default content;
+}
+
+declare module '*.jpg' {
+  const content: any;
+  export default content;
 }

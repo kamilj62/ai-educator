@@ -4,16 +4,21 @@ import TitleBodyLayout from '../layouts/TitleBodyLayout';
 import TitleImageLayout from '../layouts/TitleImageLayout';
 import TwoColumnLayout from '../layouts/TwoColumnLayout';
 <<<<<<< HEAD
+<<<<<<< HEAD
 import TitleOnlyLayout from '../layouts/TitleOnlyLayout';
 import type { Slide, SlideLayout, SlideImage, ImageService } from '../types';
 =======
 import type { Slide, SlideLayout } from '../types';
 >>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
+=======
+import type { Slide, SlideLayout, SlideImage } from '../types';
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
 
 interface SlideLayoutRendererProps {
   slide: Slide;
   onChange?: (slide: Slide) => void;
   onImageUpload?: (file: File) => Promise<string>;
+<<<<<<< HEAD
 <<<<<<< HEAD
   onImageGenerate?: (prompt: string, service?: ImageService) => Promise<SlideImage>;
   preview?: boolean;
@@ -21,6 +26,9 @@ interface SlideLayoutRendererProps {
 =======
   onImageGenerate?: (prompt: string, service?: string) => Promise<string>;
 >>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
+=======
+  onImageGenerate?: (prompt: string, service?: string) => Promise<SlideImage>;
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
 }
 
 const SlideLayoutRenderer: React.FC<SlideLayoutRendererProps> = ({ slide, onChange = () => {}, onImageUpload, onImageGenerate, preview, slides }) => {

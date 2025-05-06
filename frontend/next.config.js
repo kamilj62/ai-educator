@@ -10,6 +10,7 @@ const nextConfig = {
         source: '/api/:path*',
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         destination: process.env.NEXT_PUBLIC_API_BASE_URL
           ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/:path*`
           : 'http://localhost:8000/api/:path*',
@@ -18,6 +19,9 @@ const nextConfig = {
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
         destination: 'http://localhost:8000/:path*',
 >>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
+=======
+        destination: `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/:path*`,
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
       },
     ];
 =======

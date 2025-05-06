@@ -10,6 +10,7 @@ import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../store/store';
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { setSlides, setActiveSlide } from '../../store/presentationSlice';
 =======
 import { updateSlides } from '../../store/presentationSlice';
@@ -18,6 +19,13 @@ import SlideSorter from './components/SlideSorter';
 import SavePresentation from './components/SavePresentation';
 import SlideEditDialog from './components/SlideEditDialog';
 import { Slide, ImageService, SlideImage, SlideTopic, BackendSlideLayout } from './types';
+=======
+import { setSlides, setActiveSlide } from '../../store/presentationSlice';
+import SlideSorter from './components/SlideSorter';
+import SavePresentation from './components/SavePresentation';
+import SlideEditDialog from './components/SlideEditDialog';
+import { Slide, ImageService, SlideImage } from './types';
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
 import SlideLayoutRenderer from './components/SlideLayoutRenderer';
 <<<<<<< HEAD
 import { backendSlideToFrontend, convertLayoutToFrontend, convertLayoutToBackend } from './utils';
@@ -38,6 +46,7 @@ const SlideEditor: React.FC = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [pendingNewSlide, setPendingNewSlide] = useState<Slide | null>(null);
 
+<<<<<<< HEAD
   const slides = useSelector((state: RootState) => state.presentation.slides);
   const activeSlideId = useSelector((state: RootState) => state.presentation.activeSlideId);
   const activeSlideIdx = slides.findIndex(s => s.id === activeSlideId);
@@ -96,30 +105,52 @@ const SlideEditor: React.FC = () => {
     );
     dispatch(setSlides(newSlides));
 =======
+=======
+  // Redux selectors
+  const slides = useSelector((state: RootState) => state.presentation.slides);
+  const activeSlideId = useSelector((state: RootState) => state.presentation.activeSlideId);
+
+  // Find the active slide if any
+  const activeSlide = slides.find(slide => slide.id === activeSlideId);
+
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
   const handleSlideSelect = async (slideId: string) => {
-    // Removed setActiveSlide call
+    dispatch(setActiveSlide(slideId));
   };
 
   const handleSlidesReorder = (newSlides: Slide[]) => {
-    // If updateSlides expects SlideContent[], map Slide[] to SlideContent[] before dispatching.
-    // For example: updateSlides(slides.map(slide => slide.content))
-    dispatch(updateSlides(newSlides.map(slide => slide.content)));
+    // If setSlides expects Slide[], dispatch newSlides directly.
+    dispatch(setSlides(newSlides));
   };
 
   const handleSlideDelete = (slideId: string) => {
-    // Removed setSlides call
-    // Removed setActiveSlide call
+    const newSlides = slides.filter(slide => slide.id !== slideId);
+    dispatch(setSlides(newSlides));
+    // If the deleted slide was active, set the next available slide as active
+    if (activeSlideId === slideId && newSlides.length > 0) {
+      dispatch(setActiveSlide(newSlides[0].id));
+    } else if (newSlides.length === 0) {
+      dispatch(setActiveSlide(''));
+    }
   };
 
   const handleSlideChange = (updatedSlide: Slide) => {
+<<<<<<< HEAD
     // Removed setSlides call
 >>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
+=======
+    const newSlides = slides.map(slide =>
+      slide.id === updatedSlide.id ? updatedSlide : slide
+    );
+    dispatch(setSlides(newSlides));
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
   };
 
   const handleImageUpload = async (file: File): Promise<string> => {
     return URL.createObjectURL(file);
   };
 
+<<<<<<< HEAD
   const IMAGE_PROMPT_QUALITY_TEMPLATE = 'highly detailed, photorealistic, trending on ArtStation, 4k, vibrant colors, dramatic lighting';
 
   const enhancePrompt = (prompt: string) => {
@@ -134,6 +165,11 @@ const SlideEditor: React.FC = () => {
     try {
       const enhancedPrompt = enhancePrompt(prompt);
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/generate/image`, {
+=======
+  const handleImageGenerate = async (prompt: string, service: ImageService = 'dalle'): Promise<SlideImage> => {
+    try {
+      const response = await fetch('http://localhost:8000/api/generate-image', {
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -148,6 +184,7 @@ const SlideEditor: React.FC = () => {
         throw new Error(error.detail || 'Failed to generate image');
       }
       const data = await response.json();
+<<<<<<< HEAD
       let url = data.imageUrl || data.image_url || '';
       if (url && url.startsWith('/static/')) {
         const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '');
@@ -157,6 +194,12 @@ const SlideEditor: React.FC = () => {
         url,
         alt: enhancedPrompt,
         prompt: enhancedPrompt,
+=======
+      return {
+        url: data.imageUrl,
+        alt: prompt,
+        prompt,
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
         service,
       };
     } catch (error) {
@@ -298,7 +341,7 @@ const SlideEditor: React.FC = () => {
           <span>
             <IconButton
               onClick={() => setEditDialogOpen(true)}
-              disabled={true} // Removed activeSlide check
+              disabled={!activeSlide}
               size="large"
             >
               <EditIcon />
@@ -346,11 +389,11 @@ const SlideEditor: React.FC = () => {
               <Typography variant="h6" sx={{ color: 'inherit', fontWeight: 700 }}>Slides</Typography>
             </Box>
             <SlideSorter
-              slides={[]} // Removed slides prop
+              slides={slides}
               onSlidesReorder={handleSlidesReorder}
               onSlideSelect={handleSlideSelect}
               onSlideDelete={handleSlideDelete}
-              activeSlideId={''} // Removed activeSlideId prop
+              activeSlideId={activeSlideId || ''}
             />
           </Box>
         )}
@@ -363,6 +406,7 @@ const SlideEditor: React.FC = () => {
           minWidth: 0, 
           overflow: 'hidden', 
         }}>
+<<<<<<< HEAD
 <<<<<<< HEAD
           {!isFullscreen && activeSlide && (
             <EditorControls
@@ -438,13 +482,22 @@ const SlideEditor: React.FC = () => {
             Select a slide to edit
           </Typography>
 >>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
+=======
+          {activeSlide ? (
+            <SlideLayoutRenderer slide={activeSlide} />
+          ) : (
+            <Typography variant="h6" sx={{ textAlign: 'center', mt: 4 }}>
+              Select a slide to edit
+            </Typography>
+          )}
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
         </Box>
       </Box>
       <SavePresentation
         open={saveDialogOpen}
         onClose={() => setSaveDialogOpen(false)}
         onSave={handleSave}
-        slides={[]} // Removed slides prop
+        slides={slides}
       />
 <<<<<<< HEAD
       {(pendingNewSlide || (activeSlide && topics.length > 0)) && (
@@ -472,8 +525,21 @@ const SlideEditor: React.FC = () => {
       )}
 =======
 
+<<<<<<< HEAD
       {/* Removed SlideEditDialog */}
 >>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
+=======
+      {activeSlide && (
+        <SlideEditDialog
+          open={editDialogOpen}
+          onClose={() => setEditDialogOpen(false)}
+          slide={activeSlide}
+          onSave={handleSlideChange}
+          onImageUpload={handleImageUpload}
+          onImageGenerate={handleImageGenerate}
+        />
+      )}
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
     </Box>
   );
 };

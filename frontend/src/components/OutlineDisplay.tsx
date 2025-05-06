@@ -29,6 +29,7 @@ import AddIcon from '@mui/icons-material/Add';
 import PresentationIcon from '@mui/icons-material/Slideshow';
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { generateSlides, setOutline } from '../store/presentationSlice';
 =======
 import { generateSlides } from '../store/presentationSlice';
@@ -39,6 +40,9 @@ import { generateSlides } from '../store/presentationSlice';
 import { updateTopics } from '../store/presentationSlice';
 >>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
 >>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
+=======
+import { generateSlides, setOutline } from '../store/presentationSlice';
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
 
 interface EditDialogProps {
   open: boolean;
@@ -93,8 +97,11 @@ const OutlineDisplay: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const error = useSelector((state: RootState) => state.presentation.error);
   const outline = useSelector((state: RootState) => state.presentation.outline);
+<<<<<<< HEAD
   const slides = useSelector((state: RootState) => state.presentation.slides);
   const hasSlides = slides && slides.length > 0;
+=======
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingPoint, setEditingPoint] = useState<{ topicId: string; index: number; text: string } | null>(null);
 
@@ -105,6 +112,9 @@ const OutlineDisplay: React.FC = () => {
 
   const handleSavePoint = (newText: string) => {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
     if (editingPoint && outline) {
       // Find the topic and update the point
       const updatedOutline = outline.map(topic => {
@@ -116,6 +126,7 @@ const OutlineDisplay: React.FC = () => {
         return topic;
       });
       dispatch(setOutline(updatedOutline));
+<<<<<<< HEAD
 =======
     if (editingPoint) {
 <<<<<<< HEAD
@@ -127,12 +138,17 @@ const OutlineDisplay: React.FC = () => {
       // Removed dispatch(updateTopics({ topicId: editingPoint.topicId, pointIndex: editingPoint.index, newText }));
 >>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
 >>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
+=======
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
     }
   };
 
   const handleDeletePoint = (topicId: string, index: number) => {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
     if (outline) {
       const updatedOutline = outline.map(topic => {
         if (topic.id === topicId) {
@@ -143,6 +159,7 @@ const OutlineDisplay: React.FC = () => {
       });
       dispatch(setOutline(updatedOutline));
     }
+<<<<<<< HEAD
   };
 
   const handleAddPoint = (topicId: string) => {
@@ -174,6 +191,20 @@ const OutlineDisplay: React.FC = () => {
     // Removed dispatch(addTopicPoint({ topicId, text: 'New point' }));
 >>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
 >>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
+=======
+  };
+
+  const handleAddPoint = (topicId: string) => {
+    if (outline) {
+      const updatedOutline = outline.map(topic => {
+        if (topic.id === topicId) {
+          return { ...topic, key_points: [...topic.key_points, 'New point'] };
+        }
+        return topic;
+      });
+      dispatch(setOutline(updatedOutline));
+    }
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
   };
 
   const handleGenerateSlides = () => {
@@ -189,20 +220,29 @@ const OutlineDisplay: React.FC = () => {
       });
     };
 <<<<<<< HEAD
+<<<<<<< HEAD
     if (outline) {
       collectTopics(outline);
       console.log('Topics to generate:', topicsToGenerate);
       // Set topicsToGenerate on window so SlideEditor can access it
       (window as any).topicsToGenerate = topicsToGenerate;
+=======
+    if (outline) {
+      collectTopics(outline);
+      console.log('Topics to generate:', topicsToGenerate);
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
       dispatch(generateSlides(topicsToGenerate));
     } else {
       console.warn('No outline found when trying to generate slides.');
     }
+<<<<<<< HEAD
 =======
     
     // Removed collectTopics(outline);
     // Removed dispatch(generateSlides(topicsToGenerate));
 >>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
+=======
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
   };
 
   const renderTopic = (topic: SlideTopic, index: number) => (
@@ -280,6 +320,7 @@ const OutlineDisplay: React.FC = () => {
     <Box sx={{ p: 3 }}>
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       {/* Show Generate All Slides button if there is an outline and no slides yet */}
       {outline && outline.length > 0 && !hasSlides && (
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
@@ -322,6 +363,8 @@ const OutlineDisplay: React.FC = () => {
       {outline && outline.map((topic, index) => renderTopic(topic, index))}
 =======
 =======
+=======
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
       <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
         <Button
           variant="contained"
@@ -337,8 +380,12 @@ const OutlineDisplay: React.FC = () => {
           </Typography>
         )}
       </Box>
+<<<<<<< HEAD
 >>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
 >>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
+=======
+      {outline && outline.map((topic, index) => renderTopic(topic, index))}
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
       <EditDialog
         open={editDialogOpen}
         text={editingPoint?.text || ''}

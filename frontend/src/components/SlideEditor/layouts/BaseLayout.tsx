@@ -38,6 +38,7 @@ interface BaseLayoutProps {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   error?: APIError | null;
 >>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
 =======
@@ -49,6 +50,9 @@ interface BaseLayoutProps {
   error?: any | null;
 >>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
 >>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
+=======
+  error?: string | null;
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
   onErrorClose?: () => void;
   backgroundColor?: string;
   fontColor?: string;

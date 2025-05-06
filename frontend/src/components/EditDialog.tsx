@@ -162,7 +162,10 @@ const EditDialog: React.FC<EditDialogProps> = ({
             <AddIcon />
           </IconButton>
         </Box>
+<<<<<<< HEAD
 
+=======
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
         {editedSlide?.bullets && (
           <List>
             {editedSlide.bullets.replace(/<\/?ul>/g, '').split(/<li>|<\/li>/).filter(Boolean).map((bullet: string, index: number) => (

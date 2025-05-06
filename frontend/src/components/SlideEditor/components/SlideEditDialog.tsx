@@ -31,8 +31,12 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import ImageIcon from '@mui/icons-material/Image';
+<<<<<<< HEAD
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { Slide, SlideLayout, BulletPoint, ImageService, SlideImage, SlideTopic } from '../types';
+=======
+import { Slide, SlideLayout, BulletPoint, ImageService, SlideImage } from '../types';
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
 import { convertLayoutToFrontend, convertLayoutToBackend } from '../utils';
 import ImageUploader from './ImageUploader';
 import TiptapEditor from './TiptapEditor'; // Import TiptapEditor
@@ -101,6 +105,7 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   onImageUpload,
   onImageGenerate,
 }) => {
+<<<<<<< HEAD
   // DEBUG: Log if onImageGenerate is present
   console.log('[SlideEditDialog] onImageGenerate present:', typeof onImageGenerate === 'function');
 
@@ -121,10 +126,13 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     return '';
   }
 
+=======
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
   // Only update editedSlide when the dialog is opened or the slide changes (not on every render)
   const [editedSlide, setEditedSlide] = useState<Slide>(() => {
     const baseContent = {
       ...slide.content,
+<<<<<<< HEAD
       // Normalize bullets for all possible input types
       bullets: normalizeBulletsForDialog(slide.content.bullets),
     };
@@ -133,6 +141,13 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     if (!('image_prompt' in baseContent) && 'image_prompt' in slide.content) {
       baseContent.image_prompt = slide.content.image_prompt;
     }
+=======
+      bullets: slide.content.bullets ? [...slide.content.bullets] : [],
+    };
+    const layout = convertLayoutToFrontend(slide.layout);
+    console.log('SlideEditDialog INIT layout:', layout, 'baseContent:', baseContent);
+    // TEMP: Force fallback for all layouts if image missing
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
     if (!baseContent.image) {
       baseContent.image = {
         url: '',
@@ -149,20 +164,30 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   });
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   console.log('SlideEditDialog topic:', topic);
   console.log('SlideEditDialog defaultImagePrompt:', editedSlide.content.image_prompt || topic?.image_prompt || slide.content.image_prompt || '');
 
+=======
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
   useEffect(() => {
     if (open) {
       const validLayout = convertLayoutToFrontend(slide.layout);
       const baseContent = {
         ...slide.content,
+<<<<<<< HEAD
         // Normalize bullets for all possible input types
         bullets: normalizeBulletsForDialog(slide.content.bullets),
       };
       if (!('image_prompt' in baseContent) && 'image_prompt' in slide.content) {
         baseContent.image_prompt = slide.content.image_prompt;
       }
+=======
+        bullets: slide.content.bullets ? [...slide.content.bullets] : [],
+      };
+      console.log('SlideEditDialog EFFECT layout:', validLayout, 'baseContent:', baseContent);
+      // TEMP: Force fallback for all layouts if image missing
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
       if (!baseContent.image) {
         baseContent.image = {
           url: '',
@@ -405,6 +430,7 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     if (!onImageGenerate) return;
 >>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
     try {
+<<<<<<< HEAD
       // Use the current title or topic as prompt, fallback to 'Generate slide content'
       const prompt = editedSlide.content.title || topic?.title || 'Generate slide content';
       // Prepare the topic object for the backend
@@ -445,10 +471,18 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
       setAiError(err.message || 'Failed to generate slide');
     } finally {
       setAiLoading(false);
+=======
+      console.log('SlideEditDialog - Generating image with prompt:', prompt);
+      const image = await onImageGenerate(prompt, 'dalle');
+      handleImageChange(image);
+    } catch (err) {
+      console.error('Failed to generate image:', err);
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
     }
   }, [onImageGenerate, handleImageChange]);
 
   useEffect(() => {
+<<<<<<< HEAD
     const newSlide = {
       ...slide,
       layout: convertLayoutToFrontend(slide.layout),
@@ -472,6 +506,36 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
       handleImageGenerate(slide.content.image_prompt);
     }
   }, [slide, handleImageGenerate]);
+=======
+    if ((editedSlide.layout === 'title-body' || editedSlide.layout === 'title-body-image')) {
+      if (!editedSlide.content.body || editedSlide.content.body.trim() === '') {
+        setBodyError('Body content is empty or missing.');
+      } else if (!editedSlide.content.body.startsWith('<')) {
+        setBodyError('Body content is not HTML.');
+      } else {
+        setBodyError(null);
+      }
+    } else {
+      setBodyError(null);
+    }
+  }, [editedSlide.layout, editedSlide.content.body]);
+
+  useEffect(() => {
+    if (editedSlide.layout.includes('image')) {
+      if (!editedSlide.content.image || !editedSlide.content.image.url) {
+        setImageError('Image is missing or not set. You can save without an image, or generate/upload one below.');
+      } else {
+        setImageError(null);
+      }
+    } else {
+      setImageError(null);
+    }
+  }, [editedSlide.layout, editedSlide.content.image]);
+
+  useEffect(() => {
+    console.log('SlideEditDialog image:', editedSlide.content.image);
+  }, [editedSlide.content.image]);
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
 
   const handleSave = () => {
     onSave({
@@ -485,6 +549,7 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
 
   const currentLayout = layoutOptions.find(option => option.value === editedSlide.layout) ? editedSlide.layout : 'title-bullets';
 
+<<<<<<< HEAD
   // Priority: editedSlide.content.image_prompt > topic?.image_prompt > slide.content.image_prompt
   const defaultImagePrompt = editedSlide.content.image_prompt || topic?.image_prompt || slide.content.image_prompt || '';
 
@@ -496,6 +561,8 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     return `<p>${content}</p>`;
   };
 
+=======
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Edit Slide</DialogTitle>

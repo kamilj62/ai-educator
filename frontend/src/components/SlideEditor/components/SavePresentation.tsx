@@ -4,13 +4,6 @@ import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, F
 import pptxgen from 'pptxgenjs';
 import { Slide } from '../types';
 
-// Add this at the top or in a global.d.ts file, but for now add here for the error:
-declare global {
-  interface Window {
-    showSaveFilePicker?: (...args: any[]) => Promise<any>;
-  }
-}
-
 interface SavePresentationProps {
   open: boolean;
   onClose: () => void;
@@ -132,10 +125,14 @@ const SavePresentation: React.FC<SavePresentationProps> = ({
             },
           }],
 <<<<<<< HEAD
+<<<<<<< HEAD
         }) as FileSystemFileHandle;
 =======
         });
 >>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
+=======
+        }) as FileSystemFileHandle;
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
         const writable = await fileHandle.createWritable();
 
         if (format === 'pptx') {

@@ -4,6 +4,12 @@ import AddIcon from '@mui/icons-material/Add';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PresentationIcon from '@mui/icons-material/Slideshow';
+<<<<<<< HEAD
+=======
+import LayoutSwitcher from './LayoutSwitcher';
+import { Slide, BackendSlideLayout } from '../types';
+import { convertLayoutToFrontend, convertLayoutToBackend } from '../utils';
+>>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
 
 interface EditorControlsProps {
   onAddSlide: () => void;
