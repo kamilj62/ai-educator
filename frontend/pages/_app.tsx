@@ -7,6 +7,7 @@ import { store } from '../src/store/store';
 import '../styles/slide-overrides.css';
 import '../src/components/SlideEditor/layouts/SlideEditorImageFix.css';
 import ErrorBoundary from '../src/components/ErrorBoundary';
+import Head from 'next/head';
 
 const theme = createTheme({
   palette: {
@@ -44,6 +45,9 @@ function MyApp({ Component, pageProps }: AppProps) {
     <Provider store={store}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
+        <Head>
+          <link rel="icon" href="/favicon.ico" />
+        </Head>
         <ErrorBoundary>
           <Component {...pageProps} />
         </ErrorBoundary>
