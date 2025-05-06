@@ -74,6 +74,8 @@ IMAGES_DIR.mkdir(exist_ok=True)
 logger.info(f"Static directories created: {STATIC_DIR}, {IMAGES_DIR}")
 
 # Replace deprecated startup event with lifespan context
+from contextlib import asynccontextmanager
+
 @asynccontextmanager
 async def lifespan(app):
     global ai_service
@@ -85,11 +87,10 @@ async def lifespan(app):
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
         await ai_service.initialize()
-        yield
     except Exception as e:
         logger.error(f"Failed to initialize AI service for testing: {e}")
         logger.error(traceback.format_exc())
-        yield
+    yield
 
 app = FastAPI(lifespan=lifespan)
 
