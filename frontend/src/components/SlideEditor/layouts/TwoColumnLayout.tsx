@@ -1,3 +1,4 @@
+import React from 'react';
 import { Box, styled } from '@mui/material';
 import BaseLayout from './BaseLayout';
 import type { Slide, ImageService, SlideImage } from '../types';
