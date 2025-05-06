@@ -94,6 +94,19 @@ def lifespan(app):
 
 app = FastAPI(title="MarvelAI Presentation Generator", lifespan=lifespan)
 
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://ai-educator-1vxhsdwjo-kamilj62s-projects.vercel.app",
+        "http://localhost:3000",
+        "https://ai-powerpoint-f44a1d57b590.herokuapp.com"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 import sys
 if ("pytest" in sys.modules or "PYTEST_CURRENT_TEST" in os.environ) and ai_service is None:
     try:
@@ -109,19 +122,6 @@ if ("pytest" in sys.modules or "PYTEST_CURRENT_TEST" in os.environ) and ai_servi
     except Exception as e:
         logger.error(f"Failed to initialize AI service for testing: {e}")
         logger.error(traceback.format_exc())
-
-# Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://ai-educator-1vxhsdwjo-kamilj62s-projects.vercel.app",
-        "http://localhost:3000",
-        "https://ai-powerpoint-f44a1d57b590.herokuapp.com"
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Mount static files directory
 app.mount("/static", StaticFiles(directory="static"), name="static")
