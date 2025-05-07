@@ -468,6 +468,9 @@ class AIService:
                     slide["id"] = slide_id
                     repaired_topics.append(slide)
 
+                # Debug: Log all repaired slides before filtering
+                for idx, slide in enumerate(repaired_topics):
+                    logger.error(f"[DEBUG][Repaired Slide {idx+1}] Fields: title={slide.get('title')!r}, description={slide.get('description')!r}, key_points={slide.get('key_points')!r}, image_prompt={slide.get('image_prompt')!r}, id={slide.get('id')!r}")
                 # Now validate after ALL repairs
                 filtered_topics = []
                 for slide in repaired_topics:
@@ -485,7 +488,12 @@ class AIService:
                     if not slide.get("image_prompt"):
                         slide["image_prompt"] = f"Illustration of {slide.get('title', 'this topic')}"
                     filtered_topics.append(slide)
-                logger.info(f"[OpenAI] Filtered topics after repair and validation (attempt {attempt}): {filtered_topics}")
+                logger.error(f"[DEBUG] Filtered topics ({len(filtered_topics)}): {filtered_topics}")
+                for handler in logger.handlers:
+                    try:
+                        handler.flush()
+                    except Exception:
+                        pass
                 if filtered_topics:
                     logger.info(f"[OpenAI] Returning {len(filtered_topics)} topics to client.")
                     return {
