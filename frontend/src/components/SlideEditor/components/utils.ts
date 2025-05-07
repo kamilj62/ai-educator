@@ -1,3 +1,4 @@
+
 // Converts from backend dash-case string to frontend SlideLayout (UPPERCASE)
 // export const convertLayoutToFrontend = (layout: string): string => {
 //   switch (layout) {
@@ -15,58 +16,25 @@
 //   }
 // };
 
-<<<<<<< HEAD
-// Converts from frontend SlideLayout (UPPERCASE) to backend dash-case string
-export const convertLayoutToBackend = (layout: string): string => {
-  switch (layout) {
-    case 'TITLE_ONLY':
-=======
-export const convertLayoutToFrontend = (layout: BackendSlideLayout): SlideLayout => {
+
+// If SlideLayout or BackendSlideLayout are missing, fallback to string types
+// import { BackendSlideLayout, SlideLayout } from '../types';
+export const convertLayoutToFrontend = (layout: string): string => {
   switch (layout) {
     case 'title-only':
->>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
-      return 'title-only';
     case 'title-body':
-      return 'title-body';
     case 'title-bullets':
-      return 'title-bullets';
     case 'two-column':
-      return 'two-column';
     case 'title-image':
-      return 'title-image';
     case 'title-body-image':
-      return 'title-body-image';
     case 'title-bullets-image':
-      return 'title-bullets-image';
     case 'two-column-image':
-      return 'two-column-image';
+      return layout;
     default:
       return 'title-only';
   }
 };
 
-export const convertLayoutToBackend = (layout: SlideLayout): BackendSlideLayout => {
-  switch (layout) {
-    case 'title-only':
-      return 'title-only';
-    case 'title-body':
-      return 'title-body';
-    case 'title-bullets':
-      return 'title-bullets';
-    case 'two-column':
-      return 'two-column';
-    case 'title-image':
-      return 'title-image';
-    case 'title-body-image':
-      return 'title-body-image';
-    case 'title-bullets-image':
-      return 'title-bullets-image';
-    case 'two-column-image':
-      return 'two-column-image';
-    default:
-      return 'title-only';
-  }
-};
 
 // Normalize bullets to HTML string
 export function normalizeBullets(bullets: any): string {

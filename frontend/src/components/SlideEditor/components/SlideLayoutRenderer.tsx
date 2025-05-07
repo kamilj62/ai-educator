@@ -17,7 +17,7 @@ interface SlideLayoutRendererProps {
 
 const SlideLayoutRenderer: React.FC<SlideLayoutRendererProps> = ({ slide, onChange = () => {}, onImageUpload, onImageGenerate, preview, slides }) => {
   switch (slide.layout) {
-    case 'title-only':
+    case 'title':
       return <TitleOnlyLayout slide={slide} onChange={onChange} />;
     case 'title-bullets': {
       // Find the index of the current slide in the slides array if available
@@ -31,8 +31,24 @@ const SlideLayoutRenderer: React.FC<SlideLayoutRendererProps> = ({ slide, onChan
       return <TitleBodyLayout slide={slide} onChange={onChange} />;
     case 'title-image':
       return <TitleImageLayout slide={slide} onChange={onChange} onImageUpload={onImageUpload} onImageGenerate={onImageGenerate} />;
-    case 'title-body-image':
-      return <TitleBodyLayout slide={slide} onChange={onChange} />;
+    case 'title-body-image': {
+      // Ensure TiptapEditor receives HTML for body and title, not plain text
+      // If body/title are not HTML, wrap as <p>...</p>
+      const ensureHtml = (val?: string) => {
+        if (!val) return '<p></p>';
+        const isHtml = /<([a-z][\s\S]*?)>/i.test(val);
+        return isHtml ? val : `<p>${val}</p>`;
+      };
+      const slideWithHtml = {
+        ...slide,
+        content: {
+          ...slide.content,
+          body: ensureHtml(slide.content?.body || ''),
+          title: ensureHtml(slide.content?.title || ''),
+        },
+      };
+      return <TitleBodyLayout slide={slideWithHtml} onChange={onChange} />;
+    }
     case 'two-column':
       return <TwoColumnLayout slide={slide} onChange={onChange} preview={preview} />;
     default:

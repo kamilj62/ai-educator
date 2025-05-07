@@ -1,6 +1,5 @@
 // API Configuration
 export const API_CONFIG = {
-<<<<<<< HEAD
   BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || '/api',  // Use relative path for API requests or NEXT_PUBLIC_API_BASE_URL if set
   ENDPOINTS: {
     GENERATE_OUTLINE: '/api/generate/outline',
@@ -18,22 +17,6 @@ export const API_CONFIG = {
 // DEBUG: Log API base URL for troubleshooting
 console.log('[config] API_CONFIG.BASE_URL:', API_CONFIG.BASE_URL);
 
-=======
-  BASE_URL: '/api',  // Use relative path for API requests
-  ENDPOINTS: {
-    GENERATE_OUTLINE: '/generate/outline',
-    GENERATE_SLIDE: '/generate/slide',
-    GENERATE_SLIDES: '/generate/slides',
-    EXPORT: '/export',
-    LAYOUTS: '/layouts',
-    LAYOUT_VALIDATE: '/layout/validate',
-    LAYOUT_SWITCH: '/layout/switch',
-    UPLOAD_IMAGE: '/upload/image',
-    HEALTH: '/health'
-  }
-} as const;
-
->>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
 // Retry configuration for API calls
 export const API_RETRY_CONFIG = {
   maxRetries: 3,
@@ -42,7 +25,7 @@ export const API_RETRY_CONFIG = {
 } as const;
 
 // Utility function to check API health
-export const checkApiHealth = async () => {
+export const checkApiHealth = async (): Promise<boolean> => {
   try {
     const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.HEALTH}`);
     return response.ok;

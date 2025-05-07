@@ -1,8 +1,4 @@
-<<<<<<< HEAD
- import React, { useEffect, useState, useRef } from 'react';
-=======
 import React, { useEffect, useState, useRef } from 'react';
->>>>>>> 49ccefaf (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 import { Box, Typography, Button, IconButton, Tooltip } from '@mui/material';
 import EditorToolbar from './components/EditorToolbar';
 import SaveIcon from '@mui/icons-material/Save';
@@ -20,7 +16,6 @@ import SavePresentation from './components/SavePresentation';
 import SlideEditDialog from './components/SlideEditDialog';
 import { Slide, ImageService, SlideImage, SlideTopic, BackendSlideLayout } from './types';
 import SlideLayoutRenderer from './components/SlideLayoutRenderer';
-<<<<<<< HEAD
 import { backendSlideToFrontend, convertLayoutToFrontend, convertLayoutToBackend } from './utils';
 import EditorControls from './components/EditorControls';
 import AddIcon from '@mui/icons-material/Add';
@@ -35,11 +30,26 @@ const EditorContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
   backgroundColor: theme.palette.grey[100],
 }));
-=======
-import { backendSlideToFrontend } from './utils';
->>>>>>> 49ccefaf (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
+
 
 const SlideEditor: React.FC = () => {
+  // ...existing hooks
+  // Handler to save a new or edited slide from the dialog
+  const handleEditDialogSave = (slide: Slide) => {
+    // If slide already exists, update it; otherwise, add as new
+    const exists = slides.some(s => s.id === slide.id);
+    let newSlides;
+    if (exists) {
+      newSlides = slides.map(s => (s.id === slide.id ? slide : s));
+    } else {
+      newSlides = [...slides, slide];
+    }
+    dispatch(setSlides(newSlides));
+    dispatch(setActiveSlide(slide.id));
+    setEditDialogOpen(false);
+    setPendingNewSlide(null);
+  };
+
   const dispatch = useDispatch<AppDispatch>();
   const editorRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -105,6 +115,7 @@ const SlideEditor: React.FC = () => {
     dispatch(setSlides(newSlides));
   };
 
+
   const handleImageUpload = async (file: File): Promise<string> => {
     return URL.createObjectURL(file);
   };
@@ -169,8 +180,11 @@ const SlideEditor: React.FC = () => {
     }
   };
 
-  const handleNextSlide = () => {};
-  const handlePreviousSlide = () => {};
+  const handleNextSlide = () => {
+  };
+
+  const handlePreviousSlide = () => {
+  };
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -207,150 +221,189 @@ const SlideEditor: React.FC = () => {
   };
 
   return (
-    <EditorContainer ref={editorRef}>
-      {!isFullscreen && (
-        <EditorToolbar editor={null} />
-      )}
-      <Box sx={{ 
-        display: 'flex', 
-        height: '100%',
-        overflow: 'hidden',
-        bgcolor: 'background.default'
-      }}>
+    <>
+      <EditorContainer ref={editorRef}>
         {!isFullscreen && (
-          <Box sx={{ 
-            width: 300, 
-            borderRight: 1, 
-            borderColor: 'divider',
-            display: 'flex',
-            flexDirection: 'column',
-            bgcolor: 'primary.main',
-            color: 'white',
-          }}>
-            <Box sx={{ 
-              p: 2, 
-              borderBottom: 1, 
-              borderColor: 'divider',
-              bgcolor: 'primary.main', 
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
-              <Typography variant="h6" sx={{ color: 'inherit', fontWeight: 700 }}>Slides</Typography>
-            </Box>
-            <SlideSorter
-              slides={slides}
-              onSlidesReorder={handleSlidesReorder}
-              onSlideSelect={handleSlideSelect}
-              onSlideDelete={handleSlideDelete}
-              activeSlideId={activeSlideId || ''}
-            />
-          </Box>
+          <EditorToolbar editor={null} />
         )}
         <Box sx={{ 
-          flex: 1, 
+          height: '100%', 
           display: 'flex', 
           flexDirection: 'column',
-          bgcolor: 'primary.light',
-          minHeight: 0, 
-          minWidth: 0, 
-          overflow: 'hidden', 
+          position: 'relative'
         }}>
-          {!isFullscreen && activeSlide && (
-            <EditorControls
-              onAddSlide={() => {
-                // Prepare a new slide but do not add it yet
-                const { v4: uuidv4 } = require('uuid');
-                const blankSlide = {
-                  id: uuidv4(),
-                  layout: 'title-body',
-                  content: {
-                    title: '',
-                    subtitle: '',
-                    body: '',
-                    bullets: '',
-                  },
-                };
-                setPendingNewSlide(blankSlide as Slide);
-                setEditDialogOpen(true);
-              }}
-              onDuplicateSlide={undefined}
-              onDeleteSlide={undefined}
-              onStartPresentation={undefined}
-            />
-          )}
-          <Box sx={{ p: 2 }} />
           <Box sx={{ 
-            flex: 1, 
-            p: 3, 
-            overflow: 'auto',
-            position: 'relative',
-            display: 'block',
-            minHeight: '80vh',
-            minWidth: 0,
-            bgcolor: 'primary.light',
+            display: 'flex', 
+            justifyContent: 'flex-end', 
+            gap: 1, 
+            p: 1,
+            bgcolor: 'background.paper',
+            borderBottom: 1,
+            borderColor: 'divider'
           }}>
-            {activeSlide && (
-              <Box
-                sx={{
-                  width: '100%',
-                  background: DEFAULT_BG_COLOR,
-                  p: 0,
-                  minHeight: 400,
-                  position: 'relative',
-                  zIndex: 1000,
-                }}
-              >
-                <Box
-                  sx={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    height: '100%',
-                    background: '#fffbe7',
-                    margin: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                  }}
+            <Tooltip title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}>
+              <span>
+                <IconButton onClick={toggleFullScreen} size="large">
+                  {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="Edit Slide">
+              <span>
+                <IconButton
+                  onClick={() => setEditDialogOpen(true)}
+                  disabled={true} // Removed activeSlide check
+                  size="large"
                 >
-                  {activeSlide && (
-                    <SlideLayoutRenderer
-                      slide={activeSlide}
-                      onChange={handleSlideChange}
-                      onImageUpload={handleImageUpload}
-                      onImageGenerate={handleImageGenerate}
-                    />
-                  )}
+                  <EditIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="Save Presentation">
+              <span>
+                <IconButton
+                  onClick={() => setSaveDialogOpen(true)}
+                  disabled={true} // Removed slides check
+                  size="large"
+                >
+                  <SaveIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Box>
+          <Box sx={{ 
+            display: 'flex', 
+            height: '100%',
+            overflow: 'hidden',
+            bgcolor: 'background.default'
+          }}>
+            {!isFullscreen && (
+              <Box sx={{ 
+                width: 300, 
+                borderRight: 1, 
+                borderColor: 'divider',
+                display: 'flex',
+                flexDirection: 'column',
+                bgcolor: 'primary.main',
+                color: 'white',
+              }}>
+                <Box sx={{ 
+                  p: 2, 
+                  borderBottom: 1, 
+                  borderColor: 'divider',
+                  bgcolor: 'primary.main', 
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <Typography variant="h6" sx={{ color: 'inherit', fontWeight: 700 }}>Slides</Typography>
                 </Box>
+                <SlideSorter
+                  slides={slides}
+                  onSlidesReorder={handleSlidesReorder}
+                  onSlideSelect={handleSlideSelect}
+                  onSlideDelete={handleSlideDelete}
+                  activeSlideId={activeSlideId ?? undefined}
+                />
               </Box>
             )}
+            <Box sx={{ 
+              flex: 1, 
+              display: 'flex', 
+              flexDirection: 'column',
+              bgcolor: 'primary.light',
+              minHeight: 0, 
+              minWidth: 0, 
+              overflow: 'hidden', 
+            }}>
+              {!isFullscreen && activeSlide && (
+                <EditorControls
+                  onAddSlide={() => {
+                    // Prepare a new slide but do not add it yet
+                    const { v4: uuidv4 } = require('uuid');
+                    const blankSlide = {
+                      id: uuidv4(),
+                      layout: 'title-body',
+                      content: {
+                        title: '',
+                        subtitle: '',
+                        body: '',
+                        bullets: '',
+                      },
+                    };
+                    setPendingNewSlide(blankSlide as Slide);
+                    setEditDialogOpen(true);
+                  }}
+                  onDuplicateSlide={undefined}
+                  onDeleteSlide={undefined}
+                  onStartPresentation={undefined}
+                />
+              )}
+              <Box sx={{ p: 2 }} />
+              <Box sx={{ 
+                flex: 1, 
+                p: 3, 
+                overflow: 'auto',
+                position: 'relative',
+                display: 'block',
+                minHeight: '80vh',
+                minWidth: 0,
+                bgcolor: 'primary.light',
+              }}>
+                {activeSlide && (
+                  <Box
+                    sx={{
+                      width: '100%',
+                      background: DEFAULT_BG_COLOR,
+                      p: 0,
+                      minHeight: 400,
+                      position: 'relative',
+                      zIndex: 1000,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        height: '100%',
+                        background: '#fffbe7',
+                        margin: 0,
+                        display: 'flex',
+                        flexDirection: 'column',
+                      }}
+                    >
+                      {activeSlide && (
+                        <SlideLayoutRenderer
+                          slide={activeSlide}
+                          onChange={handleSlideChange}
+                          onImageUpload={handleImageUpload}
+                          onImageGenerate={handleImageGenerate}
+                        />
+                      )}
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            </Box>
           </Box>
         </Box>
-      </Box>
-<<<<<<< HEAD
-    </EditorContainer>
-  );
-=======
-
+      </EditorContainer>
       <SavePresentation
         open={saveDialogOpen}
         onClose={() => setSaveDialogOpen(false)}
         onSave={handleSave}
         slides={slides}
       />
-
-      {activeSlide && (
+      {pendingNewSlide && (
         <SlideEditDialog
           open={editDialogOpen}
           onClose={() => setEditDialogOpen(false)}
-          slide={activeSlide}
-          onSave={handleSlideChange}
-          onImageUpload={handleImageUpload}
-          onImageGenerate={handleImageGenerate}
+          slide={pendingNewSlide}
+          onSave={handleEditDialogSave}
         />
       )}
-    </Box>
+    </>
   );
-};
+}
 
->>>>>>> 49ccefaf (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 export default SlideEditor;

@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 import React from 'react';
 import { Card, CardContent, Typography, Box, IconButton, Tooltip } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
@@ -84,7 +84,7 @@ const SortableSlide: React.FC<SortableSlideProps> = ({
 };
 
 export default SortableSlide;
-=======
+
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Box, Paper, Typography, styled } from '@mui/material';
@@ -157,4 +157,4 @@ export const SortableSlide = ({ slide, isActive, onClick }: SortableSlideProps) 
     </SlidePreview>
   );
 };
->>>>>>> dd7ecbd (added imagen images)
+

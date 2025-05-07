@@ -17,8 +17,8 @@ export const convertLayoutToFrontend = (layout: BackendSlideLayout): SlideLayout
     case 'title-bullets-image':
       return 'title-bullets-image';
     case 'two-column-image':
-<<<<<<< HEAD
-=======
+
+
       return 'two-column-image';
     default:
       return 'title-only';
@@ -42,7 +42,7 @@ export const convertLayoutToBackend = (layout: SlideLayout): BackendSlideLayout 
     case 'title-bullets-image':
       return 'title-bullets-image';
     case 'two-column-image':
->>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
+
       return 'two-column-image';
     default:
       return 'title-only';

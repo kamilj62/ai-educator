@@ -1,14 +1,14 @@
-<<<<<<< HEAD
+
 // Image generation service types
 export type ImageService = 'dalle' | 'imagen' | 'generated' | 'upload';
 
 // Base types for layouts
 export type BackendSlideLayout = 
   | 'title-only'
-=======
+
 export type SlideLayout = 
   | 'title'
->>>>>>> dd7ecbd (added imagen images)
+
   | 'title-image'
   | 'title-body'
   | 'title-body-image'
@@ -17,7 +17,7 @@ export type SlideLayout =
   | 'two-column'
   | 'two-column-image';
 
-<<<<<<< HEAD
+
 export type SlideLayout = BackendSlideLayout;
 
 // Content types that match the frontend components
@@ -230,7 +230,7 @@ export type SlideTopic = {
   instructionalLevel?: InstructionalLevel;
 };
 
-=======
+
 export interface Slide {
   id: string;
   layout: SlideLayout;
@@ -248,23 +248,23 @@ export interface Slide {
   };
 }
 
->>>>>>> dd7ecbd (added imagen images)
+
 export interface EditorProps {
   slide: Slide;
   onChange: (slide: Slide) => void;
   onImageUpload?: (file: File) => Promise<string>;
-<<<<<<< HEAD
+
   onImageGenerate?: (prompt: string, service?: ImageService) => Promise<SlideImage>;
-=======
-<<<<<<< HEAD
+
+
   onImageGenerate?: (prompt: string, service?: ImageService) => Promise<string>;
->>>>>>> 70d1487b (Update Procfile for Heroku deployment)
+
   onSafetyCheck?: (content: string) => Promise<{
     passed: boolean;
     reason?: string;
     topics?: string[];
     level?: 'low' | 'medium' | 'high';
   }>;
-=======
->>>>>>> dd7ecbd (added imagen images)
+
+
 }

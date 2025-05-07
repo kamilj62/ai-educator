@@ -4,6 +4,13 @@ import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, F
 import pptxgen from 'pptxgenjs';
 import { Slide } from '../types';
 
+// Add this at the top or in a global.d.ts file, but for now add here for the error:
+declare global {
+  interface Window {
+    showSaveFilePicker?: (<T>(options?: SaveFilePickerOptions) => Promise<T>) | undefined;
+  }
+}
+
 interface SavePresentationProps {
   open: boolean;
   onClose: () => void;

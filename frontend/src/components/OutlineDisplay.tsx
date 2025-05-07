@@ -134,8 +134,6 @@ const OutlineDisplay: React.FC = () => {
 
   const handleGenerateSlides = () => {
     console.log('Clicked Generate All Slides');
-    // Collect all topics in order
-    const topicsToGenerate: SlideTopic[] = [];
     const collectTopics = (topics: SlideTopic[]) => {
       topics.forEach(topic => {
         topicsToGenerate.push(topic);
@@ -144,6 +142,7 @@ const OutlineDisplay: React.FC = () => {
         }
       });
     };
+
     if (outline) {
       collectTopics(outline);
       console.log('Topics to generate:', topicsToGenerate);
@@ -228,6 +227,7 @@ const OutlineDisplay: React.FC = () => {
 
   return (
     <Box sx={{ p: 3 }}>
+ HEAD
       {/* Show Generate All Slides button if there is an outline and no slides yet */}
       {outline && outline.length > 0 && !hasSlides && (
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
@@ -247,6 +247,43 @@ const OutlineDisplay: React.FC = () => {
         </Typography>
       )}
       {outline && outline.map((topic, index) => renderTopic(topic, index))}
+
+ HEAD
+      {outline.length > 0 && (
+        <>
+          <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Button
+              variant="contained"
+              startIcon={<PresentationIcon />}
+              onClick={handleGenerateSlides}
+              disabled={isGeneratingSlides}
+              sx={{ minWidth: 200 }}
+            >
+              Generate All Slides
+            </Button>
+            <ErrorDisplay error={error} />
+          </Box>
+          {outline.map((topic, index) => renderTopic(topic, index))}
+        </>
+      )}
+
+      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Button
+          variant="contained"
+          startIcon={<PresentationIcon />}
+          onClick={handleGenerateSlides}
+          sx={{ minWidth: 200 }}
+        >
+          Generate All Slides
+        </Button>
+        {error && (
+          <Typography color="error" variant="body2">
+            {error}
+          </Typography>
+        )}
+      </Box>
+ d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
+ ec70fcf5 (Fix layout type errors and unify BackendSlideLayout conversions)
       <EditDialog
         open={editDialogOpen}
         text={editingPoint?.text || ''}

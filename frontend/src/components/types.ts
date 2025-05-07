@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 // Slide layout types
 export type SlideLayout = 
   | 'title-only'
@@ -57,7 +57,7 @@ export interface Presentation {
 
 // Re-export types from SlideEditor
 export * from './SlideEditor/types';
-=======
+
 export type SlideLayout = 
   | 'title'
   | 'title-image'
@@ -90,4 +90,4 @@ export interface EditorProps {
   onChange: (slide: Slide) => void;
   onImageUpload?: (file: File) => Promise<string>;
 }
->>>>>>> dd7ecbd (added imagen images)
+

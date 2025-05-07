@@ -1,159 +1,13 @@
-<<<<<<< HEAD
-import React from 'react';
-import { useState } from 'react';
-import { Box, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
-=======
-<<<<<<< HEAD
-import React, { useState } from 'react';
-import { Box, Button, Dialog, DialogTitle, DialogContent, Grid, Card, CardContent, Typography, IconButton } from '@mui/material';
-import { LayoutOption, SlideLayout, layoutOptions } from '../types';
->>>>>>> 70d1487b (Update Procfile for Heroku deployment)
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../../store/store';
-import { setSlides } from '../../../store/presentationSlice';
-import { SlideLayout, layoutOptions } from '../types';
 
-<<<<<<< HEAD
-interface ColorOption {
-  label: string;
-  value: string;
-=======
+import React, { useState } from 'react';
+import { Box, Button, Menu, MenuItem, Typography, styled } from '@mui/material';
+import ViewQuiltIcon from '@mui/icons-material/ViewQuilt';
+import { SlideLayout } from '../types';
+
 interface LayoutSwitcherProps {
   layout: SlideLayout;
   onLayoutChange: (layout: SlideLayout) => void;
->>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
 }
-
-const backgroundColors: ColorOption[] = [
-  { label: 'White', value: '#fff' },
-  { label: 'Blue', value: '#6366f1' },
-  { label: 'Black', value: '#18181b' },
-  { label: 'Gray', value: '#e5e7eb' },
-  { label: 'Custom...', value: 'custom' },
-];
-
-<<<<<<< HEAD
-const fontColors: ColorOption[] = [
-  { label: 'Black', value: '#222' },
-  { label: 'White', value: '#fff' },
-  { label: 'Blue', value: '#6366f1' },
-  { label: 'Gray', value: '#888' },
-  { label: 'Custom...', value: 'custom' },
-];
-=======
-const LayoutSwitcher: React.FC<LayoutSwitcherProps> = ({ layout, onLayoutChange }) => {
-  const [open, setOpen] = useState(false);
-  const [selectedLayout, setSelectedLayout] = useState<SlideLayout>(layout);
-  const dispatch = useDispatch();
-  const slides = useSelector((state: RootState) => state.presentation.slides);
-  const activeSlideId = useSelector((state: RootState) => state.presentation.activeSlideId);
->>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
-
-interface LayoutSwitcherProps {
-  backgroundColor: string;
-  fontColor: string;
-  onBackgroundColorChange: (color: string) => void;
-  onFontColorChange: (color: string) => void;
-}
-
-const LayoutSwitcher: React.FC<LayoutSwitcherProps> = ({ backgroundColor, fontColor, onBackgroundColorChange, onFontColorChange }) => {
-  const [customBg, setCustomBg] = useState('');
-  const [customFont, setCustomFont] = useState('');
-
-  return (
-    <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', py: 1 }}>
-      <FormControl size="small">
-        <InputLabel id="bg-color-label">Slide Background</InputLabel>
-        <Select
-          labelId="bg-color-label"
-          value={backgroundColor.startsWith('#') ? backgroundColor : ''}
-          label="Slide Background"
-          onChange={e => {
-            if (e.target.value === 'custom') return;
-            onBackgroundColorChange(e.target.value as string);
-          }}
-        >
-          {backgroundColors.map(opt => (
-            <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-          ))}
-        </Select>
-        {backgroundColor === 'custom' && (
-          <input
-            type="color"
-            value={customBg}
-            onChange={e => {
-              setCustomBg(e.target.value);
-              onBackgroundColorChange(e.target.value);
-            }}
-<<<<<<< HEAD
-            style={{ marginTop: 8 }}
-          />
-        )}
-      </FormControl>
-      <FormControl size="small">
-        <InputLabel id="font-color-label">Font Color</InputLabel>
-        <Select
-          labelId="font-color-label"
-          value={fontColor.startsWith('#') ? fontColor : ''}
-          label="Font Color"
-          onChange={e => {
-            if (e.target.value === 'custom') return;
-            onFontColorChange(e.target.value as string);
-          }}
-        >
-          {fontColors.map(opt => (
-            <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-          ))}
-        </Select>
-        {fontColor === 'custom' && (
-          <input
-            type="color"
-            value={customFont}
-            onChange={e => {
-              setCustomFont(e.target.value);
-              onFontColorChange(e.target.value);
-            }}
-            style={{ marginTop: 8 }}
-          />
-        )}
-      </FormControl>
-    </Box>
-=======
-          >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2}>
-            {layoutOptions.map((layout) => (
-              <Grid item xs={12} sm={6} md={4} key={layout.layout}>
-                <Card 
-                  sx={{ 
-                    cursor: 'pointer',
-                    bgcolor: layout.layout === selectedLayout ? 'primary.light' : 'background.paper',
-                    '&:hover': {
-                      bgcolor: layout.layout === selectedLayout 
-                        ? 'primary.light' 
-                        : 'action.hover'
-                    }
-                  }}
-                  onClick={() => handleLayoutSelect(layout.layout)}
-                >
-                  <CardContent>
-                    {getLayoutPreview(layout)}
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </DialogContent>
-      </Dialog>
-    </>
-=======
-import { Box, Button, Menu, MenuItem, Typography, styled } from '@mui/material';
-import { useState } from 'react';
-import LayoutIcon from '@mui/icons-material/ViewQuilt';
-import { SlideLayout } from '../types';
 
 const LayoutButton = styled(Button)(({ theme }) => ({
   textTransform: 'none',
@@ -176,7 +30,7 @@ const LayoutPreview = styled(Box)(({ theme }) => ({
 }));
 
 const layoutOptions: { [key in SlideLayout]: string } = {
-  'title': 'Title Only',
+  title: 'Title Only',
   'title-image': 'Title with Image',
   'title-body': 'Title and Body',
   'title-body-image': 'Title and Body with Image',
@@ -186,12 +40,7 @@ const layoutOptions: { [key in SlideLayout]: string } = {
   'two-column-image': 'Two Columns with Image',
 };
 
-interface LayoutSwitcherProps {
-  currentLayout: SlideLayout;
-  onLayoutChange: (layout: SlideLayout) => void;
-}
-
-const LayoutSwitcher = ({ currentLayout, onLayoutChange }: LayoutSwitcherProps) => {
+const LayoutSwitcher: React.FC<LayoutSwitcherProps> = ({ layout, onLayoutChange }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -213,9 +62,9 @@ const LayoutSwitcher = ({ currentLayout, onLayoutChange }: LayoutSwitcherProps) 
       <LayoutButton
         variant="outlined"
         onClick={handleClick}
-        startIcon={<LayoutIcon />}
+        startIcon={<ViewQuiltIcon />}
       >
-        {layoutOptions[currentLayout]}
+        {layoutOptions[layout]}
       </LayoutButton>
       <Menu
         anchorEl={anchorEl}
@@ -240,11 +89,11 @@ const LayoutSwitcher = ({ currentLayout, onLayoutChange }: LayoutSwitcherProps) 
               gap: 1,
             }}
           >
-            {Object.entries(layoutOptions).map(([layout, label]) => (
+            {Object.entries(layoutOptions).map(([layoutKey, label]) => (
               <MenuItem
-                key={layout}
-                onClick={() => handleLayoutSelect(layout as SlideLayout)}
-                selected={currentLayout === layout}
+                key={layoutKey}
+                onClick={() => handleLayoutSelect(layoutKey as SlideLayout)}
+                selected={layout === layoutKey}
                 sx={{ p: 0 }}
               >
                 <Box sx={{ p: 1, width: '100%' }}>
@@ -258,14 +107,14 @@ const LayoutSwitcher = ({ currentLayout, onLayoutChange }: LayoutSwitcherProps) 
                         mb: 0.5,
                       }}
                     />
-                    {layout.includes('image') && (
+                    {(layoutKey.includes('image')) && (
                       <Box
                         sx={{
-                          width: layout.includes('two-column') ? '45%' : '30%',
+                          width: layoutKey.includes('two-column') ? '45%' : '30%',
                           height: '30px',
                           backgroundColor: 'primary.main',
                           opacity: 0.1,
-                          alignSelf: layout.includes('two-column')
+                          alignSelf: layoutKey.includes('two-column')
                             ? 'flex-end'
                             : 'center',
                         }}
@@ -282,8 +131,6 @@ const LayoutSwitcher = ({ currentLayout, onLayoutChange }: LayoutSwitcherProps) 
         </Box>
       </Menu>
     </Box>
->>>>>>> dd7ecbd (added imagen images)
->>>>>>> 70d1487b (Update Procfile for Heroku deployment)
   );
 };
 
