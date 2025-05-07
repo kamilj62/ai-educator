@@ -764,6 +764,28 @@ class AIService:
             logger.error(traceback.format_exc())
             raise ValueError(f"Failed to generate slide content: {str(e)}")
 
+    async def _make_openai_request(self, api_type: str, api_func, *args, **kwargs):
+        """
+        Wrapper for making OpenAI API requests with error handling and rate limiting.
+        Args:
+            api_type: 'chat', 'dalle', etc. Used for rate limiting and logging.
+            api_func: The OpenAI API function to call (should be awaitable).
+            *args, **kwargs: Arguments to pass to the API function.
+        Returns:
+            The response from the OpenAI API.
+        Raises:
+            HTTPException or ValueError on error.
+        """
+        try:
+            # Rate limiting
+            await self.rate_limiter.wait_if_needed(api_type)
+            response = await api_func(*args, **kwargs)
+            return response
+        except Exception as e:
+            logger.error(f"Error in OpenAI request ({api_type}): {str(e)}")
+            logger.error(traceback.format_exc())
+            raise ValueError(f"OpenAI API request failed: {str(e)}")
+
     async def enhance_content(self, slide_content: SlideContent) -> SlideContent:
         """Enhance slide content with Gemini Pro (optional enhancement)."""
         try:

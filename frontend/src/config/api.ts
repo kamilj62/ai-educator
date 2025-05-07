@@ -1,20 +1,18 @@
+// Example API config file after resolving merge conflicts
+import { SlideLayout } from '../components/types';
 import type { APIConfig } from './types';
-import type { BackendSlideLayout } from '../components/SlideEditor/types';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api';
 
 // Define the default layout for outline generation
-export const DEFAULT_LAYOUT: BackendSlideLayout = 'title-bullets';
+export const DEFAULT_LAYOUT: SlideLayout = 'title-bullets';
 
 export const API_CONFIG: APIConfig = {
-<<<<<<< HEAD
-  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || '/api',
-  ENDPOINTS: {
-    GENERATE_OUTLINE: '/api/generate/outline',
-    GENERATE_SLIDE: '/api/generate/slide',
-=======
-  BASE_URL: '/api',
+  BASE_URL: API_BASE_URL,
   ENDPOINTS: {
     GENERATE_OUTLINE: '/generate/outline',
     GENERATE_SLIDE: '/generate/slide',
->>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
   },
 } as const;
+
+export default API_BASE_URL;

@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { Box, Paper, styled, Typography } from '@mui/material';
+import { Box, Paper, styled, Typography, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import ImageUploader from '../components/ImageUploader';
-import type { Slide, SlideImage, ImageService } from '../types';
+import { Slide, SlideContent, SlideImage, ImageService } from '../../types';
 import Image from 'next/image';
 import { Rnd } from 'react-rnd';
 
@@ -157,7 +157,7 @@ const TitleImageLayout: React.FC<TitleImageLayoutProps> = ({ slide, onChange, on
         </ImageArea>
         <Box>
           <ImageUploader
-            imageUrl={slide.content.image?.url}
+            image={image}
             onImageChange={handleImageChange}
             onImageUpload={onImageUpload}
           />

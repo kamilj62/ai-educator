@@ -13,19 +13,9 @@ import {
   AlertTitle,
 } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-<<<<<<< HEAD
-import { generateOutline, setError } from '../store/presentationSlice';
-import type { InstructionalLevel, SlideTopic, SlideContent } from '../components/types';
-=======
 import { generateOutline, setError, APIError } from '../store/presentationSlice';
-<<<<<<< HEAD
-import { InstructionalLevel } from './SlideEditor/types';
->>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
-=======
 import type { InstructionalLevel, SlideTopic, SlideContent } from '../components/types';
->>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
 import { LayoutSelector } from './SlideEditor/components/LayoutSelector';
-import { BackendSlideLayout } from './SlideEditor/types';
 import SlidePreview from './SlidePreview';
 import EditDialog from './EditDialog';
 
@@ -35,22 +25,13 @@ interface OutlineEditorProps {
 
 const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => {
   const dispatch = useAppDispatch();
-<<<<<<< HEAD
-  const error = useAppSelector(state => state.presentation.error);
-  const outline = useAppSelector(state => state.presentation.outline);
+  const error = useAppSelector(state => state.presentation.error) as unknown as APIError | null;
+  const presentation = useAppSelector(state => state.presentation && (state.presentation as any).presentation);
   const slides = useAppSelector(state => state.presentation.slides);
-=======
-  const error = useAppSelector(state => state.presentation.error) as APIError | null;
-<<<<<<< HEAD
->>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
-=======
-  const presentation = useAppSelector(state => state.presentation.presentation);
-  const slides = useAppSelector(state => state.presentation.slides);
->>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
   const [topic, setTopic] = useState('');
   const [numSlides, setNumSlides] = useState(5);
   const [level, setLevel] = useState<InstructionalLevel>('high_school');
-  const [layout, setLayout] = useState<BackendSlideLayout>('title-bullets');
+  const [layout, setLayout] = useState('');
   const [isLayoutSelectorOpen, setIsLayoutSelectorOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [retryTimeout, setRetryTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -62,10 +43,7 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
       if (retryTimeout) {
         clearTimeout(retryTimeout);
       }
-<<<<<<< HEAD
-=======
       dispatch(setError(null));
->>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
     };
   }, [retryTimeout, dispatch]);
 
@@ -79,7 +57,7 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
     dispatch(setError(null));
 
     try {
-      await dispatch(generateOutline({
+      await (dispatch as any)(generateOutline({
         topic: topic.trim(),
         numSlides: Math.max(1, Math.min(20, numSlides)),
         instructionalLevel: level,
@@ -91,11 +69,7 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
         const timeout = setTimeout(() => {
           setRetryTimeout(null);
           dispatch(setError(null));
-<<<<<<< HEAD
         }, errorObj.retryAfter * 1000);
-=======
-        }, apiError.retryAfter * 1000);
->>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
         setRetryTimeout(timeout);
       }
     } finally {
@@ -103,7 +77,7 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
     }
   };
 
-  const handleLayoutSelect = (selectedLayout: BackendSlideLayout) => {
+  const handleLayoutSelect = (selectedLayout: string) => {
     setLayout(selectedLayout);
     setIsLayoutSelectorOpen(false);
   };
@@ -171,13 +145,6 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
     }
   };
 
-  const handleSaveTopic = (updatedTopic: SlideTopic, updatedSlide?: SlideContent) => {
-    if (editingTopic && slides) {
-      // Implement logic to update the slide/topic in Redux or local state
-      setEditingTopic(null);
-    }
-  };
-
   return (
     <Box
       component="form"
@@ -190,15 +157,11 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
 
       {error && (
         <Alert 
-<<<<<<< HEAD
-          severity={getErrorSeverity(getErrorObject(error))}
-=======
-          severity={getErrorSeverity(error.type)}
->>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
+          severity={getErrorSeverity(error)}
           onClose={() => dispatch(setError(null))}
           sx={{ mb: 2, whiteSpace: 'pre-wrap' }}
         >
-          <AlertTitle>{getErrorTitle(getErrorObject(error))}</AlertTitle>
+          <AlertTitle>{getErrorTitle(error)}</AlertTitle>
           {getErrorMessage(error)}
           {getErrorObject(error).retryAfter && (
             <Typography variant="body2" sx={{ mt: 1 }}>
@@ -224,15 +187,22 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
       {editingTopic && slides && (
         <EditDialog
           open={true}
-          topic={{
-            id: slides[editingTopic.index]?.id || '',
-            title: slides[editingTopic.index]?.content?.title || '',
-            key_points: [],
-            description: slides[editingTopic.index]?.content?.body || '',
-          }}
-          slide={slides[editingTopic.index]?.content}
+          initialValue={slides[editingTopic.index]?.content?.title || ''}
           onClose={() => setEditingTopic(null)}
-          onSave={(topic, slideContent) => handleSaveTopic(topic, slideContent)}
+          onSave={(value: string) => {
+            if (slides && editingTopic) {
+              const oldSlide = slides[editingTopic.index];
+              const updatedTopic = {
+                id: oldSlide.id,
+                title: value,
+                key_points: oldSlide.content?.bullets ? oldSlide.content.bullets.split('\n') : [],
+                description: oldSlide.content?.body || '',
+              };
+              handleSaveTopic(updatedTopic, undefined);
+            }
+          }}
+          title="Edit Topic Title"
+          label="Topic Title"
         />
       )}
 

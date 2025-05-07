@@ -13,11 +13,11 @@ import {
   Button,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { BackendSlideLayout, getLayoutFeatures } from '../types';
-import type { SlideTopic } from '../types';
+import { SlideTopic } from '../../types';
+import { getLayoutFeatures } from '../types';
 
 interface LayoutOption {
-  layout: BackendSlideLayout;
+  layout: string;
   title: string;
   description: string;
   preview: string;
@@ -30,7 +30,7 @@ interface LayoutOption {
 export interface LayoutSelectorProps {
   open: boolean;
   topic: SlideTopic;
-  onSelect: (layout: BackendSlideLayout) => void;
+  onSelect: (layout: string) => void;
   onClose: () => void;
 }
 
@@ -48,7 +48,7 @@ export const LayoutSelector: React.FC<LayoutSelectorProps> = ({
   onSelect,
   onClose,
 }) => {
-  const handleSelect = (layout: BackendSlideLayout) => {
+  const handleSelect = (layout: string) => {
     onSelect(layout);
   };
 
@@ -68,8 +68,6 @@ export const LayoutSelector: React.FC<LayoutSelectorProps> = ({
       features: addLegacyFeatureKeys(getLayoutFeatures('title-image')),
     },
     {
-<<<<<<< HEAD
-=======
       layout: 'title-body',
       title: 'Title and Body',
       description: 'Classic layout with a title and text content',
@@ -84,7 +82,6 @@ export const LayoutSelector: React.FC<LayoutSelectorProps> = ({
       features: addLegacyFeatureKeys(getLayoutFeatures('title-body-image')),
     },
     {
->>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
       layout: 'title-bullets',
       title: 'Title and Bullets',
       description: 'Title slide with bullet points',

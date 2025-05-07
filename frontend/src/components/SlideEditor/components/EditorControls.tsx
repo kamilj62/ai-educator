@@ -1,65 +1,26 @@
 import React from 'react';
-import { Box, IconButton, Tooltip } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import DeleteIcon from '@mui/icons-material/Delete';
-import PresentationIcon from '@mui/icons-material/Slideshow';
-<<<<<<< HEAD
-=======
-import LayoutSwitcher from './LayoutSwitcher';
-import { Slide, BackendSlideLayout } from '../types';
-import { convertLayoutToFrontend, convertLayoutToBackend } from '../utils';
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
+import { Box, Button } from '@mui/material';
 
 interface EditorControlsProps {
-  onAddSlide: () => void;
+  onSave: () => void;
+  onCancel: () => void;
+  onAddSlide?: () => void;
   onDuplicateSlide?: () => void;
   onDeleteSlide?: () => void;
   onStartPresentation?: () => void;
 }
 
-const EditorControls: React.FC<EditorControlsProps> = ({
-  onAddSlide,
-  onDuplicateSlide,
-  onDeleteSlide,
-  onStartPresentation,
-}) => {
+const EditorControls: React.FC<EditorControlsProps> = ({ onSave, onCancel, onAddSlide, onDuplicateSlide, onDeleteSlide, onStartPresentation }) => {
   return (
-    <Box sx={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 1,
-      p: 1,
-      borderBottom: 1,
-      borderColor: 'divider',
-    }}>
-      <Box sx={{ flex: 1 }} />
-      <Tooltip title="Add Slide">
-        <IconButton onClick={onAddSlide} sx={{ color: 'white', bgcolor: 'primary.main', '&:hover': { bgcolor: 'primary.dark' } }}>
-          <AddIcon />
-        </IconButton>
-      </Tooltip>
-      {onDuplicateSlide && (
-        <Tooltip title="Duplicate Slide">
-          <IconButton onClick={onDuplicateSlide}>
-            <ContentCopyIcon />
-          </IconButton>
-        </Tooltip>
-      )}
-      {onDeleteSlide && (
-        <Tooltip title="Delete Slide">
-          <IconButton onClick={onDeleteSlide}>
-            <DeleteIcon />
-          </IconButton>
-        </Tooltip>
-      )}
-      {onStartPresentation && (
-        <Tooltip title="Start Presentation">
-          <IconButton onClick={onStartPresentation}>
-            <PresentationIcon />
-          </IconButton>
-        </Tooltip>
-      )}
+    <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
+      <Button onClick={onCancel}>Cancel</Button>
+      <Button variant="contained" color="primary" onClick={onSave}>
+        Save
+      </Button>
+      {onAddSlide && <Button onClick={onAddSlide}>Add Slide</Button>}
+      {onDuplicateSlide && <Button onClick={onDuplicateSlide}>Duplicate Slide</Button>}
+      {onDeleteSlide && <Button onClick={onDeleteSlide}>Delete Slide</Button>}
+      {onStartPresentation && <Button onClick={onStartPresentation}>Start Presentation</Button>}
     </Box>
   );
 };

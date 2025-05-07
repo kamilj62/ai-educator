@@ -1,13 +1,4 @@
-<<<<<<< HEAD
-import React from 'react';
-import {
-  useState,
-  useEffect,
-  useCallback
-} from 'react';
-=======
 import React, { useState, useEffect, useCallback } from 'react';
->>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 import {
   Dialog,
   DialogTitle,
@@ -31,32 +22,24 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import ImageIcon from '@mui/icons-material/Image';
-<<<<<<< HEAD
-<<<<<<< HEAD
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-import { Slide, SlideLayout, BulletPoint, ImageService, SlideImage, SlideTopic } from '../types';
-=======
-import { Slide, SlideLayout, BulletPoint, ImageService, SlideImage } from '../types';
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
-=======
-import { Slide, SlideLayout, BulletPoint, ImageService, SlideImage, SlideTopic } from '../types';
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
+import { Slide } from '../../types';
 import { convertLayoutToFrontend, convertLayoutToBackend } from '../utils';
 import ImageUploader from './ImageUploader';
-import TiptapEditor from './TiptapEditor'; // Import TiptapEditor
+import TiptapEditor from './TiptapEditor'; // Fix TiptapEditor import to use named import if required
 import { HexColorPicker } from 'react-colorful';
 
 interface SlideEditDialogProps {
   open: boolean;
   onClose: () => void;
   slide: Slide;
-  topic?: SlideTopic;
+  topic?: any;
   onSave: (slide: Slide) => void;
   onImageUpload?: (file: File) => Promise<string>;
-  onImageGenerate?: (prompt: string, service?: ImageService) => Promise<SlideImage>;
+  onImageGenerate?: (prompt: string, service?: string) => Promise<any>;
 }
 
-const layoutOptions: { value: SlideLayout; label: string; description: string }[] = [
+const layoutOptions: { value: string; label: string; description: string }[] = [
   {
     value: 'title-only',
     label: 'Title Only',
@@ -109,13 +92,6 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   onImageUpload,
   onImageGenerate,
 }) => {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
-  // DEBUG: Log if onImageGenerate is present
-  console.log('[SlideEditDialog] onImageGenerate present:', typeof onImageGenerate === 'function');
-
   // Helper to normalize bullets to HTML string
   function normalizeBulletsForDialog(bullets: any): string {
     if (!bullets) return '';
@@ -133,42 +109,13 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     return '';
   }
 
-<<<<<<< HEAD
-=======
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
-=======
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
   // Only update editedSlide when the dialog is opened or the slide changes (not on every render)
   const [editedSlide, setEditedSlide] = useState<Slide>(() => {
     const baseContent = {
       ...slide.content,
-<<<<<<< HEAD
-<<<<<<< HEAD
-      // Normalize bullets for all possible input types
       bullets: normalizeBulletsForDialog(slide.content.bullets),
     };
     const layout = convertLayoutToFrontend(slide.layout);
-    // Ensure image_prompt is present from slide.content if missing
-    if (!('image_prompt' in baseContent) && 'image_prompt' in slide.content) {
-      baseContent.image_prompt = slide.content.image_prompt;
-    }
-=======
-      bullets: slide.content.bullets ? [...slide.content.bullets] : [],
-    };
-    const layout = convertLayoutToFrontend(slide.layout);
-    console.log('SlideEditDialog INIT layout:', layout, 'baseContent:', baseContent);
-    // TEMP: Force fallback for all layouts if image missing
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
-=======
-      // Normalize bullets for all possible input types
-      bullets: normalizeBulletsForDialog(slide.content.bullets),
-    };
-    const layout = convertLayoutToFrontend(slide.layout);
-    // Ensure image_prompt is present from slide.content if missing
-    if (!('image_prompt' in baseContent) && 'image_prompt' in slide.content) {
-      baseContent.image_prompt = slide.content.image_prompt;
-    }
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
     if (!baseContent.image) {
       baseContent.image = {
         url: '',
@@ -184,46 +131,13 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     };
   });
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-  console.log('SlideEditDialog topic:', topic);
-  console.log('SlideEditDialog defaultImagePrompt:', editedSlide.content.image_prompt || topic?.image_prompt || slide.content.image_prompt || '');
-
-=======
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
-=======
-  console.log('SlideEditDialog topic:', topic);
-  console.log('SlideEditDialog defaultImagePrompt:', editedSlide.content.image_prompt || topic?.image_prompt || slide.content.image_prompt || '');
-
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
   useEffect(() => {
     if (open) {
       const validLayout = convertLayoutToFrontend(slide.layout);
       const baseContent = {
         ...slide.content,
-<<<<<<< HEAD
-<<<<<<< HEAD
-        // Normalize bullets for all possible input types
         bullets: normalizeBulletsForDialog(slide.content.bullets),
       };
-      if (!('image_prompt' in baseContent) && 'image_prompt' in slide.content) {
-        baseContent.image_prompt = slide.content.image_prompt;
-      }
-=======
-        bullets: slide.content.bullets ? [...slide.content.bullets] : [],
-      };
-      console.log('SlideEditDialog EFFECT layout:', validLayout, 'baseContent:', baseContent);
-      // TEMP: Force fallback for all layouts if image missing
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
-=======
-        // Normalize bullets for all possible input types
-        bullets: normalizeBulletsForDialog(slide.content.bullets),
-      };
-      if (!('image_prompt' in baseContent) && 'image_prompt' in slide.content) {
-        baseContent.image_prompt = slide.content.image_prompt;
-      }
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
       if (!baseContent.image) {
         baseContent.image = {
           url: '',
@@ -243,40 +157,11 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
 
   const [bodyError, setBodyError] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
-=======
-  const handleLayoutChange = (newLayout: SlideLayout) => {
-<<<<<<< HEAD
-    // Create a new content object based on the selected layout
-    const newContent = {
-      title: editedSlide.content.title || '',
-      subtitle: editedSlide.content.subtitle,
-      body: (newLayout === 'title-body' || newLayout === 'title-body-image') ? (editedSlide.content.body || '') : undefined,
-      bullets: (newLayout === 'title-bullets' || newLayout === 'title-bullets-image') ? (editedSlide.content.bullets || []) : undefined,
-      columnLeft: newLayout === 'two-column' ? (editedSlide.content.columnLeft || '') : undefined,
-      columnRight: newLayout === 'two-column' ? (editedSlide.content.columnRight || '') : undefined,
-      image: (newLayout === 'title-image' || newLayout === 'title-bullets-image' || newLayout === 'title-body-image') ? editedSlide.content.image : undefined,
-    };
->>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
 
-  const [bgColor, setBgColor] = useState(slide.backgroundColor || '#fff');
-  const [fontColor, setFontColor] = useState(slide.fontColor || '#222');
-  const [customBg, setCustomBg] = useState('');
-  const [customFont, setCustomFont] = useState('');
-
-  useEffect(() => {
-    if (open) {
-      setBgColor(slide.backgroundColor || '#fff');
-      setFontColor(slide.fontColor || '#222');
-      setCustomBg(slide.backgroundColor && !backgroundColors.some(opt => opt.value === slide.backgroundColor) ? slide.backgroundColor : '');
-      setCustomFont(slide.fontColor && !fontColors.some(opt => opt.value === slide.fontColor) ? slide.fontColor : '');
-    }
-  }, [open, slide.backgroundColor, slide.fontColor]);
-
-=======
+  const handleLayoutChange = (newLayout: string) => {
     setEditedSlide((prev) => {
       // Remove image if switching to a layout that does not support images
       const imageLayouts = [
-        'title-body-image',
         'title-bullets-image',
         'title-image',
         'two-column-image',
@@ -293,7 +178,6 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     });
   };
 
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
   const handleTitleChange = (content: string) => {
     setEditedSlide({
       ...editedSlide,
@@ -398,8 +282,7 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     });
   };
 
-  // Fix: useCallback for handleImageChange to avoid lint warning
-  const handleImageChange = useCallback((image: SlideImage) => {
+  const handleImageChange = useCallback((image: any) => {
     setEditedSlide((prev) => ({
       ...prev,
       content: {
@@ -408,10 +291,8 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
       },
     }));
   }, []);
-<<<<<<< HEAD
 
-  // Correctly type handleImageGenerate to match the expected prop signature
-  const handleImageGenerate = useCallback(async (prompt: string, service: ImageService = 'dalle'): Promise<SlideImage> => {
+  const handleImageGenerate = useCallback(async (prompt: string, service: string = 'dalle'): Promise<any> => {
     if (!onImageGenerate) {
       throw new Error('onImageGenerate is not defined');
     }
@@ -421,34 +302,17 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   }, [onImageGenerate, handleImageChange]);
 
   const handleBgColorChange = (color: string) => {
-    setBgColor(color);
-    if (color !== 'custom') setCustomBg('');
+    setEditedSlide((prev) => ({
+      ...prev,
+      backgroundColor: color,
+    }));
   };
 
-<<<<<<< HEAD
   const handleFontColorChange = (color: string) => {
-    setFontColor(color);
-    if (color !== 'custom') setCustomFont('');
-  };
-
-  const handleLayoutChange = (newLayout: SlideLayout) => {
-    setEditedSlide((prev) => {
-      // Remove image if switching to a layout that does not support images
-      const imageLayouts = [
-        'title-bullets-image',
-        'title-image',
-        'two-column-image',
-      ];
-      const shouldKeepImage = imageLayouts.includes(newLayout);
-      return {
-        ...prev,
-        layout: newLayout,
-        content: {
-          ...prev.content,
-          image: shouldKeepImage ? prev.content.image : undefined,
-        },
-      };
-    });
+    setEditedSlide((prev) => ({
+      ...prev,
+      fontColor: color,
+    }));
   };
 
   useEffect(() => {
@@ -475,158 +339,19 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     }
   }, [editedSlide.layout, editedSlide.content.image]);
 
-  useEffect(() => {
-    console.log('SlideEditDialog image:', editedSlide.content.image);
-  }, [editedSlide.content.image]);
-
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState<string | null>(null);
-
-  const handleAIGenerate = async () => {
-    setAiLoading(true);
-    setAiError(null);
-=======
-  const handleImageGenerate = useCallback(async (prompt: string) => {
-    if (!onImageGenerate) return;
->>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
-    try {
-<<<<<<< HEAD
-      // Use the current title or topic as prompt, fallback to 'Generate slide content'
-      const prompt = editedSlide.content.title || topic?.title || 'Generate slide content';
-      // Prepare the topic object for the backend
-      const topicForBackend = topic || {
-        title: prompt,
-        description: '',
-        key_points: [],
-        image_prompt: prompt,
-        subtopics: []
-      };
-      // Use slide layout or fallback
-      const layout = editedSlide.layout || 'title-bullets';
-      const instructional_level = (topic && (topic as any).instructionalLevel) || 'high_school';
-      const response = await fetch('/api/generate/slide', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          topic: topicForBackend,
-          instructional_level,
-          layout
-        }),
-      });
-      if (!response.ok) throw new Error(await response.text());
-      const result = await response.json();
-      // The backend returns { data: { slide: { ...fields } } }
-      const data = result.data?.slide || result.slide || result.data || result;
-      setEditedSlide(prev => ({
-        ...prev,
-        content: {
-          ...prev.content,
-          title: data.title || prev.content.title,
-          subtitle: data.subtitle || prev.content.subtitle,
-          body: data.body || prev.content.body,
-          bullets: data.bullet_points ? normalizeBulletsForDialog(data.bullet_points.map((bp: any) => bp.text)) : prev.content.bullets,
-        },
-      }));
-    } catch (err: any) {
-      setAiError(err.message || 'Failed to generate slide');
-    } finally {
-      setAiLoading(false);
-=======
-      console.log('SlideEditDialog - Generating image with prompt:', prompt);
-      const image = await onImageGenerate(prompt, 'dalle');
-      handleImageChange(image);
-    } catch (err) {
-      console.error('Failed to generate image:', err);
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
-=======
-
-  // Correctly type handleImageGenerate to match the expected prop signature
-  const handleImageGenerate = useCallback(async (prompt: string, service: ImageService = 'dalle'): Promise<SlideImage> => {
-    if (!onImageGenerate) {
-      throw new Error('onImageGenerate is not defined');
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
-    }
-    const image = await onImageGenerate(prompt, service);
-    handleImageChange(image);
-    return image;
-  }, [onImageGenerate, handleImageChange]);
-
-  useEffect(() => {
-<<<<<<< HEAD
-    const newSlide = {
-      ...slide,
-      layout: convertLayoutToFrontend(slide.layout),
-      content: {
-        ...slide.content,
-        bullets: slide.content.bullets ? [...slide.content.bullets] : [],
-        image: slide.content.image || (slide.content.image_prompt ? {
-          url: '',
-          alt: slide.content.image_prompt,
-          caption: slide.content.image_prompt,
-          prompt: slide.content.image_prompt,
-          service: 'dalle' as ImageService
-        } : undefined)
-      }
-    };
-    setEditedSlide(newSlide);
-
-    // Auto-generate image if needed
-    if (slide.content.image_prompt && (!slide.content.image || !slide.content.image.url)) {
-      console.log('Auto-generating image in edit dialog');
-      handleImageGenerate(slide.content.image_prompt);
-    }
-  }, [slide, handleImageGenerate]);
-=======
-    if ((editedSlide.layout === 'title-body' || editedSlide.layout === 'title-body-image')) {
-      if (!editedSlide.content.body || editedSlide.content.body.trim() === '') {
-        setBodyError('Body content is empty or missing.');
-      } else if (!editedSlide.content.body.startsWith('<')) {
-        setBodyError('Body content is not HTML.');
-      } else {
-        setBodyError(null);
-      }
-    } else {
-      setBodyError(null);
-    }
-  }, [editedSlide.layout, editedSlide.content.body]);
-
-  useEffect(() => {
-    if (editedSlide.layout.includes('image')) {
-      if (!editedSlide.content.image || !editedSlide.content.image.url) {
-        setImageError('Image is missing or not set. You can save without an image, or generate/upload one below.');
-      } else {
-        setImageError(null);
-      }
-    } else {
-      setImageError(null);
-    }
-  }, [editedSlide.layout, editedSlide.content.image]);
-
-  useEffect(() => {
-    console.log('SlideEditDialog image:', editedSlide.content.image);
-  }, [editedSlide.content.image]);
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
-
   const handleSave = () => {
     onSave({
       ...editedSlide,
-      backgroundColor: bgColor === 'custom' ? customBg : bgColor,
-      fontColor: fontColor === 'custom' ? customFont : fontColor,
-      layout: convertLayoutToBackend(editedSlide.layout),
+      content: {
+        ...editedSlide.content,
+        title: getHtmlContent(editedSlide.content.title),
+        body: getHtmlContent(editedSlide.content.body),
+        bullets: getHtmlContent(editedSlide.content.bullets),
+      },
     });
     onClose();
   };
 
-  const currentLayout = layoutOptions.find(option => option.value === editedSlide.layout) ? editedSlide.layout : 'title-bullets';
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
-  // Priority: editedSlide.content.image_prompt > topic?.image_prompt > slide.content.image_prompt
-  const defaultImagePrompt = editedSlide.content.image_prompt || topic?.image_prompt || slide.content.image_prompt || '';
-
-  // Helper to ensure content is a string before using startsWith
   const getHtmlContent = (content: any): string => {
     if (!content) return '';
     if (typeof content !== 'string') return '';
@@ -634,27 +359,20 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     return `<p>${content}</p>`;
   };
 
-<<<<<<< HEAD
-=======
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
-=======
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Edit Slide</DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
           <Button
-            onClick={handleAIGenerate}
+            onClick={() => handleImageGenerate(editedSlide.content.title || topic?.title || 'Generate slide content')}
             startIcon={<AutoAwesomeIcon />}
-            disabled={aiLoading}
             variant="outlined"
             color="secondary"
             sx={{ minWidth: 180 }}
           >
-            {aiLoading ? 'Generating...' : 'AI Generate Slide'}
+            AI Generate Image
           </Button>
-          {aiError && <Typography color="error" variant="body2">{aiError}</Typography>}
         </Box>
         <Box sx={{
           position: 'sticky',
@@ -672,45 +390,27 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
               <InputLabel id="bg-color-label">Slide Background</InputLabel>
               <Select
                 labelId="bg-color-label"
-                value={bgColor.startsWith('#') ? bgColor : ''}
+                value={editedSlide.backgroundColor}
                 label="Slide Background"
-                onChange={e => {
-                  if (e.target.value === 'custom') return handleBgColorChange('custom');
-                  handleBgColorChange(e.target.value as string);
-                }}
+                onChange={(e) => handleBgColorChange(e.target.value as string)}
               >
                 {backgroundColors.map(opt => (
                   <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                 ))}
               </Select>
-              {bgColor === 'custom' && (
-                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <HexColorPicker color={customBg || '#ffffff'} onChange={setCustomBg} style={{ width: 160, height: 120, borderRadius: 8, boxShadow: '0 2px 8px #0002' }} aria-label="Pick custom background color" />
-                  <Box sx={{ ml: 1, minWidth: 56, px: 1, py: 0.5, borderRadius: 1, bgcolor: customBg || '#fff', border: '1px solid #ccc', fontSize: 13, fontFamily: 'monospace', color: '#222', textAlign: 'center' }}>{customBg || '#ffffff'}</Box>
-                </Box>
-              )}
             </FormControl>
             <FormControl size="small" sx={{ minWidth: 180 }}>
               <InputLabel id="font-color-label">Font Color</InputLabel>
               <Select
                 labelId="font-color-label"
-                value={fontColor.startsWith('#') ? fontColor : ''}
+                value={editedSlide.fontColor}
                 label="Font Color"
-                onChange={e => {
-                  if (e.target.value === 'custom') return handleFontColorChange('custom');
-                  handleFontColorChange(e.target.value as string);
-                }}
+                onChange={(e) => handleFontColorChange(e.target.value as string)}
               >
                 {fontColors.map(opt => (
                   <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                 ))}
               </Select>
-              {fontColor === 'custom' && (
-                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <HexColorPicker color={customFont || '#222222'} onChange={setCustomFont} style={{ width: 160, height: 120, borderRadius: 8, boxShadow: '0 2px 8px #0002' }} aria-label="Pick custom font color" />
-                  <Box sx={{ ml: 1, minWidth: 56, px: 1, py: 0.5, borderRadius: 1, bgcolor: customFont || '#222', border: '1px solid #ccc', fontSize: 13, fontFamily: 'monospace', color: '#222', textAlign: 'center' }}>{customFont || '#222222'}</Box>
-                </Box>
-              )}
             </FormControl>
           </Stack>
         </Box>
@@ -721,7 +421,7 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
               labelId="layout-label"
               value={editedSlide.layout}
               label="Layout"
-              onChange={(e) => handleLayoutChange(e.target.value as SlideLayout)}
+              onChange={(e) => handleLayoutChange(e.target.value as string)}
             >
               {layoutOptions.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
@@ -730,37 +430,24 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
               ))}
             </Select>
           </FormControl>
-<<<<<<< HEAD
-=======
-
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
           <TiptapEditor
             content={getHtmlContent(editedSlide.content.title)}
             onChange={handleTitleChange}
             placeholder="Enter slide title..."
           />
-<<<<<<< HEAD
           {(editedSlide.layout !== 'title-only') && (
             <TextField
               label="Subtitle"
               fullWidth
               value={editedSlide.content.subtitle || ''}
               onChange={(e) => handleSubtitleChange(e.target.value)}
-=======
-
-          <TextField
-            label="Subtitle"
-            fullWidth
-            value={editedSlide.content.subtitle || ''}
-            onChange={(e) => handleSubtitleChange(e.target.value)}
-          />
-
+            />
+          )}
           {(editedSlide.layout === 'title-body' || editedSlide.layout === 'title-body-image') && (
             <TiptapEditor
               content={getHtmlContent(editedSlide.content.body)}
               onChange={handleBodyChange}
               placeholder="Enter slide body..."
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
             />
           )}
           {(editedSlide.layout === 'title-bullets' || editedSlide.layout === 'title-bullets-image') && (
@@ -795,44 +482,24 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
               </Button>
             </Box>
           )}
-
           {editedSlide.layout === 'two-column' && (
             <Grid container spacing={2}>
               <Grid item xs={6}>
                 <TiptapEditor
-<<<<<<< HEAD
-                  content={getHtmlContent(editedSlide.content.title)}
-                  onChange={handleTitleChange}
-                  placeholder="Enter slide title..."
-=======
                   content={getHtmlContent(editedSlide.content.columnLeft)}
                   onChange={handleColumnLeftChange}
                   placeholder="Enter left column content..."
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
                 />
               </Grid>
               <Grid item xs={6}>
                 <TiptapEditor
-<<<<<<< HEAD
-                  content={getHtmlContent(editedSlide.content.bullets)}
-                  onChange={(content: string) => {
-                    // Accept HTML from Tiptap and set as bullets
-                    setEditedSlide({
-                      ...editedSlide,
-                      content: { ...editedSlide.content, bullets: content },
-                    });
-                  }}
-                  placeholder="Enter bullet points..."
-=======
                   content={getHtmlContent(editedSlide.content.columnRight)}
                   onChange={handleColumnRightChange}
                   placeholder="Enter right column content..."
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
                 />
               </Grid>
             </Grid>
           )}
-
           {(editedSlide.layout === 'title-image' || 
             editedSlide.layout === 'title-bullets-image') && (
             <Box>
@@ -842,7 +509,7 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
                 onImageChange={handleImageChange}
                 onImageUpload={onImageUpload}
                 onImageGenerate={handleImageGenerate}
-                prompt={defaultImagePrompt}
+                prompt={editedSlide.content.title || topic?.title || 'Generate slide content'}
               />
               {imageError && (
                 <Typography color="warning" variant="body2" sx={{ mt: 1 }}>{imageError}</Typography>

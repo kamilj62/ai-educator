@@ -10,10 +10,9 @@ import {
   Button,
   Box,
 } from '@mui/material';
-import { SlideLayout } from './SlideEditor/types';
 
 interface LayoutOption {
-  layout: SlideLayout;
+  layout: string;
   title: string;
   description: string;
   preview: string;
@@ -61,7 +60,7 @@ const layoutOptions: LayoutOption[] = [
 interface LayoutSelectorProps {
   open: boolean;
   onClose: () => void;
-  onSelect: (layout: SlideLayout) => void;
+  onSelect: (layout: string) => void;
   topic: string;
 }
 

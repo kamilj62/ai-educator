@@ -2,7 +2,7 @@ import React from 'react';
 import { styled } from '@mui/material/styles';
 import { Box } from '@mui/material';
 import BaseLayout from './BaseLayout';
-import type { Slide } from '../types';
+import type { Slide } from '../../types';
 
 const ContentContainer = styled(Box)(({ theme }) => ({
   padding: theme.spacing(4),
@@ -28,7 +28,7 @@ interface TitleOnlyLayoutProps {
   onChange: (slide: Slide) => void;
 }
 
-const TitleOnlyLayout: React.FC<TitleOnlyLayoutProps> = ({ slide }) => {
+const TitleOnlyLayout: React.FC<TitleOnlyLayoutProps> = ({ slide, onChange }) => {
   return (
     <BaseLayout>
       <ContentContainer>

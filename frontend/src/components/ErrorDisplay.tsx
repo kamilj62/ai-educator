@@ -1,24 +1,7 @@
 import React from 'react';
 
 interface ErrorDisplayProps {
-<<<<<<< HEAD
-<<<<<<< HEAD
   error: string | { message?: string; [key: string]: any } | null;
-=======
-  error: string | null;
-<<<<<<< HEAD
->>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
-=======
-=======
-import { selectError } from '../store/presentationSlice';
-
-interface ErrorDisplayProps {
-  error: any | null;
->>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
->>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
-=======
-  error: string | { message?: string; [key: string]: any } | null;
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
   onClose?: () => void;
 }
 
@@ -27,21 +10,8 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onClose }) => {
 
   // Determine the error message to display
   let errorMessage = typeof error === 'string' ? error : error.message || String(error);
-<<<<<<< HEAD
-
-  const renderErrorDetails = (rec: any, index: number) => {
-    return (
-      <li key={index}>{rec}</li>
-    );
-  };
 
   return (
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
-  return (
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
     <div style={{ color: 'red', margin: '1rem 0' }}>
       <strong>Error:</strong> {errorMessage}
       {onClose && (
@@ -49,73 +19,6 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onClose }) => {
           Close
         </button>
       )}
-<<<<<<< HEAD
-=======
-    <div className={`rounded-lg border p-4 mb-4 ${getErrorColor(error.type ?? '')}`}>
-=======
-    <div className={`rounded-lg border p-4 mb-4 ${getErrorColor(error ?? '')}`}>
->>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
-      <div className="flex justify-between items-start">
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold mb-2">
-            {getErrorTitle(error ?? '')}
-          </h3>
-<<<<<<< HEAD
-          <p className="mb-2">{error}</p>
-=======
-          <p className="mb-2">{error.message}</p>
-          
-          {error.service && (
-            <p className="text-sm mb-2">
-              Service: {error.service}
-              {error.retryAfter && ` (retry after ${error.retryAfter} seconds)`}
-            </p>
-          )}
-          
-          {error.context && Object.keys(error.context).length > 0 && (
-            <div className="text-sm mb-2">
-              <p>Context:</p>
-              <ul className="list-disc list-inside pl-2">
-                {error.context.topic && (
-                  <li>Topic: {error.context.topic}</li>
-                )}
-                {error.context.level && (
-                  <li>Level: {error.context.level}</li>
-                )}
-              </ul>
-            </div>
-          )}
-          
-          {error.recommendations && error.recommendations.length > 0 && (
-            <div className="mt-3">
-              <h4 className="font-semibold mb-1">Recommendations:</h4>
-              <ul className="list-disc list-inside text-sm">
-                {error.recommendations.map(renderErrorDetails)}
-              </ul>
-            </div>
-          )}
->>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
-        </div>
-        
-        {onClose && (
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
-            aria-label="Close error message"
-          >
-            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </button>
-        )}
-      </div>
->>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
-=======
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
     </div>
   );
 };

@@ -1,22 +1,89 @@
 // Slide layout types
 export type SlideLayout =
-  | 'title'
+  | 'title-only'
   | 'title-image'
+  | 'title-body'
+  | 'title-body-image'
   | 'title-bullets'
-  | 'image-bullets'
-  | 'bullets'
-  | 'section-title';
+  | 'title-bullets-image'
+  | 'two-column'
+  | 'two-column-image';
+
+// Instructional level types
+export type InstructionalLevel =
+  | 'elementary_school'
+  | 'middle_school'
+  | 'high_school'
+  | 'university'
+  | 'professional';
+
+// Slide topic type
+export interface SlideTopic {
+  id: string;
+  title: string;
+  key_points: string[];
+  image_prompt?: string;
+  description?: string;
+  subtopics?: SlideTopic[];
+  instructionalLevel?: InstructionalLevel;
+}
+
+// Slide image type
+export type ImageService = 'Imagen' | 'DALL-E' | 'dalle' | 'imagen' | 'generated' | 'upload';
+
+export interface SlideImage {
+  url: string;
+  alt: string;
+  caption?: string;
+  service: ImageService;
+  prompt?: string;
+  metadata?: {
+    topics?: string[];
+    level?: 'low' | 'medium' | 'high';
+  };
+  error?: APIError;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+}
+
+// Bullet point type
+export type BulletPoint = { text: string };
+
+// Slide content type
+export interface SlideContent {
+  title?: string;
+  subtitle?: string;
+  body?: string;
+  bullets?: string;
+  image?: SlideImage;
+  image_prompt?: string;
+  columnLeft?: string;
+  columnRight?: string;
+  instructionalLevel?: InstructionalLevel;
+  examples?: Array<string | { text: string }>;
+  discussion_questions?: string[];
+  description?: string;
+}
+
+// Slide type
+export interface Slide {
+  id: string;
+  layout: string;
+  content: SlideContent;
+  backgroundColor?: string;
+  fontColor?: string;
+}
 
 // Error handling types
-export type ErrorType = 
+export type ErrorType =
   | 'RATE_LIMIT'
   | 'QUOTA_EXCEEDED'
   | 'SAFETY_VIOLATION'
   | 'INVALID_REQUEST'
   | 'API_ERROR'
   | 'NETWORK_ERROR';
-
-export type ImageService = 'Imagen' | 'DALL-E';
 
 export interface APIError {
   type: ErrorType;
@@ -36,16 +103,6 @@ export interface ImageGenerationError extends APIError {
   maxRetries?: number;
 }
 
-// Slide type
-export interface Slide {
-  id: string;
-  title: string;
-  content: string;
-  layout: SlideLayout;
-  imageUrl?: string;
-  bulletPoints?: string[];
-}
-
 // Presentation type
 export interface Presentation {
   id: string;
@@ -54,6 +111,3 @@ export interface Presentation {
   createdAt?: string;
   updatedAt?: string;
 }
-
-// Re-export types from SlideEditor
-export * from './SlideEditor/types';

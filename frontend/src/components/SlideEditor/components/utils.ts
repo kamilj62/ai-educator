@@ -1,41 +1,9 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-// Converts from backend dash-case string to frontend SlideLayout (UPPERCASE)
-// export const convertLayoutToFrontend = (layout: string): string => {
-//   switch (layout) {
-//     case 'title-only':
-//     case 'title-body':
-//     case 'title-bullets':
-//     case 'two-column':
-//     case 'title-image':
-//     case 'title-body-image':
-//     case 'title-bullets-image':
-//     case 'two-column-image':
-//       return layout;
-//     default:
-//       return 'title-only';
-//   }
-// };
-
-<<<<<<< HEAD
-// Converts from frontend SlideLayout (UPPERCASE) to backend dash-case string
-export const convertLayoutToBackend = (layout: string): string => {
-  switch (layout) {
-    case 'TITLE_ONLY':
-=======
-export const convertLayoutToFrontend = (layout: BackendSlideLayout): SlideLayout => {
-  switch (layout) {
-    case 'title-only':
->>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
-      return 'title-only';
-=======
-import { BackendSlideLayout } from '../types';
+// import { SlideLayout } from '../../types';
 
 // Converts from backend dash-case string to frontend SlideLayout (UPPERCASE)
 export const convertLayoutToFrontend = (layout: string): string => {
   switch (layout) {
     case 'title-only':
->>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
     case 'title-body':
     case 'title-bullets':
     case 'two-column':
@@ -48,24 +16,6 @@ export const convertLayoutToFrontend = (layout: string): string => {
       return 'title-only';
   }
 };
-=======
-// Converts from backend dash-case string to frontend SlideLayout (UPPERCASE)
-// export const convertLayoutToFrontend = (layout: string): string => {
-//   switch (layout) {
-//     case 'title-only':
-//     case 'title-body':
-//     case 'title-bullets':
-//     case 'two-column':
-//     case 'title-image':
-//     case 'title-body-image':
-//     case 'title-bullets-image':
-//     case 'two-column-image':
-//       return layout;
-//     default:
-//       return 'title-only';
-//   }
-// };
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
 
 // Converts from frontend SlideLayout (UPPERCASE) to backend dash-case string
 export const convertLayoutToBackend = (layout: string): string => {

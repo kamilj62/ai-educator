@@ -2,8 +2,7 @@ import React from 'react';
 import { memo } from 'react';
 import { Box } from '@mui/material';
 import SortableSlide from './SortableSlide';
-import { Slide } from '../types';
-<<<<<<< HEAD
+import { Slide } from '../../types';
 import {
   DndContext,
   closestCenter,
@@ -18,7 +17,6 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-=======
 
 const grid = 8;
 
@@ -56,7 +54,7 @@ const DraggableItem = memo(({
   onDragEnd,
   onDragOver
 }: DraggableItemProps) => {
-  const [isDragging, setIsDragging] = useState(false);
+  const [isDragging, setIsDragging] = React.useState(false);
 
   return (
     <div
@@ -78,7 +76,6 @@ const DraggableItem = memo(({
 });
 
 DraggableItem.displayName = 'DraggableItem';
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
 
 interface SlideSorterProps {
   slides: Slide[];

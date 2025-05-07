@@ -10,25 +10,21 @@ import {
   CircularProgress,
   Typography,
   SelectChangeEvent,
-<<<<<<< HEAD
   Paper,
   InputAdornment
-=======
->>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
 } from '@mui/material';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
-import { useDispatch, useSelector } from 'react-redux';
-import { generateOutline, selectPresentation, selectLoading, selectError } from '../store/presentationSlice';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { generateOutline, selectLoading, selectError, selectOutline } from '../store/presentationSlice';
 import { RootState } from '../store/store';
-import type { InstructionalLevel } from '../components/SlideEditor/types';
-import { AppDispatch } from '../store/store';
+import { InstructionalLevel } from './types';
 import ErrorDisplay from './ErrorDisplay';
 
 const InputSection: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const presentation = useSelector(selectPresentation);
-  const loading = useSelector(selectLoading);
-  const error = useSelector(selectError);
+  const dispatch = useAppDispatch();
+  const loading = useAppSelector(selectLoading);
+  const error = useAppSelector(selectError);
+  const outline = useAppSelector(selectOutline);
 
   const [contextInput, setContextInput] = useState('');
   const [numSlidesInput, setNumSlidesInput] = useState('5');
@@ -40,7 +36,7 @@ const InputSection: React.FC = () => {
       return;
     }
     try {
-      await dispatch(generateOutline({
+      await (dispatch as any)(generateOutline({
         topic: contextInput.trim(),
         numSlides: Number(numSlidesInput),
         instructionalLevel: instructionalLevelInput,
@@ -57,7 +53,6 @@ const InputSection: React.FC = () => {
   };
 
   return (
-<<<<<<< HEAD
     <Paper elevation={6} sx={{
       p: { xs: 3, md: 4 },
       borderRadius: 5,
@@ -70,11 +65,6 @@ const InputSection: React.FC = () => {
     }}>
       <Typography variant="h5" fontWeight={800} sx={{ mb: 2, letterSpacing: 0.5, textAlign: 'center', color: '#fff' }}>
         <span style={{ color: '#fff' }}>Generate Presentation</span>
-=======
-    <Box component="form" sx={{ p: 2 }}>
-      <Typography variant="h6" gutterBottom>
-        Generate Presentation
->>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
       </Typography>
       <Typography variant="body2" sx={{ textAlign: 'center', mb: 3, color: '#a5b4fc', fontWeight: 500 }}>
         Instantly create a professional outline for your slides
@@ -108,19 +98,12 @@ const InputSection: React.FC = () => {
           InputLabelProps={{ style: { color: '#a5b4fc' } }}
         />
         <FormControl fullWidth>
-<<<<<<< HEAD
           <InputLabel sx={{ color: '#a5b4fc' }}>Instructional Level</InputLabel>
-=======
-          <InputLabel>Instructional Level</InputLabel>
->>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
           <Select
             value={instructionalLevelInput}
             onChange={handleLevelChange}
             label="Instructional Level"
-<<<<<<< HEAD
             sx={{ borderRadius: 3, background: 'rgba(36,37,41,0.85)', color: '#fff', '.MuiSelect-icon': { color: '#a5b4fc' } }}
-=======
->>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
           >
             <MenuItem value="elementary_school">Elementary School</MenuItem>
             <MenuItem value="middle_school">Middle School</MenuItem>
@@ -132,7 +115,6 @@ const InputSection: React.FC = () => {
         <Button
           onClick={handleGenerateOutline}
           variant="contained"
-<<<<<<< HEAD
           size="large"
           disabled={loading}
           sx={{
@@ -152,10 +134,6 @@ const InputSection: React.FC = () => {
             },
           }}
           startIcon={<RocketLaunchIcon sx={{ fontSize: 28 }} />}
-=======
-          disabled={loading}
-          sx={{ minWidth: 150 }}
->>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
         >
           {loading ? (
             <>

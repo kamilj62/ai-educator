@@ -10,14 +10,7 @@ import {
   Typography,
 } from '@mui/material';
 
-export interface SlideLayout {
-  id: string;
-  name: string;
-  description: string;
-  image: string;
-}
-
-export const slideLayouts: SlideLayout[] = [
+export const slideLayouts: any[] = [
   {
     id: 'title',
     name: 'Title Slide',
@@ -67,6 +60,10 @@ export const SlideLayoutModal: React.FC<SlideLayoutModalProps> = ({
   onClose,
   onSelect,
 }) => {
+  const handleSelect = (layout: string) => {
+    onSelect(layout);
+  };
+
   return (
     <Dialog
       open={open}
@@ -79,7 +76,7 @@ export const SlideLayoutModal: React.FC<SlideLayoutModalProps> = ({
       </DialogTitle>
       <DialogContent>
         <Grid container spacing={2} sx={{ mt: 1 }}>
-          {slideLayouts.map((layout) => (
+          {slideLayouts.map((layout: any) => (
             <Grid item xs={12} sm={6} md={4} key={layout.id}>
               <Card
                 sx={{
@@ -94,7 +91,7 @@ export const SlideLayoutModal: React.FC<SlideLayoutModalProps> = ({
                   },
                 }}
                 onClick={() => {
-                  onSelect(layout.id);
+                  handleSelect(layout.id);
                   onClose();
                 }}
               >

@@ -2,7 +2,6 @@ import React from 'react';
 import { Provider } from 'react-redux';
 import { store } from '../src/store/store';
 import App from '../src/App';
-<<<<<<< HEAD
 import { Box, Button, Typography, Stack, Chip } from '@mui/material';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import { useRouter } from 'next/router';
@@ -128,25 +127,12 @@ const LandingPage: React.FC = () => {
 };
 
 const Home: React.FC = () => {
-  return <LandingPage />;
-};
-
-=======
-
-const Home: React.FC = () => {
   return (
     <Provider store={store}>
-<<<<<<< HEAD
+      <LandingPage />
       <App />
-=======
-      <main>
-        <App />
-        {/* <LogViewer /> */}
-      </main>
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
     </Provider>
   );
 };
 
->>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
 export default Home;

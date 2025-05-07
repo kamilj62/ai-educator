@@ -1,73 +1,8 @@
-// Image generation service types
-export type ImageService = 'dalle' | 'imagen' | 'generated' | 'upload';
-
-// Base types for layouts
-export type SlideLayout =
-  | 'title-only'
-  | 'title-image'
-  | 'title-body'
-  | 'title-body-image'
-  | 'title-bullets'
-  | 'title-bullets-image'
-  | 'two-column'
-  | 'two-column-image';
-
-// Content types that match the frontend components
-export type BulletPoint = {
-  text: string;
-  subpoints?: BulletPoint[];
-};
-
-export type SlideImage = {
-  url: string;
-  alt: string;
-  caption?: string;
-  service: ImageService;
-  prompt?: string;
-  metadata?: {
-    topics?: string[];
-    level?: 'low' | 'medium' | 'high';
-  };
-  error?: APIError;
-  // Added for draggable/resizable support
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-};
-
-export type InstructionalLevel =
-  | 'elementary_school'
-  | 'middle_school'
-  | 'high_school'
-  | 'university'
-  | 'professional';
-
-export type SlideContent = {
-  title: string;
-  subtitle?: string;
-  body?: string;
-  bullets?: string;
-  image?: SlideImage;
-  image_prompt?: string;
-  columnLeft?: string;
-  columnRight?: string;
-  instructionalLevel?: InstructionalLevel;
-  examples?: Array<string | { text: string }>;
-  discussion_questions?: string[];
-  description?: string;
-};
-
-export type Slide = {
-  id: string;
-  layout: SlideLayout;
-  content: SlideContent;
-  backgroundColor?: string;
-  fontColor?: string;
-};
+// DEPRECATED: All Slide and SlideLayout types should be imported from ../../types
+// This file should only contain types unique to SlideEditor, not Slide or SlideLayout.
 
 // Layout conversion utilities
-export function convertLayoutToFrontend(layout: SlideLayout): SlideLayout {
+export function convertLayoutToFrontend(layout: any): any {
   switch (layout) {
     case 'title-body-image':
       return 'title-bullets-image';
@@ -76,7 +11,7 @@ export function convertLayoutToFrontend(layout: SlideLayout): SlideLayout {
   }
 }
 
-export function convertLayoutToBackend(layout: SlideLayout): SlideLayout {
+export function convertLayoutToBackend(layout: any): any {
   switch (layout) {
     case 'title-bullets-image':
       return 'title-body-image';
@@ -86,17 +21,17 @@ export function convertLayoutToBackend(layout: SlideLayout): SlideLayout {
 }
 
 // Content conversion utilities
-export const convertContentToBackend = (content: SlideContent): SlideContent => {
+export const convertContentToBackend = (content: any): any => {
   return content;
 };
 
-export const convertContentToFrontend = (content: SlideContent): SlideContent => {
+export const convertContentToFrontend = (content: any): any => {
   return content;
 };
 
 // Type guards for layout validation
-export const isSlideLayout = (layout: string): layout is SlideLayout => {
-  const validLayouts: SlideLayout[] = [
+export const isSlideLayout = (layout: string): boolean => {
+  const validLayouts: any[] = [
     'title-only',
     'title-image',
     'title-body',
@@ -106,7 +41,7 @@ export const isSlideLayout = (layout: string): layout is SlideLayout => {
     'two-column',
     'two-column-image',
   ];
-  return validLayouts.includes(layout as SlideLayout);
+  return validLayouts.includes(layout);
 };
 
 // Layout features and options
@@ -118,7 +53,7 @@ export interface LayoutFeatures {
   supportsColumns: boolean;
 }
 
-export const getLayoutFeatures = (layout: SlideLayout): LayoutFeatures => {
+export const getLayoutFeatures = (layout: any): LayoutFeatures => {
   return {
     supportsImage: layout.includes('image'),
     supportsBody: layout.includes('body'),
@@ -129,7 +64,7 @@ export const getLayoutFeatures = (layout: SlideLayout): LayoutFeatures => {
 };
 
 export interface LayoutOption {
-  layout: SlideLayout;
+  layout: any;
   title: string;
   description: string;
   preview: string;
@@ -195,37 +130,12 @@ export const layoutOptions: LayoutOption[] = [
   },
 ];
 
-// Image-related types
-export type ErrorType =
-  | 'RATE_LIMIT'
-  | 'QUOTA_EXCEEDED'
-  | 'SAFETY_VIOLATION'
-  | 'INVALID_REQUEST'
-  | 'API_ERROR'
-  | 'NETWORK_ERROR';
-
-export type APIError = {
-  type: ErrorType;
-  message: string;
-  service?: string;
-  retryAfter?: number;
-};
-
-export type SlideTopic = {
-  id: string;
-  title: string;
-  key_points: string[];
-  image_prompt?: string;
-  description?: string;
-  subtopics?: SlideTopic[];
-  instructionalLevel?: InstructionalLevel;
-};
-
+// EditorProps kept for SlideEditor-specific use
 export interface EditorProps {
-  slide: Slide;
-  onChange: (slide: Slide) => void;
+  slide: any;
+  onChange: (slide: any) => void;
   onImageUpload?: (file: File) => Promise<string>;
-  onImageGenerate?: (prompt: string, service?: ImageService) => Promise<SlideImage>;
+  onImageGenerate?: (prompt: string, service?: string) => Promise<any>;
   onSafetyCheck?: (content: string) => Promise<{
     passed: boolean;
     reason?: string;

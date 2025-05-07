@@ -6,11 +6,7 @@ import json
 
 # Initialize Flask app
 app = Flask(__name__)
-<<<<<<< HEAD
 CORS(app, resources={r"/api/*": {"origins": ["http://localhost:3000", "https://ai-educator-jfpenqilf-kamilj62s-projects.vercel.app"]}})
-=======
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
->>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
 
 # Load OpenAI API key from credentials
 try:
@@ -19,7 +15,6 @@ try:
         openai.api_key = credentials.get('openai_api_key')
 except Exception as e:
     print(f"Error loading credentials: {str(e)}")
-    raise
 
 @app.route('/api/generate-image', methods=['POST'])
 def generate_image():

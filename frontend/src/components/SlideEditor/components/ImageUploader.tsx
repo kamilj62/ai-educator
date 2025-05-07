@@ -1,27 +1,7 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-import React from 'react';
-import { useCallback, useState, useEffect } from 'react';
-=======
-<<<<<<< HEAD
-=======
->>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
-import React, { useCallback, useState } from 'react';
->>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
-=======
 import React, { useCallback, useState, useEffect } from 'react';
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
 import { Box, Button, Typography, styled, CircularProgress, TextField } from '@mui/material';
 import { AddPhotoAlternate as AddPhotoIcon, Refresh as RefreshIcon } from '@mui/icons-material';
-<<<<<<< HEAD
-<<<<<<< HEAD
-import type { SlideImage, ImageService } from '../types';
-=======
->>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
-=======
-import type { SlideImage, ImageService } from '../types';
->>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
+import type { SlideImage, ImageService } from '../../types';
 
 const UploadContainer = styled('div')(({ theme }) => ({
   width: '100%',
@@ -50,24 +30,10 @@ const ImagePreview = styled('img')({
 });
 
 export interface ImageUploaderProps {
-<<<<<<< HEAD
-<<<<<<< HEAD
   image?: string | SlideImage;
   onImageChange: (image: SlideImage) => void;
   onImageUpload?: (file: File) => Promise<string>;
   onImageGenerate?: (prompt: string, service?: ImageService) => Promise<SlideImage>;
-=======
-  currentImage?: any;
-  onImageChange: (image: any) => void;
-  onImageUpload?: (file: File) => Promise<string>;
-  onImageGenerate?: (prompt: string, service?: any) => Promise<string>;
->>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
-=======
-  image?: string | SlideImage;
-  onImageChange: (image: SlideImage) => void;
-  onImageUpload?: (file: File) => Promise<string>;
-  onImageGenerate?: (prompt: string, service?: ImageService) => Promise<SlideImage>;
->>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
   maxWidth?: number;
   maxHeight?: number;
   acceptedTypes?: string[];
@@ -86,10 +52,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
   const [prompt, setPrompt] = useState(initialPrompt);
 
   // DEBUG: Log if onImageGenerate is present
@@ -101,12 +63,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   useEffect(() => {
     setPrompt(initialPrompt);
   }, [initialPrompt]);
-<<<<<<< HEAD
-=======
-  const [prompt, setPrompt] = useState('');
->>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
-=======
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
 
   const handleFileUpload = useCallback(async (file: File) => {
     if (!onImageUpload) return;
@@ -167,10 +123,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   return (
     <Box>
       {imageUrl ? (
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
         <Box sx={{ textAlign: 'center', position: 'relative', display: 'inline-block', width: '100%' }}>
           <ImagePreview src={imageUrl} alt="Slide image" style={{ opacity: isLoading ? 0.3 : 1, filter: isLoading ? 'blur(2px)' : 'none', transition: 'opacity 0.2s, filter 0.2s' }} />
           {/* Overlay spinner and message when generating */}
@@ -195,25 +147,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
               </Typography>
             </Box>
           )}
-<<<<<<< HEAD
-=======
-        <Box sx={{ textAlign: 'center' }}>
-          <ImagePreview src={imageUrl} alt="Slide image" />
-          <Box sx={{ mt: 2, display: 'flex', gap: 1, justifyContent: 'center' }}>
-            {onImageGenerate && (
-              <Button
-                variant="outlined"
-                startIcon={<RefreshIcon />}
-                onClick={handleImageGenerate}
-                disabled={isLoading || !prompt.trim()}
-              >
-                Regenerate Image
-              </Button>
-            )}
-          </Box>
->>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
-=======
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
         </Box>
       ) : (
         <UploadContainer
@@ -278,11 +211,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           )}
         </UploadContainer>
       )}
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
       {/* Move re-generate button below image preview */}
       {imageUrl && onImageGenerate && !isLoading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
@@ -298,42 +226,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           </Button>
         </Box>
       )}
-<<<<<<< HEAD
-=======
-=======
-  return (
-    <Box>
-      <input
-        accept="image/*"
-        type="file"
-        id="image-upload"
-        onChange={handleImageUpload}
-        style={{ display: 'none' }}
-      />
-      <label htmlFor="image-upload">
-        <ImageContainer>
-          {imageUrl ? (
-            <PreviewImage src={imageUrl} alt="Slide content" />
-          ) : (
-            <>
-              <ImageIcon sx={{ fontSize: 48, color: 'grey.500', mb: 2 }} />
-              <Button
-                variant="outlined"
-                component="span"
-                disabled={isLoading}
-              >
-                {isLoading ? 'Uploading...' : 'Upload Image'}
-              </Button>
-            </>
-          )}
-        </ImageContainer>
-      </label>
->>>>>>> dd7ecbd (added imagen images)
->>>>>>> a8dbce3e (Update Procfile for Heroku deployment)
-=======
->>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
-=======
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
     </Box>
   );
 };

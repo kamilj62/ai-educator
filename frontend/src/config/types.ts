@@ -1,13 +1,22 @@
-import { BackendSlideLayout } from '../components/SlideEditor/types';
+// Example types config file after resolving merge conflicts
+// Remove BackendSlideLayout import - use SlideLayout from components/types instead
+import { SlideLayout } from '../components/types';
+
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+};
+
+export type Presentation = {
+  id: string;
+  title: string;
+  slides: string[];
+};
 
 export interface APIEndpoints {
-<<<<<<< HEAD
-  GENERATE_OUTLINE: '/api/generate/outline';
-  GENERATE_SLIDE: '/api/generate/slide';
-=======
   GENERATE_OUTLINE: '/generate/outline';
   GENERATE_SLIDE: '/generate/slide';
->>>>>>> 02948cc4 (Fix layout type errors, update selectors, and resolve build issues)
 }
 
 export interface APIConfig {

@@ -71,3 +71,4 @@ yarn-error.log*
 backend/credentials/marvelai-imagen-sa-key.json
 
 backend/venv/
+.vercel

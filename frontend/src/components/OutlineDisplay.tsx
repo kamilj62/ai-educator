@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../store/store';
-import { SlideTopic, BulletPoint } from './SlideEditor/types';
+import { SlideTopic, BulletPoint } from './types';
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
 import ImageIcon from '@mui/icons-material/Image';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -27,22 +27,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import PresentationIcon from '@mui/icons-material/Slideshow';
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-import { generateSlides, setOutline } from '../store/presentationSlice';
-=======
-import { generateSlides } from '../store/presentationSlice';
->>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
-=======
-import { generateSlides } from '../store/presentationSlice';
-=======
-import { updateTopics } from '../store/presentationSlice';
->>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
->>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
-=======
-import { generateSlides, setOutline } from '../store/presentationSlice';
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
+import { generateSlides, updateOutline } from '../store/presentationSlice';
 
 interface EditDialogProps {
   open: boolean;
@@ -84,26 +69,19 @@ const EditDialog: React.FC<EditDialogProps> = ({ open, text, onClose, onSave }) 
   );
 };
 
-const ErrorDisplay: React.FC<{ error: string | null }> = ({ error }) => {
-  if (!error) return null;
-  return (
-    <div style={{ color: 'red', margin: '1rem 0' }}>
-      <strong>Error:</strong> {error}
-    </div>
-  );
-};
-
 const OutlineDisplay: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const error = useSelector((state: RootState) => state.presentation.error);
   const outline = useSelector((state: RootState) => state.presentation.outline);
-<<<<<<< HEAD
   const slides = useSelector((state: RootState) => state.presentation.slides);
   const hasSlides = slides && slides.length > 0;
-=======
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingPoint, setEditingPoint] = useState<{ topicId: string; index: number; text: string } | null>(null);
+
+  // Utility to ensure all key_points are BulletPoint[]
+  function normalizeKeyPoints(points: Array<string | BulletPoint>): BulletPoint[] {
+    return points.map((p) => typeof p === 'string' ? { text: p } : p);
+  }
 
   const handleEditPoint = (topicId: string, index: number, text: string) => {
     setEditingPoint({ topicId, index, text });
@@ -111,141 +89,51 @@ const OutlineDisplay: React.FC = () => {
   };
 
   const handleSavePoint = (newText: string) => {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
     if (editingPoint && outline) {
       // Find the topic and update the point
-      const updatedOutline = outline.map(topic => {
+      const updatedOutline = outline.map((topic: SlideTopic) => {
         if (topic.id === editingPoint.topicId) {
-          const updatedPoints = [...topic.key_points];
-          updatedPoints[editingPoint.index] = newText;
-          return { ...topic, key_points: updatedPoints };
+          const updatedPoints: BulletPoint[] = normalizeKeyPoints(topic.key_points);
+          updatedPoints[editingPoint.index] = { text: newText };
+          return { ...topic, key_points: updatedPoints.map(bp => typeof bp === 'string' ? bp : bp.text) };
         }
         return topic;
       });
-      dispatch(setOutline(updatedOutline));
-<<<<<<< HEAD
-=======
-    if (editingPoint) {
-<<<<<<< HEAD
-      // Removed updateTopicPoint call
-<<<<<<< HEAD
->>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
-=======
-=======
-      // Removed dispatch(updateTopics({ topicId: editingPoint.topicId, pointIndex: editingPoint.index, newText }));
->>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
->>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
-=======
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
+      dispatch(updateOutline(updatedOutline));
     }
+    setEditDialogOpen(false);
   };
 
   const handleDeletePoint = (topicId: string, index: number) => {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
     if (outline) {
-      const updatedOutline = outline.map(topic => {
+      const updatedOutline = outline.map((topic: SlideTopic) => {
         if (topic.id === topicId) {
-          const updatedPoints = topic.key_points.filter((_, i) => i !== index);
-          return { ...topic, key_points: updatedPoints };
+          const updatedPoints: BulletPoint[] = normalizeKeyPoints(topic.key_points).filter((_, i) => i !== index);
+          return { ...topic, key_points: updatedPoints.map(bp => typeof bp === 'string' ? bp : bp.text) };
         }
         return topic;
       });
-      dispatch(setOutline(updatedOutline));
+      dispatch(updateOutline(updatedOutline));
     }
-<<<<<<< HEAD
   };
 
   const handleAddPoint = (topicId: string) => {
     if (outline) {
-      const updatedOutline = outline.map(topic => {
+      const updatedOutline = outline.map((topic: SlideTopic) => {
         if (topic.id === topicId) {
-          return { ...topic, key_points: [...topic.key_points, 'New point'] };
+          const updatedPoints: BulletPoint[] = normalizeKeyPoints([...topic.key_points, { text: 'New point' }]);
+          return { ...topic, key_points: updatedPoints.map(bp => typeof bp === 'string' ? bp : bp.text) };
         }
         return topic;
       });
-      dispatch(setOutline(updatedOutline));
+      dispatch(updateOutline(updatedOutline));
     }
-=======
-=======
->>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
-    // Removed deleteTopicPoint call
-  };
-
-  const handleAddPoint = (topicId: string) => {
-    // Removed addTopicPoint call
-<<<<<<< HEAD
->>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
-=======
-=======
-    // Removed dispatch(deleteTopicPoint({ topicId, pointIndex: index }));
-  };
-
-  const handleAddPoint = (topicId: string) => {
-    // Removed dispatch(addTopicPoint({ topicId, text: 'New point' }));
->>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
->>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
-=======
-  };
-
-  const handleAddPoint = (topicId: string) => {
-    if (outline) {
-      const updatedOutline = outline.map(topic => {
-        if (topic.id === topicId) {
-          return { ...topic, key_points: [...topic.key_points, 'New point'] };
-        }
-        return topic;
-      });
-      dispatch(setOutline(updatedOutline));
-    }
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
   };
 
   const handleGenerateSlides = () => {
-    console.log('Clicked Generate All Slides');
-    // Collect all topics in order
-    const topicsToGenerate: SlideTopic[] = [];
-    const collectTopics = (topics: SlideTopic[]) => {
-      topics.forEach(topic => {
-        topicsToGenerate.push(topic);
-        if (topic.subtopics) {
-          collectTopics(topic.subtopics);
-        }
-      });
-    };
-<<<<<<< HEAD
-<<<<<<< HEAD
-    if (outline) {
-      collectTopics(outline);
-      console.log('Topics to generate:', topicsToGenerate);
-      // Set topicsToGenerate on window so SlideEditor can access it
-      (window as any).topicsToGenerate = topicsToGenerate;
-<<<<<<< HEAD
-=======
-    if (outline) {
-      collectTopics(outline);
-      console.log('Topics to generate:', topicsToGenerate);
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
-=======
->>>>>>> af57c608 (feat: Restore draggable/resizable images below text for all image layouts with smooth movement)
-      dispatch(generateSlides(topicsToGenerate));
-    } else {
-      console.warn('No outline found when trying to generate slides.');
+    if (outline && outline.length > 0) {
+      (dispatch as any)(generateSlides(outline));
     }
-<<<<<<< HEAD
-=======
-    
-    // Removed collectTopics(outline);
-    // Removed dispatch(generateSlides(topicsToGenerate));
->>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
-=======
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
   };
 
   const renderTopic = (topic: SlideTopic, index: number) => (
@@ -260,34 +148,17 @@ const OutlineDisplay: React.FC = () => {
         </Box>
       )}
       <List dense>
-        {topic.key_points.map((point: string | BulletPoint, i) => (
+        {normalizeKeyPoints(topic.key_points).map((point: BulletPoint, i) => (
           <ListItem key={`point-${index}-${i}`}>
             <ListItemIcon sx={{ minWidth: 32 }}>
               <ArrowRightIcon sx={{ color: '#fff' }} />
             </ListItemIcon>
-            <ListItemText 
-              primary={typeof point === 'string' ? point : point.text} 
-              primaryTypographyProps={{ sx: { color: '#fff' } }}
-            />
+            <ListItemText primary={point.text} />
             <ListItemSecondaryAction>
-              <IconButton 
-                edge="end" 
-                aria-label="edit"
-                onClick={() => handleEditPoint(
-                  topic.id!, 
-                  i, 
-                  typeof point === 'string' ? point : point.text
-                )}
-                sx={{ mr: 1, color: '#60a5fa' }}
-              >
+              <IconButton edge="end" size="small" onClick={() => handleEditPoint(topic.id!, i, point.text)}>
                 <EditIcon />
               </IconButton>
-              <IconButton 
-                edge="end" 
-                aria-label="delete"
-                onClick={() => handleDeletePoint(topic.id!, i)}
-                sx={{ color: '#60a5fa' }}
-              >
+              <IconButton edge="end" size="small" aria-label="delete" onClick={() => handleDeletePoint(topic.id!, i)} sx={{ color: '#60a5fa' }}>
                 <DeleteIcon />
               </IconButton>
             </ListItemSecondaryAction>
@@ -313,7 +184,7 @@ const OutlineDisplay: React.FC = () => {
       )}
       {topic.subtopics && topic.subtopics.length > 0 && (
         <Box sx={{ ml: 3, mt: 2 }}>
-          {topic.subtopics.map((subtopic, subIndex) => renderTopic(subtopic, subIndex))}
+          {topic.subtopics.map((subtopic: SlideTopic, subIndex: number) => renderTopic(subtopic, subIndex))}
         </Box>
       )}
     </Paper>
@@ -321,9 +192,6 @@ const OutlineDisplay: React.FC = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
       {/* Show Generate All Slides button if there is an outline and no slides yet */}
       {outline && outline.length > 0 && !hasSlides && (
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
@@ -336,59 +204,13 @@ const OutlineDisplay: React.FC = () => {
             Generate All Slides
           </Button>
         </Box>
-=======
-=======
->>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
-      {outline.length > 0 && (
-        <>
-          <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Button
-              variant="contained"
-              startIcon={<PresentationIcon />}
-              onClick={handleGenerateSlides}
-              disabled={isGeneratingSlides}
-              sx={{ minWidth: 200 }}
-            >
-              Generate All Slides
-            </Button>
-            <ErrorDisplay error={error} />
-          </Box>
-          {outline.map((topic, index) => renderTopic(topic, index))}
-        </>
->>>>>>> 241cbc39 (Fix lint errors, optimize images, and clean up lockfile for Heroku deployment)
       )}
-<<<<<<< HEAD
       {error && (
         <Typography color="error" variant="body2" sx={{ mb: 2 }}>
           {error}
         </Typography>
       )}
-      {outline && outline.map((topic, index) => renderTopic(topic, index))}
-=======
-=======
-=======
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
-      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Button
-          variant="contained"
-          startIcon={<PresentationIcon />}
-          onClick={handleGenerateSlides}
-          sx={{ minWidth: 200 }}
-        >
-          Generate All Slides
-        </Button>
-        {error && (
-          <Typography color="error" variant="body2">
-            {error}
-          </Typography>
-        )}
-      </Box>
-<<<<<<< HEAD
->>>>>>> d07ba51 (Fix layout type errors and unify BackendSlideLayout conversions)
->>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
-=======
-      {outline && outline.map((topic, index) => renderTopic(topic, index))}
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
+      {outline && outline.map((topic: SlideTopic, index: number) => renderTopic(topic, index))}
       <EditDialog
         open={editDialogOpen}
         text={editingPoint?.text || ''}

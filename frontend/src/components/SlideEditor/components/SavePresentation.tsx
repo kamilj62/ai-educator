@@ -2,7 +2,7 @@ import React from 'react';
 import { useState } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import pptxgen from 'pptxgenjs';
-import { Slide } from '../types';
+import { Slide } from '../../types';
 
 interface SavePresentationProps {
   open: boolean;
@@ -124,15 +124,7 @@ const SavePresentation: React.FC<SavePresentationProps> = ({
               [getMimeType(format)]: [getFileExtension(format)],
             },
           }],
-<<<<<<< HEAD
-<<<<<<< HEAD
         }) as FileSystemFileHandle;
-=======
-        });
->>>>>>> ef57eb93 (Fix layout type errors and unify BackendSlideLayout conversions)
-=======
-        }) as FileSystemFileHandle;
->>>>>>> 11d5af65 (Add /api/generate/image endpoint and enhancements)
         const writable = await fileHandle.createWritable();
 
         if (format === 'pptx') {

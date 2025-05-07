@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { v4 as uuidv4 } from 'uuid';
-import { Slide, SlideContent, SlideLayout, SlideImage, SlideTopic, BulletPoint, InstructionalLevel } from '../components/SlideEditor/types';
+import { Slide, SlideContent, SlideLayout, SlideImage, SlideTopic, BulletPoint, InstructionalLevel } from '../components/types';
 import { RootState } from './store';
 import { normalizeBullets } from '../components/SlideEditor/components/utils';
 import { API_CONFIG } from '../config';
@@ -18,6 +18,7 @@ interface PresentationState {
   error: string | null;
   instructionalLevel: InstructionalLevel;
   defaultLayout: SlideLayout;
+  activeSlideId: string | null;
 }
 
 const initialState: PresentationState = {
@@ -28,6 +29,7 @@ const initialState: PresentationState = {
   error: null,
   instructionalLevel: 'high_school',
   defaultLayout: 'title-bullets',
+  activeSlideId: null,
 };
 
 export const generateOutline = createAsyncThunk(
