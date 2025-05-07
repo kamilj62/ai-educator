@@ -477,7 +477,8 @@ class AIService:
                 logger.error(f"[OpenAI] After repair, not enough valid slides. Rejecting response.")
                 # If first attempt failed, retry with explicit feedback
                 user_prompt += ("\nYour last response was missing required fields. Please follow the JSON structure exactly and ensure every slide contains: id, title, key_points (3-5), image_prompt, and description. Output only valid JSON.")
-            raise ValueError("OpenAI did not return any valid slides with all required fields.")
+            # DEBUG: Include raw OpenAI output and parsed topics in error for diagnosis
+            raise ValueError(f"OpenAI did not return any valid slides with all required fields.\nRaw OpenAI content: {content}\nParsed topics: {topics}")
         except Exception as e:
             logger.error(f"Error in generate_outline: {str(e)}")
             logger.error(traceback.format_exc())
