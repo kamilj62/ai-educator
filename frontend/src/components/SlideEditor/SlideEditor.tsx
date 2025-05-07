@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useRef } from 'react';
+ import React, { useEffect, useState, useRef } from 'react';
 import { Box, Typography, Button, IconButton, Tooltip } from '@mui/material';
+import EditorToolbar from './components/EditorToolbar';
 import SaveIcon from '@mui/icons-material/Save';
 import EditIcon from '@mui/icons-material/Edit';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
@@ -21,6 +22,14 @@ import AddIcon from '@mui/icons-material/Add';
 
 const DEFAULT_BG_COLOR = '#fff';
 const DEFAULT_FONT_COLOR = '#222';
+
+import { styled } from '@mui/material';
+
+const EditorContainer = styled(Box)(({ theme }) => ({
+  height: '100vh',
+  display: 'flex',
+  backgroundColor: theme.palette.grey[100],
+}));
 
 const SlideEditor: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -190,53 +199,9 @@ const SlideEditor: React.FC = () => {
   };
 
   return (
-    <Box ref={editorRef} sx={{ 
-      height: '100%', 
-      display: 'flex', 
-      flexDirection: 'column',
-      position: 'relative',
-      overflowY: 'hidden',
-    }}>
+    <EditorContainer ref={editorRef}>
       {!isFullscreen && (
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'flex-end', 
-          gap: 1, 
-          p: 1,
-          bgcolor: 'primary.light',
-          borderBottom: 1,
-          borderColor: 'divider'
-        }}>
-          <Tooltip title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}>
-            <span>
-              <IconButton onClick={toggleFullScreen} size="large">
-                {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
-              </IconButton>
-            </span>
-          </Tooltip>
-          <Tooltip title="Edit Slide">
-            <span>
-              <IconButton
-                onClick={() => setEditDialogOpen(true)}
-                disabled={!activeSlide}
-                size="large"
-              >
-                <EditIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-          <Tooltip title="Save Presentation">
-            <span>
-              <IconButton
-                onClick={() => setSaveDialogOpen(true)}
-                disabled={false} 
-                size="large"
-              >
-                <SaveIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-        </Box>
+        <EditorToolbar editor={null} />
       )}
       <Box sx={{ 
         display: 'flex', 
@@ -258,7 +223,7 @@ const SlideEditor: React.FC = () => {
               p: 2, 
               borderBottom: 1, 
               borderColor: 'divider',
-              bgcolor: 'primary.main', // blue background
+              bgcolor: 'primary.main', 
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center'
@@ -353,37 +318,6 @@ const SlideEditor: React.FC = () => {
           </Box>
         </Box>
       </Box>
-      <SavePresentation
-        open={saveDialogOpen}
-        onClose={() => setSaveDialogOpen(false)}
-        onSave={handleSave}
-        slides={slides}
-      />
-      {(pendingNewSlide || (activeSlide && topics.length > 0)) && (
-        <SlideEditDialog
-          open={editDialogOpen}
-          onClose={() => {
-            setEditDialogOpen(false);
-            setPendingNewSlide(null);
-          }}
-          slide={pendingNewSlide || activeSlide!}
-          topic={pendingNewSlide ? undefined : getTopicForSlide(activeSlide!)}
-          onSave={(slide) => {
-            if (pendingNewSlide) {
-              dispatch(setSlides([...slides, slide]));
-              dispatch(setActiveSlide(slide.id));
-              setPendingNewSlide(null);
-            } else {
-              handleSlideChange(slide);
-            }
-            setEditDialogOpen(false);
-          }}
-          onImageUpload={handleImageUpload}
-          onImageGenerate={handleImageGenerate}
-        />
-      )}
-    </Box>
+    </EditorContainer>
   );
-};
-
 export default SlideEditor;

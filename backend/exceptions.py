@@ -1,9 +1,5 @@
 from enum import Enum
-<<<<<<< HEAD
 from typing import Optional, Any, Dict, List
-=======
-from typing import Optional, Dict, Any, List
->>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
 
 class ErrorType(str, Enum):
     RATE_LIMIT = "RATE_LIMIT"
@@ -16,12 +12,22 @@ class ErrorType(str, Enum):
 class ImageServiceProvider(str, Enum):
     OPENAI = "DALL-E"
     GOOGLE = "Imagen"
+    IMAGEN = "IMAGEN"
+    DALLE = "DALLE"
+
+class ImageGenerationErrorType(Enum):
+    RATE_LIMIT = "RATE_LIMIT"
+    QUOTA_EXCEEDED = "QUOTA_EXCEEDED"
+    SAFETY_VIOLATION = "SAFETY_VIOLATION"
+    INVALID_REQUEST = "INVALID_REQUEST"
+    API_ERROR = "API_ERROR"
+    NETWORK_ERROR = "NETWORK_ERROR"
 
 class ImageGenerationError(Exception):
     def __init__(
         self,
         message: str,
-        error_type: ErrorType,
+        error_type: ImageGenerationErrorType,
         service: Optional[ImageServiceProvider] = None,
         retry_after: Optional[int] = None,
         context: Optional[Dict[str, Any]] = None,
@@ -99,6 +105,106 @@ class ImageGenerationError(Exception):
                 "Verify API endpoint is accessible",
                 "Try again in a few minutes"
             ]
+        )
+
+class ContentSafetyError(Exception):
+    def __init__(
+        self,
+        message: str,
+        context: Optional[Dict[str, Any]] = None,
+        recommendations: Optional[List[str]] = None
+    ):
+        self.message = message
+        self.context = context or {}
+        self.recommendations = recommendations or [
+            "Focus on factual, educational content",
+            "Use balanced and objective language",
+            "Include multiple perspectives when appropriate"
+        ]
+        super().__init__(self.message)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "type": ErrorType.SAFETY_VIOLATION,
+            "message": self.message,
+            "context": self.context,
+            "recommendations": self.recommendations
+        }
+
+    @classmethod
+    def from_topic(cls, topic: str, reason: str) -> 'ContentSafetyError':
+        return cls(
+            message=reason,
+            context={"topic": topic},
+            recommendations=[
+                "Consider focusing on factual, educational aspects",
+                "Use balanced and objective language",
+                "Include historical context and multiple perspectives"
+            ]
+        )
+
+class ContentSafetyError(Exception):
+    def __init__(
+        self,
+        message: str,
+        context: Optional[Dict[str, Any]] = None,
+        recommendations: Optional[List[str]] = None
+    ):
+        self.message = message
+        self.context = context or {}
+        self.recommendations = recommendations or [
+            "Focus on factual, educational content",
+            "Use balanced and objective language",
+            "Include multiple perspectives when appropriate"
+        ]
+        super().__init__(self.message)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "type": ErrorType.SAFETY_VIOLATION,
+            "message": self.message,
+            "context": self.context,
+            "recommendations": self.recommendations
+        }
+
+    @classmethod
+    def from_dalle_error(cls, error: Any, context: Optional[Dict[str, Any]] = None) -> 'ImageGenerationError':
+        """Convert DALL-E API errors to our custom ImageGenerationError format.
+        
+        Args:
+            error: The error from the DALL-E API
+            context: Optional dictionary containing additional context (e.g., topic, level)
+            
+        Returns:
+            ImageGenerationError: Our custom error type with appropriate classification
+        """
+        error_type = ImageGenerationErrorType.API_ERROR
+        message = str(error)
+        retry_after = None
+
+        if hasattr(error, 'status_code'):
+            if error.status_code == 429:
+                error_type = ImageGenerationErrorType.RATE_LIMIT
+                retry_after = 60  # Default to 1 minute for rate limits
+            elif error.status_code == 400:
+                error_type = ImageGenerationErrorType.INVALID_REQUEST
+            elif error.status_code == 402:
+                error_type = ImageGenerationErrorType.QUOTA_EXCEEDED
+        
+        if hasattr(error, 'error'):
+            if 'safety' in str(error.error).lower():
+                error_type = ImageGenerationErrorType.SAFETY_VIOLATION
+            elif 'rate' in str(error.error).lower():
+                error_type = ImageGenerationErrorType.RATE_LIMIT
+                retry_after = 60
+            message = str(error.error)
+
+        return cls(
+            message=message,
+            error_type=error_type,
+            service=ImageServiceProvider.DALLE,
+            retry_after=retry_after,
+            context=context
         )
 
 class ContentSafetyError(Exception):

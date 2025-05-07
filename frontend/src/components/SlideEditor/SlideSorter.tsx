@@ -1,27 +1,24 @@
-import React, { useState } from 'react';
+ import React, { useState } from 'react';
 import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, useSensor, useSensors, MouseSensor, TouchSensor, closestCenter, KeyboardSensor, PointerSensor } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis, restrictToWindowEdges } from '@dnd-kit/modifiers';
-import { Box, styled, Grid } from '@mui/material';
+import { Box, styled } from '@mui/material';
 import SortableSlide from './components/SortableSlide';
 import { Slide } from './types';
 
 interface SlideSorterProps {
   slides: Slide[];
   onSlidesReorder: (newSlides: Slide[]) => void;
-  onSlideSelect?: (slideId: string) => void;
+  onSlideSelect: (slideId: string) => void;
   activeSlideId?: string;
 }
 
 const SorterContainer = styled(Box)(({ theme }) => ({
   width: '280px',
-  height: '100%',
-  overflowY: 'auto',
-  padding: theme.spacing(2),
   backgroundColor: theme.palette.background.paper,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: theme.spacing(2),
+  padding: theme.spacing(2),
+  borderRadius: theme.spacing(1),
+  boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
 }));
 
 const SortableItem = ({ slide, onClick, isActive }: { slide: Slide; onClick?: () => void; isActive?: boolean }) => {
@@ -62,17 +59,6 @@ const SlideSorter: React.FC<SlideSorterProps> = ({
   const activeSlide = activeId ? slides.find(slide => slide.id === activeId) : null;
 
   const sensors = useSensors(
-    useSensor(MouseSensor, {
-      activationConstraint: {
-        distance: 10,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 250,
-        tolerance: 5,
-      },
-    }),
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
@@ -88,14 +74,10 @@ const SlideSorter: React.FC<SlideSorterProps> = ({
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = slides.findIndex(slide => slide.id === active.id);
-      const newIndex = slides.findIndex(slide => slide.id === over.id);
-
-      const newSlides = [...slides];
-      const [movedSlide] = newSlides.splice(oldIndex, 1);
-      newSlides.splice(newIndex, 0, movedSlide);
-
-      onSlidesReorder(newSlides);
+      const oldIndex = slides.findIndex((slide) => slide.id === active.id);
+      const newIndex = slides.findIndex((slide) => slide.id === over.id);
+      
+      onSlidesReorder(arrayMove(slides, oldIndex, newIndex));
     }
 
     setActiveId(null);

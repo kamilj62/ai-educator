@@ -1,10 +1,6 @@
 from enum import Enum
 from typing import List, Optional, Dict, Any, Union
-<<<<<<< HEAD
 from pydantic import BaseModel, Field, field_validator, root_validator, ConfigDict
-=======
-from pydantic import BaseModel, Field, ConfigDict
->>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
 
 class InstructionalLevel(str, Enum):
     ELEMENTARY = "elementary"
@@ -23,12 +19,11 @@ class Example(BaseModel):
 
 class SlideTopic(BaseModel):
     model_config = ConfigDict(extra='forbid')
-<<<<<<< HEAD
     id: Optional[str] = Field(default=None, description="Unique identifier for the topic")
     title: str = Field(..., description="Title of the topic")
     description: Optional[str] = Field(None, description="Optional detailed description")
     key_points: List[str] = Field(..., min_length=3, max_length=5, description="List of 3-5 key points")
-    image_prompt: str = Field(..., min_length=1, description="Non-empty prompt for generating an image")
+    image_prompt: Optional[str] = Field(None, description="Non-empty prompt for generating an image")
     subtopics: Optional[List['SlideTopic']] = Field(default_factory=list, description="Optional list of subtopics")
 
     @field_validator('key_points')
@@ -39,15 +34,9 @@ class SlideTopic(BaseModel):
 
     @field_validator('image_prompt')
     def check_image_prompt(cls, v):
-        if not isinstance(v, str) or not v.strip():
-            raise ValueError('image_prompt must be a non-empty string')
+        if v is not None and (not isinstance(v, str) or not v.strip()):
+            raise ValueError('image_prompt must be a non-empty string if provided')
         return v
-=======
-    title: str
-    key_points: List[str]
-    image_prompt: Optional[str] = None
-    description: Optional[str] = None
-
 class SlideLayout(str, Enum):
     TITLE_ONLY = "title-only"
     TITLE_IMAGE = "title-image"
@@ -57,7 +46,6 @@ class SlideLayout(str, Enum):
     TITLE_BULLETS_IMAGE = "title-bullets-image"
     TWO_COLUMN = "two-column"
     TWO_COLUMN_IMAGE = "two-column-image"
->>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
 
 class SlideLayout(str, Enum):
     TITLE_ONLY = "title-only"
@@ -127,15 +115,12 @@ class Presentation(BaseModel):
 class ExportRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
     presentation: Presentation
-    format: str = "pptx"  # Only pptx supported for now
+    format: ExportFormat
 
-<<<<<<< HEAD
 class ImageServiceProvider(Enum):
     OPENAI = "openai"
     GOOGLE = "google"
 
-=======
->>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
 class ImageGenerationRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
     prompt: str
@@ -145,20 +130,13 @@ class ExportFormat(str, Enum):
     PDF = "pdf"
     PPTX = "pptx"
 
-<<<<<<< HEAD
-=======
-class ImageServiceProvider(Enum):
-    OPENAI = "openai"
     GOOGLE = "google"
 
->>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
 class PresentationInput(BaseModel):
     model_config = ConfigDict(extra='forbid')
     context: str = Field(..., min_length=1)
     num_slides: int = Field(..., ge=1, le=20)
     instructional_level: InstructionalLevel
-<<<<<<< HEAD
-=======
 
 class SlideGenerationRequestNew(BaseModel):
     model_config = ConfigDict(extra='forbid')
@@ -169,4 +147,10 @@ class SlideGenerationRequestNew(BaseModel):
 class PresentationNew(BaseModel):
     model_config = ConfigDict(extra='forbid')
     slides: List[SlideNew]
->>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
+class ExportRequest(BaseModel):
+    presentation: Presentation
+    format: ExportFormat
+
+class ImageGenerationRequest(BaseModel):
+    """Request model for image generation."""
+    prompt: str = Field(..., description="The prompt to generate an image from")

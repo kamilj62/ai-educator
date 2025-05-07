@@ -6,8 +6,20 @@ import type { Slide, SlideTopic, SlideLayout, InstructionalLevel } from '../comp
 import { Slide, SlideContent, SlideLayout, SlideImage, SlideTopic, BulletPoint, InstructionalLevel } from '../components/SlideEditor/types';
 >>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
 import { RootState } from './store';
+<<<<<<< HEAD
 import type { SlideContent } from '../components/SlideEditor/types';
 import { normalizeBullets } from '../components/SlideEditor/components/utils'; // Import the normalizeBullets utility
+=======
+
+// API Configuration
+const API_BASE_URL = 'http://localhost:8005';
+const API_ENDPOINTS = {
+  generateOutline: '/generate/outline',
+  generateSlides: '/generate/slide',
+  generateImage: '/api/test-image-generation',
+  export: '/export'
+};
+>>>>>>> 70d1487b (Update Procfile for Heroku deployment)
 
 <<<<<<< HEAD
 export interface PresentationState {
@@ -79,12 +91,14 @@ export const generateOutline = createAsyncThunk(
   }) => {
 >>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
     try {
+<<<<<<< HEAD
       const requestBody = {
         context: params.topic,
         num_slides: params.numSlides,
         instructional_level: params.instructionalLevel,
       };
 
+<<<<<<< HEAD
 <<<<<<< HEAD
       // Use environment variable for API base URL
       const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
@@ -95,11 +109,21 @@ export const generateOutline = createAsyncThunk(
       console.log("🚀 Sending outline request:", requestBody);
 
       const response = await fetch('http://localhost:8000/api/generate/outline', {
+=======
+      const response = await fetch(`${API_BASE_URL}/generate/outline`, {
+=======
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.generateOutline}`, {
+>>>>>>> dd7ecbd (added imagen images)
+>>>>>>> 70d1487b (Update Procfile for Heroku deployment)
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+<<<<<<< HEAD
 >>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
+=======
+<<<<<<< HEAD
+>>>>>>> 70d1487b (Update Procfile for Heroku deployment)
         body: JSON.stringify(requestBody),
       });
 
@@ -146,10 +170,67 @@ export const generateOutline = createAsyncThunk(
         description: topic.description || ''
       }));
 <<<<<<< HEAD
+<<<<<<< HEAD
     } catch (error: any) {
 =======
 
       return outline;
+=======
+=======
+        credentials: 'include',  // Include credentials for CORS
+        body: JSON.stringify({
+          context: input.context,
+          num_slides: input.num_slides,
+          instructional_level: input.instructional_level
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Server error response:', errorData);
+        
+        // Map to our custom error types from memory
+        let errorMessage = 'An unexpected error occurred';
+        if (errorData.error_type) {
+          switch (errorData.error_type) {
+            case 'RATE_LIMIT':
+              errorMessage = `Rate limit exceeded. Please try again in ${errorData.retry_after} seconds.`;
+              break;
+            case 'QUOTA_EXCEEDED':
+              errorMessage = 'API quota exceeded. Please try again later.';
+              break;
+            case 'SAFETY_VIOLATION':
+              errorMessage = 'Content safety violation detected. Please modify your request.';
+              break;
+            case 'INVALID_REQUEST':
+              errorMessage = errorData.detail || 'Invalid request parameters.';
+              break;
+            case 'API_ERROR':
+              errorMessage = 'API service error. Please try again later.';
+              break;
+            case 'NETWORK_ERROR':
+              errorMessage = 'Network connection error. Please check your connection.';
+              break;
+            default:
+              errorMessage = errorData.detail || 'Server error occurred.';
+          }
+        }
+        return rejectWithValue(errorMessage);
+      }
+
+      const data = await response.json();
+      if (!data.topics) {
+        return rejectWithValue('Invalid response format from server');
+      }
+
+      return {
+        topics: data.topics,
+        instructional_level: input.instructional_level,
+        num_slides: input.num_slides,
+        slides: []
+      };
+>>>>>>> dd7ecbd (added imagen images)
+>>>>>>> 70d1487b (Update Procfile for Heroku deployment)
     } catch (error) {
       console.error("❌ Failed to generate outline:", error);
 >>>>>>> af182bc4 (Fix layout type errors, update selectors, and resolve build issues)
