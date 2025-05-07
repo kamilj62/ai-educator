@@ -372,6 +372,7 @@ class AIService:
                 "- If you cannot fill all fields, SKIP THAT SLIDE.\n"
                 "- Output ONLY valid JSON. Do NOT include any explanation, markdown, or notes.\n"
                 "- IF YOU OMIT ANY FIELD, THE REQUEST WILL FAIL.\n"
+                "- THE JSON OUTPUT MUST MATCH THIS SCHEMA: [ { 'id': str, 'title': str, 'key_points': list[str], 'image_prompt': str, 'description': str }, ... ]\n"
                 "\nVALID EXAMPLE 1:\n[\n  {\n    'id': 'slide_1',\n    'title': 'Phases of the Moon',\n    'key_points': [\n      'The moon has 8 phases in its monthly cycle',\n      'Phases are caused by the moon\'s orbit around Earth',\n      'New moon and full moon are opposite phases'\n    ],\n    'image_prompt': 'Diagram showing all 8 phases of the moon with labels',\n    'description': 'This slide explains the different phases of the moon and why they occur.'\n  }\n]\n"
                 "\nVALID EXAMPLE 2:\n[\n  {\n    'id': 'slide_2',\n    'title': 'Photosynthesis Overview',\n    'key_points': [\n      'Plants use sunlight to make food',\n      'Photosynthesis occurs in chloroplasts',\n      'Oxygen is a byproduct'\n    ],\n    'image_prompt': 'Diagram showing sunlight, a leaf, and arrows for CO2 and O2',\n    'description': 'This slide introduces the process of photosynthesis in plants.'\n  }\n]\n"
                 "\nINVALID EXAMPLE (WILL CAUSE FAILURE):\n[\n  {\n    'title': 'Incomplete Slide',\n    'description': 'This slide is missing key_points and image_prompt.'\n  }\n]\n"
@@ -426,15 +427,22 @@ class AIService:
                     description = topic.get("description", "").strip()
                     key_points = topic.get("key_points") if "key_points" in topic else None
                     image_prompt = topic.get("image_prompt", "").strip() if "image_prompt" in topic else ""
+                    slide_id = topic.get("id", f"slide_{i+1}")
 
                     # Aggressive repair for key_points (even if missing)
                     if (not key_points or not isinstance(key_points, list) or len(key_points) < 3) and description:
-                        bullets = [s.strip() for s in re.split(r'[.;\n]', description) if s.strip()]
+                        bullets = [s.strip() for s in re.split(r'[.;\n\-•]', description) if s.strip()]
                         if len(bullets) >= 3:
                             key_points = bullets[:5]
                             logger.info(f"[OpenAI][Repair] Aggressively extracted key_points from description for slide {i+1}: {key_points}")
                         else:
-                            key_points = []
+                            # Synthesize generic key points if possible
+                            key_points = [
+                                f"Key fact about {title}",
+                                f"Another important point about {title}",
+                                f"Summary statement for {title}"
+                            ]
+                            logger.info(f"[OpenAI][Repair] Synthesized generic key_points for slide {i+1}: {key_points}")
                     # Aggressive repair for image_prompt
                     if not image_prompt and title:
                         image_prompt = f"Illustration of {title}"
@@ -443,8 +451,7 @@ class AIService:
                     slide = dict(topic)
                     slide["key_points"] = key_points
                     slide["image_prompt"] = image_prompt
-                    if "id" not in slide:
-                        slide["id"] = f"slide_{i+1}"
+                    slide["id"] = slide_id
                     repaired_topics.append(slide)
                 # Now validate after ALL repairs
                 filtered_topics = []
