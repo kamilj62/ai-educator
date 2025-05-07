@@ -101,6 +101,7 @@ app.add_middleware(
         "https://ai-educator-eight.vercel.app",
         "https://ai-educator-one.vercel.app",
         "https://ai-educator-nine.vercel.app",
+        "https://ai-educator-iewndpp7z-kamilj62s-projects.vercel.app",
         "http://localhost:3000"
     ],
     allow_credentials=True,
