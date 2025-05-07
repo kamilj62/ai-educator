@@ -359,18 +359,22 @@ class AIService:
             # Strongest possible system prompt
             system_prompt = (
                 "You are an expert educational presentation designer.\n"
-                "You must generate a JSON array of slides for a presentation on a given topic, audience, and slide count.\n"
-                "STRICT REQUIREMENTS:\n"
-                "- Each slide MUST be a JSON object with ALL of the following fields:\n"
+                "You MUST generate a JSON array of slides for a presentation on a given topic, audience, and slide count.\n"
+                "STRICT REQUIREMENTS (READ CAREFULLY):\n"
+                "- EACH SLIDE MUST BE A JSON OBJECT WITH ALL OF THE FOLLOWING FIELDS:\n"
                 "  - 'id': unique string (e.g. 'slide_1', 'slide_2', ...)\n"
                 "  - 'title': non-empty string\n"
                 "  - 'key_points': array of 3-5 non-empty strings\n"
                 "  - 'image_prompt': non-empty string\n"
                 "  - 'description': non-empty string\n"
                 "- DO NOT OMIT ANY FIELD, even if you must invent plausible content.\n"
-                "- If you cannot fill all fields, skip that slide.\n"
+                "- If you cannot fill all fields, SKIP THAT SLIDE.\n"
                 "- Output ONLY valid JSON. Do NOT include any explanation, markdown, or notes.\n"
-                "\nExample output:\n[\n  {\n    'id': 'slide_1',\n    'title': 'Phases of the Moon',\n    'key_points': [\n      'The moon has 8 phases in its monthly cycle',\n      'Phases are caused by the moon\'s orbit around Earth',\n      'New moon and full moon are opposite phases'\n    ],\n    'image_prompt': 'Diagram showing all 8 phases of the moon with labels',\n    'description': 'This slide explains the different phases of the moon and why they occur.'\n  }\n]\n"
+                "- IF YOU OMIT ANY FIELD, THE REQUEST WILL FAIL.\n"
+                "\nVALID EXAMPLE 1:\n[\n  {\n    'id': 'slide_1',\n    'title': 'Phases of the Moon',\n    'key_points': [\n      'The moon has 8 phases in its monthly cycle',\n      'Phases are caused by the moon\'s orbit around Earth',\n      'New moon and full moon are opposite phases'\n    ],\n    'image_prompt': 'Diagram showing all 8 phases of the moon with labels',\n    'description': 'This slide explains the different phases of the moon and why they occur.'\n  }\n]\n"
+                "\nVALID EXAMPLE 2:\n[\n  {\n    'id': 'slide_2',\n    'title': 'Photosynthesis Overview',\n    'key_points': [\n      'Plants use sunlight to make food',\n      'Photosynthesis occurs in chloroplasts',\n      'Oxygen is a byproduct'\n    ],\n    'image_prompt': 'Diagram showing sunlight, a leaf, and arrows for CO2 and O2',\n    'description': 'This slide introduces the process of photosynthesis in plants.'\n  }\n]\n"
+                "\nINVALID EXAMPLE (WILL CAUSE FAILURE):\n[\n  {\n    'title': 'Incomplete Slide',\n    'description': 'This slide is missing key_points and image_prompt.'\n  }\n]\n"
+                "\nDO NOT WRAP THE OUTPUT IN MARKDOWN OR ADD ANY EXPLANATION.\n"
             )
             user_prompt = (
                 f"Generate a presentation outline for:\n"
@@ -412,14 +416,24 @@ class AIService:
                 except Exception as e:
                     logger.error(f"[OpenAI] JSON decode error: {e}")
                     topics = []
-                # Validate topics
+                # Validate topics and repair if possible
                 filtered_topics = []
                 for i, topic in enumerate(topics):
-                    # Accept both dict or list-of-dict
-                    title = topic.get("title", "").strip() if isinstance(topic, dict) else ""
-                    key_points = topic.get("key_points", []) if isinstance(topic, dict) else []
-                    image_prompt = topic.get("image_prompt", "").strip() if isinstance(topic, dict) else ""
-                    description = topic.get("description", "").strip() if isinstance(topic, dict) else ""
+                    if not isinstance(topic, dict):
+                        continue
+                    title = topic.get("title", "").strip()
+                    key_points = topic.get("key_points", [])
+                    image_prompt = topic.get("image_prompt", "").strip()
+                    description = topic.get("description", "").strip()
+                    # Repair: if key_points missing or empty but description present, extract up to 5 points from description
+                    if (not key_points or not isinstance(key_points, list) or len(key_points) < 3) and description:
+                        # Split by period, semicolon, or newline
+                        bullets = [s.strip() for s in re.split(r'[.;\n]', description) if s.strip()]
+                        # Take up to 5, at least 3 if possible
+                        if len(bullets) >= 3:
+                            key_points = bullets[:5]
+                            logger.info(f"[OpenAI][Repair] Extracted key_points from description for slide {i+1}: {key_points}")
+                    # Validate after repair
                     if (
                         title and image_prompt and description
                         and isinstance(key_points, list)
@@ -429,8 +443,9 @@ class AIService:
                         # Add id if missing
                         if "id" not in topic:
                             topic["id"] = f"slide_{i+1}"
+                        topic["key_points"] = key_points
                         filtered_topics.append(topic)
-                logger.info(f"[OpenAI] Filtered topics (attempt {attempt}): {filtered_topics}")
+                logger.info(f"[OpenAI] Filtered topics after repair (attempt {attempt}): {filtered_topics}")
                 if filtered_topics:
                     return {
                         "topics": filtered_topics,
