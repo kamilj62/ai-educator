@@ -732,7 +732,7 @@ class AIService:
                 warnings.append("This topic may contain sensitive content. The presentation aims to provide balanced, factual information.")
             
             return {
-                "topics": [t.model_dump() for t in response_data["topics"]],
+                "topics": [t for t in response_data["topics"]],
                 "warnings": warnings
             }
             
