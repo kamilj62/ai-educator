@@ -420,6 +420,8 @@ class AIService:
                     topics = []
                 # Validate topics and repair if possible
                 repaired_topics = []
+                logger.error(f"[OpenAI][DEBUG] Raw content: {content}")
+                logger.error(f"[OpenAI][DEBUG] Parsed topics: {topics}")
                 for i, topic in enumerate(topics):
                     if not isinstance(topic, dict):
                         continue
@@ -429,21 +431,27 @@ class AIService:
                     image_prompt = topic.get("image_prompt", "").strip() if "image_prompt" in topic else ""
                     slide_id = topic.get("id", f"slide_{i+1}")
 
-                    # Aggressive repair for key_points (even if missing)
-                    if (not key_points or not isinstance(key_points, list) or len(key_points) < 3) and description:
+                    # Always synthesize missing key_points if title/description exist
+                    if (not key_points or not isinstance(key_points, list) or len(key_points) < 3) and title and description:
                         bullets = [s.strip() for s in re.split(r'[.;\n\-•]', description) if s.strip()]
                         if len(bullets) >= 3:
                             key_points = bullets[:5]
                             logger.info(f"[OpenAI][Repair] Aggressively extracted key_points from description for slide {i+1}: {key_points}")
                         else:
-                            # Synthesize generic key points if possible
                             key_points = [
                                 f"Key fact about {title}",
                                 f"Another important point about {title}",
                                 f"Summary statement for {title}"
                             ]
                             logger.info(f"[OpenAI][Repair] Synthesized generic key_points for slide {i+1}: {key_points}")
-                    # Aggressive repair for image_prompt
+                    elif not key_points and title:
+                        key_points = [
+                            f"Key fact about {title}",
+                            f"Another important point about {title}",
+                            f"Summary statement for {title}"
+                        ]
+                        logger.info(f"[OpenAI][Repair] Synthesized generic key_points for slide {i+1} (no description): {key_points}")
+                    # Always synthesize missing image_prompt
                     if not image_prompt and title:
                         image_prompt = f"Illustration of {title}"
                         logger.info(f"[OpenAI][Repair] Generated image_prompt for slide {i+1}: {image_prompt}")
@@ -453,6 +461,7 @@ class AIService:
                     slide["image_prompt"] = image_prompt
                     slide["id"] = slide_id
                     repaired_topics.append(slide)
+
                 # Now validate after ALL repairs
                 filtered_topics = []
                 for slide in repaired_topics:
