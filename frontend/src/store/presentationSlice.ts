@@ -35,10 +35,11 @@ const initialState: PresentationState = {
 export const generateOutline = createAsyncThunk(
   'presentation/generateOutline',
   async (params: { topic: string; numSlides: number; instructionalLevel: InstructionalLevel }) => {
+    // Patch: convert 'elementary_school' to 'elementary' for backend compatibility
     const requestBody = {
       context: params.topic,
       num_slides: params.numSlides,
-      instructional_level: params.instructionalLevel,
+      instructional_level: params.instructionalLevel === 'elementary_school' ? 'elementary' : params.instructionalLevel,
     };
     const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.GENERATE_OUTLINE}`, {
       method: 'POST',
@@ -63,7 +64,7 @@ export const generateSlides = createAsyncThunk(
     const state = getState() as RootState;
     const requestBody = {
       topics: topics,
-      instructional_level: state.presentation.instructionalLevel,
+      instructional_level: state.presentation.instructionalLevel === 'elementary_school' ? 'elementary' : state.presentation.instructionalLevel,
       layout: state.presentation.defaultLayout,
     };
     const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.GENERATE_SLIDES}`, {

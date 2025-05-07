@@ -11,7 +11,7 @@ export type SlideLayout =
 
 // Instructional level types
 export type InstructionalLevel =
-  | 'elementary_school'
+  | 'elementary'
   | 'middle_school'
   | 'high_school'
   | 'university'

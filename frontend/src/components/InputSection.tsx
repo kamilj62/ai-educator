@@ -28,7 +28,7 @@ const InputSection: React.FC = () => {
 
   const [contextInput, setContextInput] = useState('');
   const [numSlidesInput, setNumSlidesInput] = useState('5');
-  const [instructionalLevelInput, setInstructionalLevelInput] = useState<InstructionalLevel>('elementary_school');
+  const [instructionalLevelInput, setInstructionalLevelInput] = useState<InstructionalLevel>('elementary');
 
   const handleGenerateOutline = async () => {
     if (!contextInput.trim() || !numSlidesInput) {
@@ -36,11 +36,13 @@ const InputSection: React.FC = () => {
       return;
     }
     try {
-      await (dispatch as any)(generateOutline({
+      const outgoingPayload = {
         topic: contextInput.trim(),
         numSlides: Number(numSlidesInput),
-        instructionalLevel: instructionalLevelInput,
-      })).unwrap();
+        instructionalLevel: (instructionalLevelInput as string) === 'elementary_school' ? 'elementary' : instructionalLevelInput,
+      };
+      console.log('DEBUG: Outline request payload', outgoingPayload);
+      await (dispatch as any)(generateOutline(outgoingPayload)).unwrap();
       setContextInput('');
       setNumSlidesInput('5');
     } catch (err) {
@@ -105,7 +107,7 @@ const InputSection: React.FC = () => {
             label="Instructional Level"
             sx={{ borderRadius: 3, background: 'rgba(36,37,41,0.85)', color: '#fff', '.MuiSelect-icon': { color: '#a5b4fc' } }}
           >
-            <MenuItem value="elementary_school">Elementary School</MenuItem>
+            <MenuItem value="elementary">Elementary School</MenuItem>
             <MenuItem value="middle_school">Middle School</MenuItem>
             <MenuItem value="high_school">High School</MenuItem>
             <MenuItem value="university">University</MenuItem>
