@@ -414,9 +414,17 @@ class AIService:
                 # Try to extract JSON
                 response_text = extract_json(content)
                 try:
-                    topics = json.loads(response_text.replace("'", '"'))
+                    parsed = json.loads(response_text.replace("'", '"'))
+                    if isinstance(parsed, dict) and "topics" in parsed:
+                        topics = parsed["topics"]
+                    elif isinstance(parsed, list):
+                        topics = parsed
+                    else:
+                        logger.error(f"[OpenAI] Unexpected JSON structure: {parsed}")
+                        topics = []
                 except Exception as e:
                     logger.error(f"[OpenAI] JSON decode error: {e}")
+                    logger.error(f"[OpenAI] Raw content on decode error: {response_text}")
                     topics = []
                 # Log raw OpenAI content and parsed topics immediately after parsing
                 logger.error(f"[OpenAI] Raw content: {content}")
