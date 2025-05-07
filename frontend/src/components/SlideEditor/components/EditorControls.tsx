@@ -5,6 +5,10 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PresentationIcon from '@mui/icons-material/Slideshow';
 
+import LayoutSwitcher from './LayoutSwitcher';
+import { Slide } from '../types';
+import { convertLayoutToFrontend, convertLayoutToBackend } from '../utils';
+
 interface EditorControlsProps {
   onAddSlide: () => void;
   onDuplicateSlide?: () => void;

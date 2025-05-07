@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Box, Button, Menu, MenuItem, Typography, styled } from '@mui/material';
 import ViewQuiltIcon from '@mui/icons-material/ViewQuilt';
@@ -30,14 +29,15 @@ const LayoutPreview = styled(Box)(({ theme }) => ({
 }));
 
 const layoutOptions: { [key in SlideLayout]: string } = {
-  title: 'Title Only',
-  'title-image': 'Title with Image',
-  'title-body': 'Title and Body',
-  'title-body-image': 'Title and Body with Image',
-  'title-bullets': 'Title and Bullets',
-  'title-bullets-image': 'Title and Bullets with Image',
-  'two-column': 'Two Columns',
-  'two-column-image': 'Two Columns with Image',
+  'title-only': 'Title Only',
+  title: 'Title',
+  'title-image': 'Title + Image',
+  'title-body': 'Title + Body',
+  'title-body-image': 'Title + Body + Image',
+  'title-bullets': 'Title + Bullets',
+  'title-bullets-image': 'Title + Bullets + Image',
+  'two-column': 'Two Column',
+  'two-column-image': 'Two Column + Image',
 };
 
 const LayoutSwitcher: React.FC<LayoutSwitcherProps> = ({ layout, onLayoutChange }) => {

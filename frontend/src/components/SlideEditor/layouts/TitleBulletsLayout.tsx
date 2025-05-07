@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { Box, styled, Typography } from '@mui/material';
 import BaseLayout from './BaseLayout';
 import type { Slide, SlideImage } from '../types';
@@ -65,7 +66,15 @@ const TitleBulletsLayout: React.FC<TitleBulletsLayoutProps> = ({
     });
   };
 
-  const handleBulletsChange = (bullets: string) => {
+  // Helper to parse HTML <ul><li>...</li></ul> to string[]
+  function parseBulletsFromHtml(html: string): string[] {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const lis = Array.from(doc.querySelectorAll('li'));
+    return lis.map(li => li.textContent || '');
+  }
+
+  const handleBulletsChange = (html: string) => {
+    const bullets = parseBulletsFromHtml(html);
     onChange({
       ...slide,
       content: { ...slide.content, bullets },
@@ -87,6 +96,7 @@ const TitleBulletsLayout: React.FC<TitleBulletsLayoutProps> = ({
   };
 
   const image = slide.content.image;
+  const bulletPoints: string[] = Array.isArray(slide.content.bullets) ? slide.content.bullets : [];
 
   return (
     <BaseLayout>
@@ -100,8 +110,11 @@ const TitleBulletsLayout: React.FC<TitleBulletsLayoutProps> = ({
         </TitleContainer>
         <BulletsContainer>
           <BulletList>
+            {bulletPoints.map((bullet, idx) => (
+              <BulletPoint key={idx}>{bullet}</BulletPoint>
+            ))}
             <TiptapEditor
-              content={Array.isArray(slide.content.bullets) ? `<ul>${slide.content.bullets.map((b: string) => `<li>${b}</li>`).join('')}</ul>` : (slide.content.bullets || '')}
+              content={Array.isArray(slide.content.bullets) ? `<ul>${slide.content.bullets.map((b: string) => `<li>${b}</li>`).join('')}</ul>` : ''}
               onChange={handleBulletsChange}
               placeholder="Enter bullet points..."
             />
@@ -165,22 +178,19 @@ const TitleBulletsLayout: React.FC<TitleBulletsLayoutProps> = ({
                 });
               }}
             >
-              <img
-                src={image.url}
-                alt={image.alt || 'Slide image'}
+              <Image 
+                src={image.url} 
+                alt={image.alt || ''} 
+                width={240} 
+                height={120} 
+                style={{ 
+                  maxWidth: '100%', 
+                  maxHeight: 120, 
+                  marginTop: 8, 
+                  objectFit: 'contain' 
+                }} 
                 className="draggable-image-handle"
                 draggable={false}
-                style={{
-                  borderRadius: 12,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                  maxWidth: '100%',
-                  maxHeight: 500,
-                  objectFit: 'contain',
-                  userSelect: 'none',
-                  cursor: 'grab',
-                  width: '100%',
-                  height: '100%',
-                }}
               />
             </Rnd>
           )}

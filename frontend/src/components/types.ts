@@ -1,93 +1,28 @@
 
 // Slide layout types
-export type SlideLayout = 
-  | 'title-only'
-  | 'title-image'
-  | 'title-body'
-  | 'title-body-image'
-  | 'title-bullets'
-  | 'title-bullets-image'
-  | 'two-column'
-  | 'two-column-image';
+
 
 // Error handling types
-export type ErrorType = 
-  | 'RATE_LIMIT'
-  | 'QUOTA_EXCEEDED'
-  | 'SAFETY_VIOLATION'
-  | 'INVALID_REQUEST'
-  | 'API_ERROR'
-  | 'NETWORK_ERROR';
 
-export type ImageService = 'Imagen' | 'DALL-E';
 
-export interface APIError {
-  type: ErrorType;
-  message: string;
-  service?: ImageService;
-  retryAfter?: number;
-  context?: {
-    topic?: string;
-    level?: string;
-  };
-  originalError?: any;
-}
 
-export interface ImageGenerationError extends APIError {
-  service: ImageService;
-  retryAttempts?: number;
-  maxRetries?: number;
-}
+
+
+
+
 
 // Slide type
-export type Slide = {
-  id: string;
-  layout: SlideLayout;
-  content: any;
-};
+
 
 // Presentation type
-export interface Presentation {
-  id: string;
-  title: string;
-  slides: Slide[];
-  createdAt?: string;
-  updatedAt?: string;
-}
+
 
 // Re-export types from SlideEditor
 export * from './SlideEditor/types';
 
-export type SlideLayout = 
-  | 'title'
-  | 'title-image'
-  | 'title-body'
-  | 'title-body-image'
-  | 'title-bullets'
-  | 'title-bullets-image'
-  | 'two-column'
-  | 'two-column-image';
 
-export interface Slide {
-  id: string;
-  layout: SlideLayout;
-  content: {
-    title?: string;
-    subtitle?: string;
-    body?: string;
-    bullets?: string[];
-    columnLeft?: string;
-    columnRight?: string;
-    image?: {
-      url: string;
-      alt: string;
-    };
-  };
-}
 
-export interface EditorProps {
-  slide: Slide;
-  onChange: (slide: Slide) => void;
-  onImageUpload?: (file: File) => Promise<string>;
-}
+
+
+
 

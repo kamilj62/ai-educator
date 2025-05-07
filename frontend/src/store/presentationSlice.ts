@@ -1,12 +1,9 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { v4 as uuidv4 } from 'uuid';
 
-import type { Slide, SlideTopic, SlideLayout, InstructionalLevel } from '../components/types';
-
-import { Slide, SlideContent, SlideLayout, SlideImage, SlideTopic, BulletPoint, InstructionalLevel } from '../components/SlideEditor/types';
+import type { Slide, SlideTopic, SlideLayout, InstructionalLevel, SlideContent, SlideImage, BulletPoint } from '../components/types';
 import { RootState } from './store';
 
-import type { SlideContent } from '../components/SlideEditor/types';
 import { normalizeBullets } from '../components/SlideEditor/components/utils'; // Import the normalizeBullets utility
 
 // API Configuration
@@ -165,9 +162,9 @@ export const generateSlides = createAsyncThunk(
             title: data.title || '',
             subtitle: data.subtitle || '',
             body: data.body || '',
-            bullets: normalizeBullets((data.bullet_points && data.bullet_points.length > 0)
-              ? data.bullet_points
-              : (topic.key_points ? topic.key_points : [])),
+            bullets: (data.bullet_points && data.bullet_points.length > 0)
+              ? data.bullet_points.map((text: string) => ({ text }))
+              : (topic.key_points ? topic.key_points.map(text => ({ text })) : []),
             image: data.image_url ? {
               url: data.image_url,
               alt: data.image_alt || '',

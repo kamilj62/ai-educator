@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { Box, styled, Typography } from '@mui/material';
 import BaseLayout from './BaseLayout';
 import type { Slide, ImageService, SlideImage } from '../types';
@@ -100,7 +101,7 @@ const TwoColumnLayout: React.FC<TwoColumnLayoutProps> = ({
           <Box sx={{ width: '50%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: 1, background: '#fff', fontSize: '0.8rem', overflow: 'hidden', boxSizing: 'border-box' }}>
             <div dangerouslySetInnerHTML={{ __html: slide.content.columnRight || '' }} />
             {slide.layout === 'two-column-image' && slide.content.image?.url && (
-              <img src={slide.content.image.url} alt={slide.content.image.alt || 'Slide image'} style={{ maxWidth: '100%', maxHeight: 60, marginTop: 4 }} />
+              <Image src={slide.content.image.url} alt={slide.content.image.alt || 'Slide image'} width={120} height={60} style={{ maxWidth: '100%', maxHeight: 60, marginTop: 4, objectFit: 'contain' }} />
             )}
           </Box>
         </Box>

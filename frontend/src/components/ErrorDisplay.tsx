@@ -21,8 +21,8 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ error, onClose }) => {
           {errorMessage}
         </Typography>
         {onClose && (
-          <IconButton size="small" onClick={onClose} aria-label="Close error message">
-            <CloseIcon fontSize="small" />
+          <IconButton onClick={onClose} size="small">
+            <CloseIcon />
           </IconButton>
         )}
       </Box>

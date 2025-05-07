@@ -1,14 +1,10 @@
-
 // Image generation service types
 export type ImageService = 'dalle' | 'imagen' | 'generated' | 'upload';
 
 // Base types for layouts
-export type BackendSlideLayout = 
-  | 'title-only'
-
 export type SlideLayout = 
+  | 'title-only'
   | 'title'
-
   | 'title-image'
   | 'title-body'
   | 'title-body-image'
@@ -17,10 +13,24 @@ export type SlideLayout =
   | 'two-column'
   | 'two-column-image';
 
-
-export type SlideLayout = BackendSlideLayout;
-
 // Content types that match the frontend components
+export interface Slide {
+  id: string;
+  layout: SlideLayout;
+  content: {
+    title?: string;
+    subtitle?: string;
+    body?: string;
+    bullets?: string[];
+    columnLeft?: string;
+    columnRight?: string;
+    image?: SlideImage;
+    [key: string]: any;
+  };
+  backgroundColor?: string;
+  fontColor?: string;
+}
+
 export type BulletPoint = {
   text: string;
   subpoints?: BulletPoint[];
@@ -55,9 +65,8 @@ export type SlideContent = {
   title: string;
   subtitle?: string;
   body?: string;
-  bullets?: string;
+  bullets?: string[];
   image?: SlideImage;
-  image_prompt?: string;
   columnLeft?: string;
   columnRight?: string;
   instructionalLevel?: InstructionalLevel;
@@ -67,13 +76,7 @@ export type SlideContent = {
   description?: string;
 };
 
-export type Slide = {
-  id: string;
-  layout: SlideLayout;
-  content: SlideContent;
-  backgroundColor?: string;
-  fontColor?: string;
-};
+
 
 // Layout conversion utilities
 export function convertLayoutToFrontend(layout: SlideLayout): SlideLayout {
@@ -228,26 +231,7 @@ export type SlideTopic = {
   description?: string;
   subtopics?: SlideTopic[];
   instructionalLevel?: InstructionalLevel;
-};
-
-
-export interface Slide {
-  id: string;
-  layout: SlideLayout;
-  content: {
-    title?: string;
-    subtitle?: string;
-    body?: string;
-    bullets?: string[];
-    columnLeft?: string;
-    columnRight?: string;
-    image?: {
-      url: string;
-      alt: string;
-    };
-  };
 }
-
 
 export interface EditorProps {
   slide: Slide;
@@ -255,9 +239,6 @@ export interface EditorProps {
   onImageUpload?: (file: File) => Promise<string>;
 
   onImageGenerate?: (prompt: string, service?: ImageService) => Promise<SlideImage>;
-
-
-  onImageGenerate?: (prompt: string, service?: ImageService) => Promise<string>;
 
   onSafetyCheck?: (content: string) => Promise<{
     passed: boolean;

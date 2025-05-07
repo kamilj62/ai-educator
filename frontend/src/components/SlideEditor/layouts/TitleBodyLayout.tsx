@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { styled } from '@mui/material/styles';
 import { Box } from '@mui/material';
 import BaseLayout from './BaseLayout';
@@ -14,7 +15,6 @@ const ContentContainer = styled(Box)(({ theme }) => ({
   flexDirection: 'column',
   justifyContent: 'flex-start',
   alignItems: 'stretch',
-  gap: theme.spacing(2)
 }));
 
 const BodyContainer = styled(Box)(({ theme }) => ({
@@ -152,59 +152,52 @@ const TitleBodyLayout: React.FC<TitleBodyLayoutProps> = ({
             enableResizing={false}
             style={{ margin: '0 auto', display: 'block' }}
           >
-            <img
+            <Image
               src={slide.content.image.url}
               alt={slide.content.image.alt || ''}
+              width={slide.content.image.width || 600}
+              height={slide.content.image.height || 280}
               style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 8 }}
             />
           </Rnd>
         )}
         {/* Body below title (and image if present) */}
-        <Box
-          className="slide-body"
-          sx={{
-            fontSize: '2rem',
-            color: '#222',
-            display: 'block',
-            marginTop: '0.5rem',
-            textAlign: 'left',
-            lineHeight: 1.35,
-            maxWidth: '100%',
-            minHeight: 120,
-            wordBreak: 'break-word',
-            p: 2,
-            borderRadius: 2,
-            boxShadow: slide.content.body ? '0 1px 8px rgba(0,0,0,0.05)' : 'none',
-            mt: 2,
-            fontFamily: 'inherit',
-            overflow: 'visible',
-            width: '100%',
-            background: '#fff',
-            fontWeight: 400,
-            letterSpacing: '-0.01em',
-          }}
-        >
-          {slide.content.body && typeof slide.content.body === 'string' ? (
-            <span
-              style={{fontSize:'2rem',fontWeight:400,lineHeight:1.35,letterSpacing:'-0.01em',color:'#222'}}
-              dangerouslySetInnerHTML={{ __html: ensureHtml(slide.content.body) }}
-            />
-          ) : (
-            <span style={{ color: '#bbb' }}>[No Body Content]</span>
-          )}
-        </Box>
-        {/* Optionally show image uploader if editing */}
-        {slide.layout.includes('image') && (
-          <ImageUploader
-            image={slide.content.image ? {
-              ...slide.content.image,
-              prompt: slide.content.image.prompt || slide.content.title || 'Educational illustration',
-            } : undefined}
-            onImageChange={handleImageChange}
-            onImageUpload={onImageUpload}
-            onImageGenerate={onImageGenerate}
-          />
-        )}
+        <BodyContainer>
+          <Box
+            className="slide-body"
+            sx={{
+              fontSize: '2rem',
+              color: '#222',
+              display: 'block',
+              marginTop: '0.5rem',
+              textAlign: 'left',
+              lineHeight: 1.35,
+              maxWidth: '100%',
+              minHeight: 120,
+              wordBreak: 'break-word',
+              p: 2,
+              borderRadius: 2,
+              boxShadow: slide.content.body ? '0 1px 8px rgba(0,0,0,0.05)' : 'none',
+              mt: 2,
+              fontFamily: 'inherit',
+              overflow: 'visible',
+            }}
+          >
+            {slide.content.body && typeof slide.content.body === 'string' ? (
+              <span
+                style={{fontSize:'2rem',fontWeight:400,lineHeight:1.35,letterSpacing:'-0.01em',color:'#222'}}
+                dangerouslySetInnerHTML={{ __html: ensureHtml(slide.content.body) }}
+              />
+            ) : (
+              <span style={{ color: '#bbb' }}>[No Body Content]</span>
+            )}
+            {slide.layout.includes('image') && slide.content.image?.url && (
+              <ImageContainer>
+                <Image src={slide.content.image.url} alt={slide.content.image.alt || ''} width={240} height={120} style={{ maxWidth: '100%', maxHeight: 120, marginTop: 8, objectFit: 'contain' }} />
+              </ImageContainer>
+            )}
+          </Box>
+        </BodyContainer>
       </ContentContainer>
     </BaseLayout>
   );

@@ -7,7 +7,7 @@ import { Slide } from '../types';
 // Add this at the top or in a global.d.ts file, but for now add here for the error:
 declare global {
   interface Window {
-    showSaveFilePicker?: (<T>(options?: SaveFilePickerOptions) => Promise<T>) | undefined;
+    pptxgen: any;
   }
 }
 
@@ -75,9 +75,8 @@ const SavePresentation: React.FC<SavePresentationProps> = ({
           fontSize: 14,
         });
       } else if (slide.content.bullets && slide.content.bullets.length > 0) {
-        // Parse HTML bullet string to array of text
-        const bulletsArr = slide.content.bullets.replace(/<\/?ul>/g, '').split(/<li>|<\/li>/).filter(Boolean).map(text => ({ text }));
-        pptSlide.addText(bulletsArr, {
+        const bulletsText = slide.content.bullets.map((text: string) => `• ${text}`).join('\n');
+        pptSlide.addText(bulletsText, {
           x: 0.5,
           y: 1.5,
           w: '90%',

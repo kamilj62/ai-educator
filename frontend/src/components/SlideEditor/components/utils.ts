@@ -1,22 +1,4 @@
-
 // Converts from backend dash-case string to frontend SlideLayout (UPPERCASE)
-// export const convertLayoutToFrontend = (layout: string): string => {
-//   switch (layout) {
-//     case 'title-only':
-//     case 'title-body':
-//     case 'title-bullets':
-//     case 'two-column':
-//     case 'title-image':
-//     case 'title-body-image':
-//     case 'title-bullets-image':
-//     case 'two-column-image':
-//       return layout;
-//     default:
-//       return 'title-only';
-//   }
-// };
-
-
 // If SlideLayout or BackendSlideLayout are missing, fallback to string types
 // import { BackendSlideLayout, SlideLayout } from '../types';
 export const convertLayoutToFrontend = (layout: string): string => {
@@ -34,7 +16,6 @@ export const convertLayoutToFrontend = (layout: string): string => {
       return 'title-only';
   }
 };
-
 
 // Normalize bullets to HTML string
 export function normalizeBullets(bullets: any): string {

@@ -31,31 +31,39 @@ const EditorContainer = styled(Box)(({ theme }) => ({
   backgroundColor: theme.palette.grey[100],
 }));
 
-
 const SlideEditor: React.FC = () => {
-  // ...existing hooks
-  // Handler to save a new or edited slide from the dialog
-  const handleEditDialogSave = (slide: Slide) => {
-    // If slide already exists, update it; otherwise, add as new
-    const exists = slides.some(s => s.id === slide.id);
-    let newSlides;
-    if (exists) {
-      newSlides = slides.map(s => (s.id === slide.id ? slide : s));
-    } else {
-      newSlides = [...slides, slide];
-    }
-    dispatch(setSlides(newSlides));
-    dispatch(setActiveSlide(slide.id));
-    setEditDialogOpen(false);
-    setPendingNewSlide(null);
-  };
-
   const dispatch = useDispatch<AppDispatch>();
   const editorRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [pendingNewSlide, setPendingNewSlide] = useState<Slide | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+  // Handler for saving slide edits
+  const handleSlideChange = (slide: Slide) => {
+    // Implement your slide update logic here
+    setEditDialogOpen(false);
+    setPendingNewSlide(null);
+    // Optionally update slides in redux
+    // dispatch(setSlides(...));
+  };
+
+  // Handler for image upload
+  const handleImageUpload = async (file: File): Promise<string> => {
+    return URL.createObjectURL(file);
+  };
+
+  // Handler for image generation
+  const handleImageGenerate = async (prompt: string, service: ImageService = 'dalle'): Promise<SlideImage> => {
+    // Implement your image generation logic here (stub)
+    return {
+      url: '',
+      alt: prompt,
+      prompt,
+      service,
+    };
+  };
+
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
 
   const slides = useSelector((state: RootState) => state.presentation.slides);
   const activeSlideId = useSelector((state: RootState) => state.presentation.activeSlideId);
@@ -101,6 +109,7 @@ const SlideEditor: React.FC = () => {
   const handleSlideDelete = (slideId: string) => {
     const newSlides = slides.filter(slide => slide.id !== slideId);
     dispatch(setSlides(newSlides));
+
     if (activeSlideId === slideId && newSlides.length > 0) {
       dispatch(setActiveSlide(newSlides[0].id));
     } else if (newSlides.length === 0) {
@@ -114,7 +123,6 @@ const SlideEditor: React.FC = () => {
     );
     dispatch(setSlides(newSlides));
   };
-
 
   const handleImageUpload = async (file: File): Promise<string> => {
     return URL.createObjectURL(file);
@@ -133,15 +141,12 @@ const SlideEditor: React.FC = () => {
   const handleImageGenerate = async (prompt: string, service: ImageService = 'dalle'): Promise<SlideImage> => {
     try {
       const enhancedPrompt = enhancePrompt(prompt);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/generate/image`, {
+      const response = await fetch('http://localhost:8000/api/generate-image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          prompt: enhancedPrompt,
-          context: { service }
-        }),
+        body: JSON.stringify({ prompt: enhancedPrompt, context: { service } }),
       });
       if (!response.ok) {
         const error = await response.json();
@@ -221,188 +226,173 @@ const SlideEditor: React.FC = () => {
   };
 
   return (
-    <>
-      <EditorContainer ref={editorRef}>
+    <Box ref={editorRef} sx={{ 
+      height: '100%', 
+      display: 'flex', 
+      flexDirection: 'column',
+      position: 'relative'
+    }}>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'flex-end', 
+        gap: 1, 
+        p: 1,
+        bgcolor: 'background.paper',
+        borderBottom: 1,
+        borderColor: 'divider'
+      }}>
+        <Tooltip title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}>
+          <span>
+            <IconButton onClick={toggleFullScreen} size="large">
+              {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
+            </IconButton>
+          </span>
+        </Tooltip>
+        <Tooltip title="Edit Slide">
+          <span>
+            <IconButton
+              onClick={() => setEditDialogOpen(true)}
+              disabled={!activeSlide}
+              size="large"
+            >
+              <EditIcon />
+            </IconButton>
+          </span>
+        </Tooltip>
+        <Tooltip title="Save Presentation">
+          <span>
+            <IconButton
+              onClick={() => setSaveDialogOpen(true)}
+              disabled={true} 
+              size="large"
+            >
+              <SaveIcon />
+            </IconButton>
+          </span>
+        </Tooltip>
+      </Box>
+      <Box sx={{ 
+        display: 'flex', 
+        height: '100%',
+        overflow: 'hidden',
+        bgcolor: 'background.default'
+      }}>
         {!isFullscreen && (
-          <EditorToolbar editor={null} />
+          <Box sx={{ 
+            width: 300, 
+            borderRight: 1, 
+            borderColor: 'divider',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <Box sx={{ 
+              p: 2, 
+              borderBottom: 1, 
+              borderColor: 'divider',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <Typography variant="h6">Slides</Typography>
+            </Box>
+            <SlideSorter
+              slides={slides}
+              onSlidesReorder={handleSlidesReorder}
+              onSlideSelect={handleSlideSelect}
+              onSlideDelete={handleSlideDelete}
+              activeSlideId={activeSlideId || ''}
+            />
+          </Box>
         )}
         <Box sx={{ 
-          height: '100%', 
+          flex: 1, 
           display: 'flex', 
           flexDirection: 'column',
-          position: 'relative'
+          bgcolor: 'primary.light',
+          minHeight: 0, 
+          minWidth: 0, 
+          overflow: 'hidden', 
         }}>
+          {!isFullscreen && activeSlide && (
+            <EditorControls
+              onAddSlide={() => {
+                const { v4: uuidv4 } = require('uuid');
+                const blankSlide = {
+  id: uuidv4(),
+  layout: 'title-body',
+  content: {
+    title: '',
+    subtitle: '',
+    body: '',
+    bullets: [],
+  },
+};
+                setPendingNewSlide(blankSlide as Slide);
+                setEditDialogOpen(true);
+              }}
+              onDuplicateSlide={undefined}
+              onDeleteSlide={undefined}
+              onStartPresentation={undefined}
+            />
+          )}
+          <Box sx={{ p: 2 }} />
           <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'flex-end', 
-            gap: 1, 
-            p: 1,
-            bgcolor: 'background.paper',
-            borderBottom: 1,
-            borderColor: 'divider'
+            flex: 1, 
+            p: 3, 
+            overflow: 'auto',
+            position: 'relative',
+            display: 'block',
+            minHeight: '80vh',
+            minWidth: 0,
+            bgcolor: 'primary.light',
           }}>
-            <Tooltip title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}>
-              <span>
-                <IconButton onClick={toggleFullScreen} size="large">
-                  {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
-                </IconButton>
-              </span>
-            </Tooltip>
-            <Tooltip title="Edit Slide">
-              <span>
-                <IconButton
-                  onClick={() => setEditDialogOpen(true)}
-                  disabled={true} // Removed activeSlide check
-                  size="large"
+            {activeSlide && (
+              <Box
+                sx={{
+                  width: '100%',
+                  background: DEFAULT_BG_COLOR,
+                  p: 0,
+                  minHeight: 400,
+                  position: 'relative',
+                  zIndex: 1000,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    height: '100%',
+                    background: '#fffbe7',
+                    margin: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                  }}
                 >
-                  <EditIcon />
-                </IconButton>
-              </span>
-            </Tooltip>
-            <Tooltip title="Save Presentation">
-              <span>
-                <IconButton
-                  onClick={() => setSaveDialogOpen(true)}
-                  disabled={true} // Removed slides check
-                  size="large"
-                >
-                  <SaveIcon />
-                </IconButton>
-              </span>
-            </Tooltip>
-          </Box>
-          <Box sx={{ 
-            display: 'flex', 
-            height: '100%',
-            overflow: 'hidden',
-            bgcolor: 'background.default'
-          }}>
-            {!isFullscreen && (
-              <Box sx={{ 
-                width: 300, 
-                borderRight: 1, 
-                borderColor: 'divider',
-                display: 'flex',
-                flexDirection: 'column',
-                bgcolor: 'primary.main',
-                color: 'white',
-              }}>
-                <Box sx={{ 
-                  p: 2, 
-                  borderBottom: 1, 
-                  borderColor: 'divider',
-                  bgcolor: 'primary.main', 
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <Typography variant="h6" sx={{ color: 'inherit', fontWeight: 700 }}>Slides</Typography>
+                  {activeSlide && (
+                    <SlideLayoutRenderer
+                      slide={activeSlide}
+                      onChange={handleSlideChange}
+                      onImageUpload={handleImageUpload}
+                      onImageGenerate={handleImageGenerate}
+                    />
+                  )}
                 </Box>
-                <SlideSorter
-                  slides={slides}
-                  onSlidesReorder={handleSlidesReorder}
-                  onSlideSelect={handleSlideSelect}
-                  onSlideDelete={handleSlideDelete}
-                  activeSlideId={activeSlideId ?? undefined}
-                />
               </Box>
             )}
-            <Box sx={{ 
-              flex: 1, 
-              display: 'flex', 
-              flexDirection: 'column',
-              bgcolor: 'primary.light',
-              minHeight: 0, 
-              minWidth: 0, 
-              overflow: 'hidden', 
-            }}>
-              {!isFullscreen && activeSlide && (
-                <EditorControls
-                  onAddSlide={() => {
-                    // Prepare a new slide but do not add it yet
-                    const { v4: uuidv4 } = require('uuid');
-                    const blankSlide = {
-                      id: uuidv4(),
-                      layout: 'title-body',
-                      content: {
-                        title: '',
-                        subtitle: '',
-                        body: '',
-                        bullets: '',
-                      },
-                    };
-                    setPendingNewSlide(blankSlide as Slide);
-                    setEditDialogOpen(true);
-                  }}
-                  onDuplicateSlide={undefined}
-                  onDeleteSlide={undefined}
-                  onStartPresentation={undefined}
-                />
-              )}
-              <Box sx={{ p: 2 }} />
-              <Box sx={{ 
-                flex: 1, 
-                p: 3, 
-                overflow: 'auto',
-                position: 'relative',
-                display: 'block',
-                minHeight: '80vh',
-                minWidth: 0,
-                bgcolor: 'primary.light',
-              }}>
-                {activeSlide && (
-                  <Box
-                    sx={{
-                      width: '100%',
-                      background: DEFAULT_BG_COLOR,
-                      p: 0,
-                      minHeight: 400,
-                      position: 'relative',
-                      zIndex: 1000,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: '100%',
-                        boxSizing: 'border-box',
-                        height: '100%',
-                        background: '#fffbe7',
-                        margin: 0,
-                        display: 'flex',
-                        flexDirection: 'column',
-                      }}
-                    >
-                      {activeSlide && (
-                        <SlideLayoutRenderer
-                          slide={activeSlide}
-                          onChange={handleSlideChange}
-                          onImageUpload={handleImageUpload}
-                          onImageGenerate={handleImageGenerate}
-                        />
-                      )}
-                    </Box>
-                  </Box>
-                )}
-              </Box>
-            </Box>
           </Box>
         </Box>
-      </EditorContainer>
-      <SavePresentation
-        open={saveDialogOpen}
-        onClose={() => setSaveDialogOpen(false)}
-        onSave={handleSave}
-        slides={slides}
-      />
+      </Box>
       {pendingNewSlide && (
         <SlideEditDialog
           open={editDialogOpen}
           onClose={() => setEditDialogOpen(false)}
           slide={pendingNewSlide}
-          onSave={handleEditDialogSave}
+          onSave={handleSlideChange}
+          onImageUpload={handleImageUpload}
+          onImageGenerate={handleImageGenerate}
         />
       )}
-    </>
+    </Box>
   );
 }
 

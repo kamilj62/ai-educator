@@ -124,9 +124,11 @@ const TitleImageLayout: React.FC<TitleImageLayoutProps> = ({ slide, onChange, on
         <ImageArea>
           {image && image.url && (
             <Box sx={{ position: 'absolute', top: initialY, left: 0, width: image.width || 400, height: image.height || 300 }}>
-              <img
+              <Image
                 src={image.url}
                 alt={image.alt || 'Slide image'}
+                width={image.width || 400}
+                height={image.height || 300}
                 draggable={false}
                 style={{
                   borderRadius: 12,
@@ -173,6 +175,9 @@ const TitleImageLayout: React.FC<TitleImageLayoutProps> = ({ slide, onChange, on
             onImageUpload={onImageUpload}
             onImageGenerate={onImageGenerate}
           />
+          {slide.content.image && (
+            <Image src={slide.content.image.url} alt={slide.content.image.alt || ''} width={320} height={240} style={{ maxWidth: '100%', maxHeight: 240, marginTop: 8, objectFit: 'contain' }} />
+          )}
         </Box>
       </ContentContainer>
     </BaseLayout>

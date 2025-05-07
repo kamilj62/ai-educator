@@ -31,7 +31,7 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { Slide, SlideLayout, BulletPoint, ImageService, SlideImage, SlideTopic } from '../types';
 import { convertLayoutToFrontend, convertLayoutToBackend } from '../utils';
 import ImageUploader from './ImageUploader';
-import TiptapEditor from './TiptapEditor'; // Import TiptapEditor
+import TiptapEditor from './TiptapEditor';
 import { HexColorPicker } from 'react-colorful';
 
 interface SlideEditDialogProps {
@@ -96,68 +96,42 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   onSave,
   onImageUpload,
   onImageGenerate,
-}) => {
-  // DEBUG: Log if onImageGenerate is present
+}): JSX.Element => {
   console.log('[SlideEditDialog] onImageGenerate present:', typeof onImageGenerate === 'function');
 
-  // Helper to normalize bullets to HTML string
-  function normalizeBulletsForDialog(bullets: any): string {
-    if (!bullets) return '';
-    if (typeof bullets === 'string') {
-      if (bullets.trim().startsWith('<ul')) return bullets;
-      const lines = bullets.split('\n').map(l => l.trim()).filter(Boolean);
-      if (lines.length) return `<ul>${lines.map(l => `<li>${l}</li>`).join('')}</ul>`;
-      return '';
-    }
-    if (Array.isArray(bullets)) {
-      const lines = bullets.map(b => typeof b === 'string' ? b : (b && b.text ? b.text : '')).filter(Boolean);
-      if (lines.length) return `<ul>${lines.map(l => `<li>${l}</li>`).join('')}</ul>`;
-      return '';
-    }
-    return '';
+  function normalizeBulletsForDialog(bullets?: string[]): string[] {
+    if (!bullets) return [];
+    return bullets;
   }
 
-  // Only update editedSlide when the dialog is opened or the slide changes (not on every render)
+  // Store bullets as string[] for Slide
+  const [bullets, setBullets] = useState<string[]>(() => normalizeBulletsForDialog(slide.content.bullets));
   const [editedSlide, setEditedSlide] = useState<Slide>(() => {
     const baseContent = {
       ...slide.content,
-      // Normalize bullets for all possible input types
-      bullets: normalizeBulletsForDialog(slide.content.bullets),
+      bullets: Array.isArray(slide.content.bullets) ? slide.content.bullets : [],
     };
-    const layout = convertLayoutToFrontend(slide.layout);
-    // Ensure image_prompt is present from slide.content if missing
-    if (!('image_prompt' in baseContent) && 'image_prompt' in slide.content) {
-      baseContent.image_prompt = slide.content.image_prompt;
-    }
     if (!baseContent.image) {
       baseContent.image = {
         url: '',
         alt: '',
-        prompt: '',
         service: 'generated',
       };
     }
     return {
       ...slide,
-      layout,
+      layout: convertLayoutToFrontend(slide.layout),
       content: baseContent,
     };
   });
-
-  console.log('SlideEditDialog topic:', topic);
-  console.log('SlideEditDialog defaultImagePrompt:', editedSlide.content.image_prompt || topic?.image_prompt || slide.content.image_prompt || '');
 
   useEffect(() => {
     if (open) {
       const validLayout = convertLayoutToFrontend(slide.layout);
       const baseContent = {
         ...slide.content,
-        // Normalize bullets for all possible input types
-        bullets: normalizeBulletsForDialog(slide.content.bullets),
+        bullets: Array.isArray(slide.content.bullets) ? slide.content.bullets : [],
       };
-      if (!('image_prompt' in baseContent) && 'image_prompt' in slide.content) {
-        baseContent.image_prompt = slide.content.image_prompt;
-      }
       if (!baseContent.image) {
         baseContent.image = {
           url: '',
@@ -214,69 +188,48 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   };
 
   const handleBulletAdd = () => {
-    // Parse the current bullets HTML string into an array, add a new empty bullet, then convert back to HTML string
-    let bulletsArr: string[] = [];
-    if (typeof editedSlide.content.bullets === 'string') {
-      bulletsArr = editedSlide.content.bullets
-        .replace(/<ul>|<\/ul>/g, '')
-        .split(/<li>|<\/li>/)
-        .map(b => b.trim())
-        .filter(Boolean);
-    }
+    // Add a new empty bullet to the array
+    const bulletsArr = Array.isArray(editedSlide.content.bullets) ? [...editedSlide.content.bullets] : [];
     bulletsArr.push('');
-    const bulletsHtml = `<ul>${bulletsArr.map(b => `<li>${b}</li>`).join('')}</ul>`;
     setEditedSlide({
       ...editedSlide,
       content: {
         ...editedSlide.content,
-        bullets: bulletsHtml,
+        bullets: bulletsArr,
       },
     });
+    
   };
 
   const handleBulletChange = (index: number, value: string) => {
-    // Parse HTML to array, change, then convert back to HTML
-    let bulletsArr: string[] = [];
-    if (typeof editedSlide.content.bullets === 'string') {
-      bulletsArr = editedSlide.content.bullets
-        .replace(/<ul>|<\/ul>/g, '')
-        .split(/<li>|<\/li>/)
-        .map(b => b.trim())
-        .filter(Boolean);
-    }
+    // Update a bullet in the array
+    const bulletsArr = Array.isArray(editedSlide.content.bullets) ? [...editedSlide.content.bullets] : [];
     bulletsArr[index] = value;
-    const bulletsHtml = `<ul>${bulletsArr.map(b => `<li>${b}</li>`).join('')}</ul>`;
     setEditedSlide({
       ...editedSlide,
       content: {
         ...editedSlide.content,
-        bullets: bulletsHtml,
+        bullets: bulletsArr,
       },
     });
+    
   };
 
   const handleBulletDelete = (index: number) => {
-    // Parse HTML to array, delete, then convert back to HTML
-    let bulletsArr: string[] = [];
-    if (typeof editedSlide.content.bullets === 'string') {
-      bulletsArr = editedSlide.content.bullets
-        .replace(/<ul>|<\/ul>/g, '')
-        .split(/<li>|<\/li>/)
-        .map(b => b.trim())
-        .filter(Boolean);
-    }
+    // Remove a bullet from the array
+    const bulletsArr = Array.isArray(editedSlide.content.bullets) ? [...editedSlide.content.bullets] : [];
     bulletsArr.splice(index, 1);
-    const bulletsHtml = `<ul>${bulletsArr.map(b => `<li>${b}</li>`).join('')}</ul>`;
     setEditedSlide({
       ...editedSlide,
       content: {
         ...editedSlide.content,
-        bullets: bulletsHtml,
+        bullets: bulletsArr,
       },
     });
+    
   };
 
-  const handleColumnLeftChange = (content: string) => {
+  const handleColumnLeftChange = (content: string): void => {
     setEditedSlide({
       ...editedSlide,
       content: {
@@ -286,7 +239,7 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     });
   };
 
-  const handleColumnRightChange = (content: string) => {
+  const handleColumnRightChange = (content: string): void => {
     setEditedSlide({
       ...editedSlide,
       content: {
@@ -307,76 +260,25 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     }));
   }, []);
 
-  // Correctly type handleImageGenerate to match the expected prop signature
-  const handleImageGenerate = useCallback(async (prompt: string, service: ImageService = 'dalle'): Promise<SlideImage> => {
+   // Correctly type handleImageGenerate to match the expected prop signature
+  const handleImageGenerate = useCallback(async (prompt: string, service?: ImageService): Promise<SlideImage> => {
     if (!onImageGenerate) {
       throw new Error('onImageGenerate is not defined');
     }
-    const image = await onImageGenerate(prompt, service);
-    handleImageChange(image);
-    return image;
-  }, [onImageGenerate, handleImageChange]);
-
-  const handleBgColorChange = (color: string) => {
-    setBgColor(color);
-    if (color !== 'custom') setCustomBg('');
-  };
-
-  const handleFontColorChange = (color: string) => {
-    setFontColor(color);
-    if (color !== 'custom') setCustomFont('');
-  };
-
-  const handleLayoutChange = (newLayout: SlideLayout) => {
-    setEditedSlide((prev) => {
-      // Remove image if switching to a layout that does not support images
-      const imageLayouts = [
-        'title-bullets-image',
-        'title-image',
-        'two-column-image',
-      ];
-      const shouldKeepImage = imageLayouts.includes(newLayout);
+    try {
+      const image = await onImageGenerate(prompt, service);
+      handleImageChange(image);
+      return image;
+    } catch (err: any) {
+      setImageError(err.message || 'Image generation failed');
+      // Return a fallback SlideImage object to satisfy return type
       return {
-        ...prev,
-        layout: newLayout,
-        content: {
-          ...prev.content,
-          image: shouldKeepImage ? prev.content.image : undefined,
-        },
+        url: '',
+        alt: 'Image generation failed',
+        service: 'generated',
       };
-    });
-  };
-
-  useEffect(() => {
-    if ((editedSlide.layout === 'title-bullets' || editedSlide.layout === 'title-bullets-image')) {
-      if (!editedSlide.content.bullets || editedSlide.content.bullets.trim() === '') {
-        setBodyError('Bullet points are empty or missing.');
-      } else {
-        setBodyError(null);
-      }
-    } else {
-      setBodyError(null);
     }
-  }, [editedSlide.layout, editedSlide.content.bullets]);
-
-  useEffect(() => {
-    if (editedSlide.layout.includes('image')) {
-      if (!editedSlide.content.image || !editedSlide.content.image.url) {
-        setImageError('Image is missing or not set. You can save without an image, or generate/upload one below.');
-      } else {
-        setImageError(null);
-      }
-    } else {
-      setImageError(null);
-    }
-  }, [editedSlide.layout, editedSlide.content.image]);
-
-  useEffect(() => {
-    console.log('SlideEditDialog image:', editedSlide.content.image);
-  }, [editedSlide.content.image]);
-
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState<string | null>(null);
+  }, [onImageGenerate, handleImageChange]);
 
   const handleAIGenerate = async () => {
     setAiLoading(true);
@@ -410,198 +312,127 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
       const data = result.data?.slide || result.slide || result.data || result;
       setEditedSlide(prev => ({
         ...prev,
-        content: {
-          ...prev.content,
-          title: data.title || prev.content.title,
-          subtitle: data.subtitle || prev.content.subtitle,
-          body: data.body || prev.content.body,
-          bullets: data.bullet_points ? normalizeBulletsForDialog(data.bullet_points.map((bp: any) => bp.text)) : prev.content.bullets,
-        },
+        // Add any updated fields here as needed
       }));
+      return data;
     } catch (err: any) {
-      setAiError(err.message || 'Failed to generate slide');
+      setAiError(err.message || 'AI generation failed');
+      // Return a fallback object to satisfy return type
+      return {
+        // Add any default fields here as needed
+      };
     } finally {
       setAiLoading(false);
     }
   };
 
-  const handleSave = () => {
-    onSave({
-      ...editedSlide,
-      backgroundColor: bgColor === 'custom' ? customBg : bgColor,
-      fontColor: fontColor === 'custom' ? customFont : fontColor,
-      layout: convertLayoutToBackend(editedSlide.layout),
+  useEffect(() => {
+    if ((editedSlide.layout === 'title-bullets' || editedSlide.layout === 'title-bullets-image')) {
+      if (!editedSlide.content.bullets || !Array.isArray(editedSlide.content.bullets) || editedSlide.content.bullets.length === 0 || editedSlide.content.bullets.every(b => !b || b.trim() === '')) {
+        setBodyError('Bullet points are empty or missing.');
+      } else {
+        setBodyError(null);
+      }
+    } else {
+      setBodyError(null);
+    }
+  }, [editedSlide.layout, editedSlide.content.bullets]);
+
+  useEffect(() => {
+    if ((editedSlide.layout === 'title-body' || editedSlide.layout === 'title-body-image')) {
+      if (!editedSlide.content.body || editedSlide.content.body.trim() === '') {
+        setBodyError('Body content is empty or missing.');
+      } else if (!editedSlide.content.body.startsWith('<')) {
+        setBodyError('Body content is not HTML.');
+      } else {
+        setBodyError(null);
+      }
+    } else {
+      setBodyError(null);
+    }
+  }, [editedSlide.layout, editedSlide.content.bullets]);
+
+  useEffect(() => {
+    if (editedSlide.layout.includes('image')) {
+      if (!editedSlide.content.image || !editedSlide.content.image.url) {
+        setImageError('Image is missing or not set. You can save without an image, or generate/upload one below.');
+      } else {
+        setImageError(null);
+      }
+    } else {
+      setImageError(null);
+    }
+  }, [editedSlide.layout, editedSlide.content.image]);
+
+  useEffect(() => {
+    console.log('SlideEditDialog image:', editedSlide.content.image);
+  }, [editedSlide.content.image]);
+
+   const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const handleBgColorChange = (color: string) => {
+    setBgColor(color);
+    if (color !== 'custom') setCustomBg('');
+  };
+
+  const handleFontColorChange = (color: string) => {
+    setFontColor(color);
+    if (color !== 'custom') setCustomFont('');
+  };
+
+  const handleLayoutChange = (newLayout: SlideLayout) => {
+    setEditedSlide((prev) => {
+      // Remove image if switching to a layout that does not support images
+      const imageLayouts = [
+        'title-bullets-image',
+        'title-image',
+        'two-column-image',
+      ];
+      const shouldKeepImage = imageLayouts.includes(newLayout);
+      return {
+        ...prev,
+        layout: newLayout,
+        content: {
+          ...prev.content,
+          image: shouldKeepImage ? prev.content.image : undefined,
+        },
+      };
     });
+  };
+
+  const handleSave = () => {
+    onSave(editedSlide);
     onClose();
   };
 
-  const currentLayout = layoutOptions.find(option => option.value === editedSlide.layout) ? editedSlide.layout : 'title-bullets';
-
-  // Priority: editedSlide.content.image_prompt > topic?.image_prompt > slide.content.image_prompt
-  const defaultImagePrompt = editedSlide.content.image_prompt || topic?.image_prompt || slide.content.image_prompt || '';
-
-  // Helper to ensure content is a string before using startsWith
-  const getHtmlContent = (content: any): string => {
-    if (!content) return '';
-    if (typeof content !== 'string') return '';
-    if (content.startsWith('<')) return content;
-    return `<p>${content}</p>`;
-  };
-
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose}>
       <DialogTitle>Edit Slide</DialogTitle>
       <DialogContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-          <Button
-            onClick={handleAIGenerate}
-            startIcon={<AutoAwesomeIcon />}
-            disabled={aiLoading}
-            variant="outlined"
-            color="secondary"
-            sx={{ minWidth: 180 }}
-          >
-            {aiLoading ? 'Generating...' : 'AI Generate Slide'}
-          </Button>
-          {aiError && <Typography color="error" variant="body2">{aiError}</Typography>}
-        </Box>
-        <Box sx={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 2,
-          bgcolor: 'background.paper',
-          pb: 1,
-          pt: 1,
-          mb: 2,
-          borderBottom: 1,
-          borderColor: 'divider',
-        }}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <FormControl size="small" sx={{ minWidth: 180 }}>
-              <InputLabel id="bg-color-label">Slide Background</InputLabel>
-              <Select
-                labelId="bg-color-label"
-                value={bgColor.startsWith('#') ? bgColor : ''}
-                label="Slide Background"
-                onChange={e => {
-                  if (e.target.value === 'custom') return handleBgColorChange('custom');
-                  handleBgColorChange(e.target.value as string);
-                }}
-              >
-                {backgroundColors.map(opt => (
-                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                ))}
-              </Select>
-              {bgColor === 'custom' && (
-                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <HexColorPicker color={customBg || '#ffffff'} onChange={setCustomBg} style={{ width: 160, height: 120, borderRadius: 8, boxShadow: '0 2px 8px #0002' }} aria-label="Pick custom background color" />
-                  <Box sx={{ ml: 1, minWidth: 56, px: 1, py: 0.5, borderRadius: 1, bgcolor: customBg || '#fff', border: '1px solid #ccc', fontSize: 13, fontFamily: 'monospace', color: '#222', textAlign: 'center' }}>{customBg || '#ffffff'}</Box>
-                </Box>
-              )}
-            </FormControl>
-            <FormControl size="small" sx={{ minWidth: 180 }}>
-              <InputLabel id="font-color-label">Font Color</InputLabel>
-              <Select
-                labelId="font-color-label"
-                value={fontColor.startsWith('#') ? fontColor : ''}
-                label="Font Color"
-                onChange={e => {
-                  if (e.target.value === 'custom') return handleFontColorChange('custom');
-                  handleFontColorChange(e.target.value as string);
-                }}
-              >
-                {fontColors.map(opt => (
-                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                ))}
-              </Select>
-              {fontColor === 'custom' && (
-                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <HexColorPicker color={customFont || '#222222'} onChange={setCustomFont} style={{ width: 160, height: 120, borderRadius: 8, boxShadow: '0 2px 8px #0002' }} aria-label="Pick custom font color" />
-                  <Box sx={{ ml: 1, minWidth: 56, px: 1, py: 0.5, borderRadius: 1, bgcolor: customFont || '#222', border: '1px solid #ccc', fontSize: 13, fontFamily: 'monospace', color: '#222', textAlign: 'center' }}>{customFont || '#222222'}</Box>
-                </Box>
-              )}
-            </FormControl>
-          </Stack>
-        </Box>
-        <Stack spacing={3} sx={{ mt: 1 }}>
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel id="layout-label">Layout</InputLabel>
-            <Select
-              labelId="layout-label"
-              value={editedSlide.layout}
-              label="Layout"
-              onChange={(e) => handleLayoutChange(e.target.value as SlideLayout)}
-            >
-              {layoutOptions.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <TiptapEditor
-            content={getHtmlContent(editedSlide.content.title)}
-            onChange={handleTitleChange}
-            placeholder="Enter slide title..."
-          />
-          {(editedSlide.layout !== 'title-only') && (
-            <TextField
-              label="Subtitle"
-              fullWidth
-              value={editedSlide.content.subtitle || ''}
-              onChange={(e) => handleSubtitleChange(e.target.value)}
-            />
-          )}
-          {(editedSlide.layout === 'title-bullets' || editedSlide.layout === 'title-bullets-image') && (
-            <Box>
-              <Typography variant="h6" gutterBottom>Bullet Points</Typography>
-              {(() => {
-                // Parse HTML to array for editing
-                let bulletsArr: string[] = [];
-                if (typeof editedSlide.content.bullets === 'string') {
-                  bulletsArr = editedSlide.content.bullets
-                    .replace(/<ul>|<\/ul>/g, '')
-                    .split(/<li>|<\/li>/)
-                    .map(b => b.trim())
-                    .filter(Boolean);
-                }
-                return bulletsArr.map((bullet, index) => (
-                  <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                    <TextField
-                      fullWidth
-                      value={bullet}
-                      onChange={e => handleBulletChange(index, e.target.value)}
-                      placeholder={`Bullet point ${index + 1}`}
-                    />
-                    <IconButton onClick={() => handleBulletDelete(index)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                ));
-              })()}
-              <Button onClick={handleBulletAdd} variant="outlined" sx={{ mt: 1 }}>
-                Add Bullet
-              </Button>
-            </Box>
-          )}
-
-          {editedSlide.layout === 'two-column' && (
+        <Stack spacing={2}>
+          {(editedSlide.layout === 'two-column') && (
             <Grid container spacing={2}>
               <Grid item xs={6}>
                 <TiptapEditor
-                  content={getHtmlContent(editedSlide.content.title)}
+                  content={typeof editedSlide.content.title === 'string' ? editedSlide.content.title : ''}
                   onChange={handleTitleChange}
                   placeholder="Enter slide title..."
                 />
               </Grid>
               <Grid item xs={6}>
                 <TiptapEditor
-                  content={getHtmlContent(editedSlide.content.bullets)}
+                  content={Array.isArray(editedSlide.content.bullets) ? `<ul>${editedSlide.content.bullets.map(b => `<li>${b}</li>`).join('')}</ul>` : ''}
                   onChange={(content: string) => {
-                    // Accept HTML from Tiptap and set as bullets
+                    const bulletsArr = content
+                      .replace(/<ul>|<\/ul>/g, '')
+                      .split(/<li>|<\/li>/)
+                      .map((b: string) => b.trim())
+                      .filter((b: string) => !!b);
+                    setBullets(bulletsArr);
                     setEditedSlide({
                       ...editedSlide,
-                      content: { ...editedSlide.content, bullets: content },
+                      content: { ...editedSlide.content, bullets: bulletsArr },
                     });
                   }}
                   placeholder="Enter bullet points..."
@@ -609,7 +440,35 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
               </Grid>
             </Grid>
           )}
-
+{(editedSlide.layout === 'two-column') && (
+  <Grid container spacing={2}>
+    <Grid item xs={6}>
+      <TiptapEditor
+        content={typeof editedSlide.content.title === 'string' ? editedSlide.content.title : ''}
+        onChange={handleTitleChange}
+        placeholder="Enter slide title..."
+      />
+    </Grid>
+    <Grid item xs={6}>
+      <TiptapEditor
+        content={Array.isArray(editedSlide.content.bullets) ? `<ul>${editedSlide.content.bullets.map(b => `<li>${b}</li>`).join('')}</ul>` : ''}
+        onChange={(content: string) => {
+          const bulletsArr = content
+            .replace(/<ul>|<\/ul>/g, '')
+            .split(/<li>|<\/li>/)
+            .map((b: string) => b.trim())
+            .filter((b: string) => !!b);
+          setBullets(bulletsArr);
+          setEditedSlide({
+            ...editedSlide,
+            content: { ...editedSlide.content, bullets: bulletsArr },
+          });
+        }}
+        placeholder="Enter bullet points..."
+      />
+    </Grid>
+  </Grid>
+)}
           {(editedSlide.layout === 'title-image' || 
             editedSlide.layout === 'title-bullets-image') && (
             <Box>
@@ -619,7 +478,7 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
                 onImageChange={handleImageChange}
                 onImageUpload={onImageUpload}
                 onImageGenerate={handleImageGenerate}
-                prompt={defaultImagePrompt}
+                prompt={editedSlide.content.title || ''}
               />
               {imageError && (
                 <Typography color="warning" variant="body2" sx={{ mt: 1 }}>{imageError}</Typography>
@@ -630,7 +489,7 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSave} variant="contained">Save</Button>
+        <Button onClick={() => handleSave()} variant="contained">Save</Button>
       </DialogActions>
     </Dialog>
   );
