@@ -438,25 +438,26 @@ class AIService:
                     slide_id = topic.get("id", f"slide_{i+1}")
 
                     # Always synthesize missing key_points if title/description exist
-                    if (not key_points or not isinstance(key_points, list) or len(key_points) < 3) and title and description:
-                        bullets = [s.strip() for s in re.split(r'[.;\n\-•]', description) if s.strip()]
-                        if len(bullets) >= 3:
-                            key_points = bullets[:5]
-                            logger.info(f"[OpenAI][Repair] Aggressively extracted key_points from description for slide {i+1}: {key_points}")
+                    if (not key_points or not isinstance(key_points, list) or len(key_points) < 3):
+                        if description:
+                            bullets = [s.strip() for s in re.split(r'[.;\n\-•]', description) if s.strip()]
+                            if len(bullets) >= 3:
+                                key_points = bullets[:5]
+                                logger.info(f"[OpenAI][Repair] Aggressively extracted key_points from description for slide {i+1}: {key_points}")
+                            else:
+                                key_points = [
+                                    f"Key fact about {title}",
+                                    f"Another important point about {title}",
+                                    f"Summary statement for {title}"
+                                ]
+                                logger.info(f"[OpenAI][Repair] Synthesized generic key_points for slide {i+1}: {key_points}")
                         else:
                             key_points = [
                                 f"Key fact about {title}",
                                 f"Another important point about {title}",
                                 f"Summary statement for {title}"
                             ]
-                            logger.info(f"[OpenAI][Repair] Synthesized generic key_points for slide {i+1}: {key_points}")
-                    elif not key_points and title:
-                        key_points = [
-                            f"Key fact about {title}",
-                            f"Another important point about {title}",
-                            f"Summary statement for {title}"
-                        ]
-                        logger.info(f"[OpenAI][Repair] Synthesized generic key_points for slide {i+1} (no description): {key_points}")
+                            logger.info(f"[OpenAI][Repair] Synthesized generic key_points for slide {i+1} (no description): {key_points}")
                     # Always synthesize missing image_prompt
                     if not image_prompt and title:
                         image_prompt = f"Illustration of {title}"
@@ -471,22 +472,12 @@ class AIService:
                 # Debug: Log all repaired slides before filtering
                 for idx, slide in enumerate(repaired_topics):
                     logger.error(f"[DEBUG][Repaired Slide {idx+1}] Fields: title={slide.get('title')!r}, description={slide.get('description')!r}, key_points={slide.get('key_points')!r}, image_prompt={slide.get('image_prompt')!r}, id={slide.get('id')!r}")
-                # Now validate after ALL repairs
+                # Now filter: only skip slides missing BOTH title and description
                 filtered_topics = []
                 for slide in repaired_topics:
-                    # Only skip if missing BOTH title and description
                     if not slide.get("title") and not slide.get("description"):
                         logger.warning(f"[OpenAI][Filter] Slide {slide.get('id', '?')} missing both title and description, skipping: {slide}")
                         continue
-                    # All others: ensure synthesized fields exist
-                    if not slide.get("key_points"):
-                        slide["key_points"] = [
-                            f"Key fact about {slide.get('title', 'this topic')}",
-                            f"Another important point about {slide.get('title', 'this topic')}",
-                            f"Summary statement for {slide.get('title', 'this topic')}"
-                        ]
-                    if not slide.get("image_prompt"):
-                        slide["image_prompt"] = f"Illustration of {slide.get('title', 'this topic')}"
                     filtered_topics.append(slide)
                 logger.error(f"[DEBUG] Filtered topics ({len(filtered_topics)}): {filtered_topics}")
                 for handler in logger.handlers:
