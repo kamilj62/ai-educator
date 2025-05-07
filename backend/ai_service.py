@@ -418,10 +418,16 @@ class AIService:
                 except Exception as e:
                     logger.error(f"[OpenAI] JSON decode error: {e}")
                     topics = []
+                # Log raw OpenAI content and parsed topics immediately after parsing
+                logger.error(f"[OpenAI] Raw content: {content}")
+                logger.error(f"[OpenAI] Parsed topics: {topics}")
+                for handler in logger.handlers:
+                    try:
+                        handler.flush()
+                    except Exception:
+                        pass
                 # Validate topics and repair if possible
                 repaired_topics = []
-                logger.error(f"[OpenAI][DEBUG] Raw content: {content}")
-                logger.error(f"[OpenAI][DEBUG] Parsed topics: {topics}")
                 for i, topic in enumerate(topics):
                     if not isinstance(topic, dict):
                         continue
@@ -487,8 +493,13 @@ class AIService:
                 # If first attempt failed, retry with explicit feedback
                 user_prompt += ("\nYour last response was missing required fields. Please follow the JSON structure exactly and ensure every slide contains: id, title, key_points (3-5), image_prompt, and description. Output only valid JSON.")
             # DEBUG: Log raw OpenAI output and parsed topics to Heroku logs only
-            logger.error(f"[OpenAI][DEBUG] Raw content: {content}")
-            logger.error(f"[OpenAI][DEBUG] Parsed topics: {topics}")
+            logger.error(f"[OpenAI][DEBUG] Raw content (pre-error): {content}")
+            logger.error(f"[OpenAI][DEBUG] Parsed topics (pre-error): {topics}")
+            for handler in logger.handlers:
+                try:
+                    handler.flush()
+                except Exception:
+                    pass
             raise ValueError("OpenAI did not return any valid slides with all required fields.")
         except Exception as e:
             logger.error(f"Error in generate_outline: {str(e)}")
