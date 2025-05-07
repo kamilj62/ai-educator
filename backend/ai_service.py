@@ -422,28 +422,34 @@ class AIService:
                     if not isinstance(topic, dict):
                         continue
                     title = topic.get("title", "").strip()
-                    key_points = topic.get("key_points", [])
-                    image_prompt = topic.get("image_prompt", "").strip()
                     description = topic.get("description", "").strip()
-                    # Repair: if key_points missing or empty but description present, extract up to 5 points from description
+                    key_points = topic.get("key_points")
+                    image_prompt = topic.get("image_prompt", "").strip() if "image_prompt" in topic else ""
+
+                    # Aggressive repair for key_points
                     if (not key_points or not isinstance(key_points, list) or len(key_points) < 3) and description:
-                        # Split by period, semicolon, or newline
+                        # Extract bullet points from description
                         bullets = [s.strip() for s in re.split(r'[.;\n]', description) if s.strip()]
-                        # Take up to 5, at least 3 if possible
                         if len(bullets) >= 3:
                             key_points = bullets[:5]
-                            logger.info(f"[OpenAI][Repair] Extracted key_points from description for slide {i+1}: {key_points}")
-                    # Validate after repair
+                            logger.info(f"[OpenAI][Repair] Aggressively extracted key_points from description for slide {i+1}: {key_points}")
+                        else:
+                            key_points = []
+                    # Aggressive repair for image_prompt
+                    if not image_prompt and title:
+                        image_prompt = f"Illustration of {title}"
+                        logger.info(f"[OpenAI][Repair] Generated image_prompt for slide {i+1}: {image_prompt}")
+                    # Validate after all repairs
                     if (
                         title and image_prompt and description
                         and isinstance(key_points, list)
                         and 3 <= len(key_points) <= 5
                         and all(isinstance(kp, str) and kp.strip() for kp in key_points)
                     ):
-                        # Add id if missing
                         if "id" not in topic:
                             topic["id"] = f"slide_{i+1}"
                         topic["key_points"] = key_points
+                        topic["image_prompt"] = image_prompt
                         filtered_topics.append(topic)
                 logger.info(f"[OpenAI] Filtered topics after repair (attempt {attempt}): {filtered_topics}")
                 if filtered_topics:
