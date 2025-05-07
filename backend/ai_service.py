@@ -5,6 +5,7 @@ from typing import List, Optional, Tuple, Dict, Any
 from enum import Enum
 import traceback
 import logging
+logger = logging.getLogger(__name__)
 import tempfile
 import base64
 import json
