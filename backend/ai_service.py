@@ -350,24 +350,27 @@ class AIService:
 
     async def generate_outline(self, context: str, num_slides: int, level: InstructionalLevel, sensitive: bool = False) -> dict:
         """Generate a presentation outline based on context and parameters."""
+        import re
+        import json
         try:
             logger.info(f"Generating outline for context: {context}")
             logger.debug(f"Parameters: num_slides={num_slides}, level={level}")
 
-            # Strong, explicit prompt for OpenAI
+            # Strongest possible system prompt
             system_prompt = (
                 "You are an expert educational presentation designer.\n"
-                "Your job is to generate a JSON array of slides for a presentation on a given topic, audience, and slide count.\n"
+                "You must generate a JSON array of slides for a presentation on a given topic, audience, and slide count.\n"
                 "STRICT REQUIREMENTS:\n"
-                "- Each slide MUST have:\n"
-                "  - a unique id (e.g. 'slide_1', 'slide_2', ...),\n"
-                "  - a clear, informative title,\n"
-                "  - a non-empty image_prompt (a description for an image that would enhance the slide),\n"
-                "  - 3-5 key_points (bullet points), each a non-empty, concise, and unique string,\n"
-                "  - a brief description.\n"
-                "- If you cannot generate 3-5 key points for a slide, DO NOT include that slide.\n"
-                "Return ONLY valid JSON. Do NOT include any explanation or notes.\n"
-                "\nExample output:\n[\n  {\n    \"id\": \"slide_1\",\n    \"title\": \"Phases of the Moon\",\n    \"key_points\": [\n      \"The moon has 8 phases in its monthly cycle\",\n      \"Phases are caused by the moon's orbit around Earth\",\n      \"New moon and full moon are opposite phases\"\n    ],\n    \"image_prompt\": \"Diagram showing all 8 phases of the moon with labels\",\n    \"description\": \"This slide explains the different phases of the moon and why they occur.\"\n  }\n]\n"
+                "- Each slide MUST be a JSON object with ALL of the following fields:\n"
+                "  - 'id': unique string (e.g. 'slide_1', 'slide_2', ...)\n"
+                "  - 'title': non-empty string\n"
+                "  - 'key_points': array of 3-5 non-empty strings\n"
+                "  - 'image_prompt': non-empty string\n"
+                "  - 'description': non-empty string\n"
+                "- DO NOT OMIT ANY FIELD, even if you must invent plausible content.\n"
+                "- If you cannot fill all fields, skip that slide.\n"
+                "- Output ONLY valid JSON. Do NOT include any explanation, markdown, or notes.\n"
+                "\nExample output:\n[\n  {\n    'id': 'slide_1',\n    'title': 'Phases of the Moon',\n    'key_points': [\n      'The moon has 8 phases in its monthly cycle',\n      'Phases are caused by the moon\'s orbit around Earth',\n      'New moon and full moon are opposite phases'\n    ],\n    'image_prompt': 'Diagram showing all 8 phases of the moon with labels',\n    'description': 'This slide explains the different phases of the moon and why they occur.'\n  }\n]\n"
             )
             user_prompt = (
                 f"Generate a presentation outline for:\n"
@@ -376,44 +379,66 @@ class AIService:
                 f"Audience level: {level.value}\n"
             )
 
-            completion = await self._make_openai_request(
-                'chat',
-                self.client.chat.completions.create,
-                model="gpt-4-turbo-preview",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=0.2,  # Lower for more deterministic output
-                max_tokens=2000
-            )
+            def extract_json(text):
+                # Remove markdown code block wrappers and extract first JSON array
+                text = text.strip()
+                text = re.sub(r'^```[a-zA-Z]*', '', text)
+                text = re.sub(r'```$', '', text)
+                # Try to find the first [ ... ] or { ... }
+                match = re.search(r'(\[.*\]|\{.*\})', text, re.DOTALL)
+                if match:
+                    return match.group(1)
+                return text
 
-            content = completion.choices[0].message.content
-            logger.info(f"[OpenAI] Raw outline response: {content}")
-
-            # Try to parse JSON
-            import json
-            try:
-                topics = json.loads(content)
-            except Exception as e:
-                logger.error(f"[OpenAI] JSON decode error: {e}")
-                raise ValueError(f"OpenAI did not return valid JSON: {e}")
-
-            # Filter slides to ensure strict compliance
-            filtered_topics = []
-            for topic in topics:
-                title = topic.get("title", "").strip()
-                key_points = topic.get("key_points", [])
-                if title and isinstance(key_points, list) and 3 <= len(key_points) <= 5 and all(isinstance(kp, str) and kp.strip() for kp in key_points):
-                    filtered_topics.append(topic)
-            if not filtered_topics:
-                raise ValueError("OpenAI did not return any valid slides with title and 3-5 key points.")
-
-            logger.info(f"[OpenAI] Filtered topics: {filtered_topics}")
-            return {
-                "topics": filtered_topics,
-                "warnings": []
-            }
+            max_attempts = 2
+            for attempt in range(1, max_attempts + 1):
+                completion = await self._make_openai_request(
+                    'chat',
+                    self.client.chat.completions.create,
+                    model="gpt-4-turbo-preview",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.2,
+                    max_tokens=2000
+                )
+                content = completion.choices[0].message.content
+                logger.info(f"[OpenAI] Raw outline response (attempt {attempt}): {content}")
+                # Try to extract JSON
+                response_text = extract_json(content)
+                try:
+                    topics = json.loads(response_text.replace("'", '"'))
+                except Exception as e:
+                    logger.error(f"[OpenAI] JSON decode error: {e}")
+                    topics = []
+                # Validate topics
+                filtered_topics = []
+                for i, topic in enumerate(topics):
+                    # Accept both dict or list-of-dict
+                    title = topic.get("title", "").strip() if isinstance(topic, dict) else ""
+                    key_points = topic.get("key_points", []) if isinstance(topic, dict) else []
+                    image_prompt = topic.get("image_prompt", "").strip() if isinstance(topic, dict) else ""
+                    description = topic.get("description", "").strip() if isinstance(topic, dict) else ""
+                    if (
+                        title and image_prompt and description
+                        and isinstance(key_points, list)
+                        and 3 <= len(key_points) <= 5
+                        and all(isinstance(kp, str) and kp.strip() for kp in key_points)
+                    ):
+                        # Add id if missing
+                        if "id" not in topic:
+                            topic["id"] = f"slide_{i+1}"
+                        filtered_topics.append(topic)
+                logger.info(f"[OpenAI] Filtered topics (attempt {attempt}): {filtered_topics}")
+                if filtered_topics:
+                    return {
+                        "topics": filtered_topics,
+                        "warnings": []
+                    }
+                # If first attempt failed, retry with explicit feedback
+                user_prompt += ("\nYour last response was missing required fields. Please follow the JSON structure exactly and ensure every slide contains: id, title, key_points (3-5), image_prompt, and description. Output only valid JSON.")
+            raise ValueError("OpenAI did not return any valid slides with all required fields.")
         except Exception as e:
             logger.error(f"Error in generate_outline: {str(e)}")
             logger.error(traceback.format_exc())
