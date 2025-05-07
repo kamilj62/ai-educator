@@ -492,8 +492,7 @@ class AIService:
                 else:
                     raise ValueError(f"Failed to parse JSON response: {str(e)}")
 
-            # Validate the response format
-            await self._validate_response_format(response_data)
+            # Do NOT validate response format here! For outline, repair/validate after parsing.
             return response_data
 
         except Exception as e:
