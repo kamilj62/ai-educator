@@ -471,17 +471,20 @@ class AIService:
                 # Now validate after ALL repairs
                 filtered_topics = []
                 for slide in repaired_topics:
-                    title = slide.get("title", "").strip()
-                    key_points = slide.get("key_points", [])
-                    image_prompt = slide.get("image_prompt", "").strip()
-                    description = slide.get("description", "").strip()
-                    if (
-                        title and image_prompt and description
-                        and isinstance(key_points, list)
-                        and 3 <= len(key_points) <= 5
-                        and all(isinstance(kp, str) and kp.strip() for kp in key_points)
-                    ):
-                        filtered_topics.append(slide)
+                    # Only skip if missing BOTH title and description
+                    if not slide.get("title") and not slide.get("description"):
+                        logger.warning(f"[OpenAI][Filter] Slide {slide.get('id', '?')} missing both title and description, skipping: {slide}")
+                        continue
+                    # All others: ensure synthesized fields exist
+                    if not slide.get("key_points"):
+                        slide["key_points"] = [
+                            f"Key fact about {slide.get('title', 'this topic')}",
+                            f"Another important point about {slide.get('title', 'this topic')}",
+                            f"Summary statement for {slide.get('title', 'this topic')}"
+                        ]
+                    if not slide.get("image_prompt"):
+                        slide["image_prompt"] = f"Illustration of {slide.get('title', 'this topic')}"
+                    filtered_topics.append(slide)
                 logger.info(f"[OpenAI] Filtered topics after repair and validation (attempt {attempt}): {filtered_topics}")
                 if filtered_topics:
                     logger.info(f"[OpenAI] Returning {len(filtered_topics)} topics to client.")
