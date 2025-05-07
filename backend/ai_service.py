@@ -351,57 +351,69 @@ class AIService:
     async def generate_outline(self, context: str, num_slides: int, level: InstructionalLevel, sensitive: bool = False) -> dict:
         """Generate a presentation outline based on context and parameters."""
         try:
-            # Format the prompt for outline generation
-            system_prompt = """You are an expert educational content creator. Generate a presentation outline in JSON format.
-            For each slide, provide:
-            1. A clear, concise title
-            2. 3-5 key points that will be covered
-            3. An image prompt that will generate an educational, appropriate image
-            
-            Format the response as a JSON object with this structure:
-            {
-                "topics": [
-                    {
-                        "title": "Slide Title",
-                        "key_points": ["Point 1", "Point 2", "Point 3"],
-                        "image_prompt": "Educational image description"
-                    }
-                ]
-            }
-            """
-            
-            user_prompt = f"""Create a {level} level presentation about "{context}" with {num_slides} slides.
-            Focus on educational value and clear progression of ideas.
-            Ensure all content and image prompts are appropriate for {level} level.
-            Return only the JSON response, no additional text."""
+            logger.info(f"Generating outline for context: {context}")
+            logger.debug(f"Parameters: num_slides={num_slides}, level={level}")
 
-            logger.info(f"Generating outline for topic: {context}")
-            
-            # Make the API request with rate limiting
-            async with self.rate_limiter.limit('chat'):
-                response = await self.client.chat.completions.create(
-                    model="gpt-4-turbo-preview",
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt}
-                    ],
-                    temperature=0.7,
-                    response_format={ "type": "json_object" }
-                )
+            # Strong, explicit prompt for OpenAI
+            system_prompt = (
+                "You are an expert educational presentation designer.\n"
+                "Your job is to generate a JSON array of slides for a presentation on a given topic, audience, and slide count.\n"
+                "STRICT REQUIREMENTS:\n"
+                "- Each slide MUST have:\n"
+                "  - a unique id (e.g. 'slide_1', 'slide_2', ...),\n"
+                "  - a clear, informative title,\n"
+                "  - a non-empty image_prompt (a description for an image that would enhance the slide),\n"
+                "  - 3-5 key_points (bullet points), each a non-empty, concise, and unique string,\n"
+                "  - a brief description.\n"
+                "- If you cannot generate 3-5 key points for a slide, DO NOT include that slide.\n"
+                "Return ONLY valid JSON. Do NOT include any explanation or notes.\n"
+                "\nExample output:\n[\n  {\n    \"id\": \"slide_1\",\n    \"title\": \"Phases of the Moon\",\n    \"key_points\": [\n      \"The moon has 8 phases in its monthly cycle\",\n      \"Phases are caused by the moon's orbit around Earth\",\n      \"New moon and full moon are opposite phases\"\n    ],\n    \"image_prompt\": \"Diagram showing all 8 phases of the moon with labels\",\n    \"description\": \"This slide explains the different phases of the moon and why they occur.\"\n  }\n]\n"
+            )
+            user_prompt = (
+                f"Generate a presentation outline for:\n"
+                f"Topic: {context}\n"
+                f"Number of slides: {num_slides}\n"
+                f"Audience level: {level.value}\n"
+            )
 
-            # Parse and validate the response
-            response_data = await self._validate_json_response(response.choices[0].message.content)
-            
-            # Add any content advisories or warnings
-            warnings = []
-            if sensitive:
-                warnings.append("This topic may contain sensitive content. The presentation aims to provide balanced, factual information.")
-            
+            completion = await self._make_openai_request(
+                'chat',
+                self.client.chat.completions.create,
+                model="gpt-4-turbo-preview",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.2,  # Lower for more deterministic output
+                max_tokens=2000
+            )
+
+            content = completion.choices[0].message.content
+            logger.info(f"[OpenAI] Raw outline response: {content}")
+
+            # Try to parse JSON
+            import json
+            try:
+                topics = json.loads(content)
+            except Exception as e:
+                logger.error(f"[OpenAI] JSON decode error: {e}")
+                raise ValueError(f"OpenAI did not return valid JSON: {e}")
+
+            # Filter slides to ensure strict compliance
+            filtered_topics = []
+            for topic in topics:
+                title = topic.get("title", "").strip()
+                key_points = topic.get("key_points", [])
+                if title and isinstance(key_points, list) and 3 <= len(key_points) <= 5 and all(isinstance(kp, str) and kp.strip() for kp in key_points):
+                    filtered_topics.append(topic)
+            if not filtered_topics:
+                raise ValueError("OpenAI did not return any valid slides with title and 3-5 key points.")
+
+            logger.info(f"[OpenAI] Filtered topics: {filtered_topics}")
             return {
-                "topics": [t.model_dump() for t in response_data["topics"]],
-                "warnings": warnings
+                "topics": filtered_topics,
+                "warnings": []
             }
-            
         except Exception as e:
             logger.error(f"Error in generate_outline: {str(e)}")
             logger.error(traceback.format_exc())
@@ -658,24 +670,15 @@ class AIService:
             
             # Parse and validate the response
             response_data = await self._validate_json_response(response_text)
-            fixed_topics = []
-            for topic in response_data["topics"]:
-                if not isinstance(topic, dict):
-                    if hasattr(topic, 'dict') and callable(getattr(topic, 'dict', None)):
-                        topic = topic.dict()
-                    else:
-                        topic = dict(topic)
-                if "key_points" not in topic or not isinstance(topic["key_points"], list):
-                    topic["key_points"] = []
-                else:
-                    topic["key_points"] = [str(kp) for kp in topic["key_points"]]
-                fixed_topics.append(topic)
-            topics = [SlideTopic.parse_obj(s) if isinstance(s, dict) else s for s in fixed_topics]
             
-            logger.info(f"Successfully generated {len(topics)} topics")
+            # Add any content advisories or warnings
+            warnings = []
+            if sensitive:
+                warnings.append("This topic may contain sensitive content. The presentation aims to provide balanced, factual information.")
+            
             return {
-                "topics": [t.model_dump() for t in topics],
-                "warnings": []
+                "topics": [t.model_dump() for t in response_data["topics"]],
+                "warnings": warnings
             }
             
         except Exception as e:
