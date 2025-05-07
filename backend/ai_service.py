@@ -731,8 +731,27 @@ class AIService:
             if sensitive:
                 warnings.append("This topic may contain sensitive content. The presentation aims to provide balanced, factual information.")
             
+            # Filter topics to ensure all required fields are present and valid
+            valid_topics = []
+            for i, t in enumerate(response_data["topics"]):
+                title = t.get("title", "").strip()
+                description = t.get("description", "").strip()
+                image_prompt = t.get("image_prompt", "").strip()
+                key_points = t.get("key_points", [])
+                if (
+                    title and description and image_prompt
+                    and isinstance(key_points, list)
+                    and 3 <= len(key_points) <= 5
+                    and all(isinstance(kp, str) and kp.strip() for kp in key_points)
+                ):
+                    valid_topics.append(t)
+                else:
+                    logger.warning(f"[OpenAI][Filter] Slide {i+1} missing required fields, skipping: {t}")
+            if not valid_topics:
+                logger.error("No valid slides remain after filtering for required fields.")
+                raise ValueError("OpenAI did not return any valid slides with all required fields.")
             return {
-                "topics": [t for t in response_data["topics"]],
+                "topics": valid_topics,
                 "warnings": warnings
             }
             
