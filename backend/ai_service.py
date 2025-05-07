@@ -417,18 +417,17 @@ class AIService:
                     logger.error(f"[OpenAI] JSON decode error: {e}")
                     topics = []
                 # Validate topics and repair if possible
-                filtered_topics = []
+                repaired_topics = []
                 for i, topic in enumerate(topics):
                     if not isinstance(topic, dict):
                         continue
                     title = topic.get("title", "").strip()
                     description = topic.get("description", "").strip()
-                    key_points = topic.get("key_points")
+                    key_points = topic.get("key_points") if "key_points" in topic else None
                     image_prompt = topic.get("image_prompt", "").strip() if "image_prompt" in topic else ""
 
-                    # Aggressive repair for key_points
+                    # Aggressive repair for key_points (even if missing)
                     if (not key_points or not isinstance(key_points, list) or len(key_points) < 3) and description:
-                        # Extract bullet points from description
                         bullets = [s.strip() for s in re.split(r'[.;\n]', description) if s.strip()]
                         if len(bullets) >= 3:
                             key_points = bullets[:5]
@@ -439,24 +438,35 @@ class AIService:
                     if not image_prompt and title:
                         image_prompt = f"Illustration of {title}"
                         logger.info(f"[OpenAI][Repair] Generated image_prompt for slide {i+1}: {image_prompt}")
-                    # Validate after all repairs
+                    # Always assign repaired fields
+                    slide = dict(topic)
+                    slide["key_points"] = key_points
+                    slide["image_prompt"] = image_prompt
+                    if "id" not in slide:
+                        slide["id"] = f"slide_{i+1}"
+                    repaired_topics.append(slide)
+                # Now validate after ALL repairs
+                filtered_topics = []
+                for slide in repaired_topics:
+                    title = slide.get("title", "").strip()
+                    key_points = slide.get("key_points", [])
+                    image_prompt = slide.get("image_prompt", "").strip()
+                    description = slide.get("description", "").strip()
                     if (
                         title and image_prompt and description
                         and isinstance(key_points, list)
                         and 3 <= len(key_points) <= 5
                         and all(isinstance(kp, str) and kp.strip() for kp in key_points)
                     ):
-                        if "id" not in topic:
-                            topic["id"] = f"slide_{i+1}"
-                        topic["key_points"] = key_points
-                        topic["image_prompt"] = image_prompt
-                        filtered_topics.append(topic)
-                logger.info(f"[OpenAI] Filtered topics after repair (attempt {attempt}): {filtered_topics}")
+                        filtered_topics.append(slide)
+                logger.info(f"[OpenAI] Filtered topics after repair and validation (attempt {attempt}): {filtered_topics}")
                 if filtered_topics:
+                    logger.info(f"[OpenAI] Returning {len(filtered_topics)} topics to client.")
                     return {
                         "topics": filtered_topics,
                         "warnings": []
                     }
+                logger.error(f"[OpenAI] After repair, not enough valid slides. Rejecting response.")
                 # If first attempt failed, retry with explicit feedback
                 user_prompt += ("\nYour last response was missing required fields. Please follow the JSON structure exactly and ensure every slide contains: id, title, key_points (3-5), image_prompt, and description. Output only valid JSON.")
             raise ValueError("OpenAI did not return any valid slides with all required fields.")
