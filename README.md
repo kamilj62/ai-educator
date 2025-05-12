@@ -15,11 +15,11 @@ An AI-powered tool that generates educational presentations with visually engagi
 1. Clone the repository:
 ```bash
 git clone https://github.com/kamilj62/ai-educator.git
-<<<<<<< HEAD
+
 cd marvelAI
-=======
+
 cd ai-educator
->>>>>>> 8da82d2 (Update GitHub username in README)
+
 ```
 
 2. Set up environment variables:
