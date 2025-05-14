@@ -38,16 +38,17 @@ app = FastAPI()
 # --- CORS MIDDLEWARE SETUP ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "https://ai-educator-1vxhsdwjo-kamilj62s-projects.vercel.app",
-        "https://ai-powerpoint-f44a1d57b590.herokuapp.com"
-    ],
+    allow_origins=["*"],  # Allow all origins for development
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
+    expose_headers=["*"],
 )
+
+# Add OPTIONS handler for preflight requests
+@app.options("/api/{rest_of_path:path}")
+async def options_handler(rest_of_path: str):
+    return {"status": "ok"}
 
 # Ensure directories exist
 os.makedirs("static", exist_ok=True)
