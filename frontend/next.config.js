@@ -1,9 +1,24 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Configure static file handling
   images: {
     domains: ['ai-powerpoint-f44a1d57b590.herokuapp.com'],
     unoptimized: true,
+  },
+  // Ensure static files are properly served
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ];
   },
   async rewrites() {
     // Always use the Heroku backend URL
