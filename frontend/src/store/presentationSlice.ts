@@ -102,9 +102,28 @@ const cleanTopic = (topic: any): any => {
   const { instructionalLevel, ...rest } = topic;
   
   // Ensure bullet_points exists and is an array
-  const bulletPoints = Array.isArray(topic.bullet_points) 
-    ? topic.bullet_points.filter((bp: any) => bp !== null && bp !== undefined)
-    : [];
+  let bulletPoints: string[] = [];
+  
+  if (Array.isArray(topic.bullet_points)) {
+    // Handle both string arrays and object arrays
+    bulletPoints = topic.bullet_points
+      .filter((bp: any) => bp !== null && bp !== undefined)
+      .map((bp: any) => {
+        // If it's an object with a text property, use that
+        if (bp && typeof bp === 'object' && 'text' in bp) {
+          return String(bp.text);
+        }
+        // If it's already a string, use it as is
+        if (typeof bp === 'string') {
+          return bp;
+        }
+        // For any other type, convert to string
+        return String(bp);
+      });
+  } else if (topic.bullet_points) {
+    // If bullet_points is not an array but exists, convert it to an array with a single item
+    bulletPoints = [String(topic.bullet_points)];
+  }
   
   // Ensure required fields have proper defaults
   const cleanedTopic = {

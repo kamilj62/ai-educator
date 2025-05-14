@@ -87,7 +87,7 @@ const OutlineDisplay: React.FC = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingPoint, setEditingPoint] = useState<{ topicId: string; index: number; text: string } | null>(null);
 
-  // Convert string array to BulletPoint array with robust type checking
+  // Convert bullet points to LocalBulletPoint array with robust type checking
   const toBulletPoints = (points: any): LocalBulletPoint[] => {
     try {
       console.log('toBulletPoints input:', points);
@@ -111,7 +111,7 @@ const OutlineDisplay: React.FC = () => {
         }
       }
       
-      // Ensure we have an array of strings
+      // Process the array
       return points
         .map((item, index) => {
           // Handle null/undefined items
@@ -120,13 +120,29 @@ const OutlineDisplay: React.FC = () => {
             return null;
           }
           
-          // Convert to string and trim
-          const text = String(item).trim();
+          let text: string;
+          
+          // Handle different input types
+          if (typeof item === 'object' && item !== null) {
+            // If it's an object with a text property, use that
+            if ('text' in item && item.text != null) {
+              text = String(item.text).trim();
+            } else {
+              // For other objects, try to stringify them
+              text = JSON.stringify(item);
+            }
+          } else {
+            // For non-objects, convert to string and trim
+            text = String(item).trim();
+          }
+          
+          // Skip empty strings
           if (!text) {
             console.warn(`Skipping empty string item at index ${index}`);
             return null;
           }
           
+          // Create a unique ID for the bullet point
           return {
             id: `point-${index}-${Math.random().toString(36).substr(2, 4)}`,
             text
@@ -139,10 +155,27 @@ const OutlineDisplay: React.FC = () => {
     }
   };
 
-  // Convert BulletPoint array back to string array
-  const toStringArray = (points: LocalBulletPoint[] | undefined | null): string[] => {
+  // Convert LocalBulletPoint array back to string array
+  const toStringArray = (points: LocalBulletPoint[] | any[] | undefined | null): string[] => {
     if (!points) return [];
-    return points.map(p => p?.text || '');
+    
+    // If it's already an array of strings, return it
+    if (points.length > 0 && typeof points[0] === 'string') {
+      return points as string[];
+    }
+    
+    // If it's an array of objects with text property, extract the text
+    if (points.length > 0 && typeof points[0] === 'object' && points[0] !== null) {
+      return (points as any[]).map(p => {
+        if (p && typeof p === 'object' && 'text' in p) {
+          return String(p.text || '');
+        }
+        return String(p || '');
+      });
+    }
+    
+    // For any other case, convert each item to string
+    return points.map(p => String(p || ''));
   };
 
   const handleEditPoint = (topicId: string, index: number, text: string) => {
