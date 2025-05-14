@@ -22,7 +22,7 @@ import { InstructionalLevel } from './types';
 import ErrorDisplay from './ErrorDisplay';
 
 const InputSection: React.FC = () => {
-  const dispatch = useAppDispatch();
+  const dispatch = useAppDispatch() as AppDispatch;
   const loading = useAppSelector(selectLoading);
   const error = useAppSelector(selectError);
   const outline = useAppSelector(selectOutline) as SlideTopic[];
