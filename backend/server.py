@@ -40,29 +40,26 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allow all origins for development
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
     expose_headers=["*"],
 )
 
-# Add middleware to add CORS headers to all responses
+# Add middleware to handle OPTIONS requests for all routes
 @app.middleware("http")
-async def add_cors_headers(request: Request, call_next):
-    response = await call_next(request)
+async def add_cors_middleware(request: Request, call_next):
+    if request.method == "OPTIONS":
+        response = JSONResponse(content={"status": "ok"})
+    else:
+        response = await call_next(request)
+        
+    # Add CORS headers
     response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "*"
-    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
     response.headers["Access-Control-Allow-Credentials"] = "true"
-    return response
-
-# Add OPTIONS handler for preflight requests
-@app.options("/api/{rest_of_path:path}")
-async def options_handler(rest_of_path: str):
-    response = JSONResponse(content={"status": "ok"})
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "*"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Max-Age"] = "600"
+    
     return response
 
 # Ensure directories exist
