@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../store/store';
-import { SlideTopic, BulletPoint } from './types';
+import { SlideTopic, BulletPoint, InstructionalLevel } from './types';
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
 import ImageIcon from '@mui/icons-material/Image';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -74,6 +74,7 @@ const OutlineDisplay: React.FC = () => {
   const error = useSelector((state: RootState) => state.presentation.error);
   const outline = useSelector((state: RootState) => state.presentation.outline);
   const slides = useSelector((state: RootState) => state.presentation.slides);
+  const instructionalLevel = useSelector((state: RootState) => state.presentation.instructionalLevel);
   const hasSlides = slides && slides.length > 0;
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingPoint, setEditingPoint] = useState<{ topicId: string; index: number; text: string } | null>(null);
@@ -132,7 +133,31 @@ const OutlineDisplay: React.FC = () => {
 
   const handleGenerateSlides = () => {
     if (outline && outline.length > 0) {
-      (dispatch as any)(generateSlides(outline));
+      // Get the instructional level from the first topic that has it, or use the one from Redux store
+      const level = outline.find(topic => topic.instructionalLevel)?.instructionalLevel || 
+                   instructionalLevel || 
+                   'elementary';
+      
+      // Create a properly typed topics array with the correct instructional level
+      const topics: SlideTopic[] = outline.map(topic => ({
+        id: topic.id,
+        title: topic.title,
+        key_points: topic.key_points || [],
+        description: topic.description || `A presentation about ${topic.title}`,
+        image_prompt: topic.image_prompt || `An illustration representing ${topic.title}`,
+        subtopics: (topic.subtopics || []).map(subtopic => ({
+          id: subtopic.id,
+          title: subtopic.title,
+          key_points: subtopic.key_points || [],
+          description: subtopic.description || `Details about ${subtopic.title}`,
+          image_prompt: subtopic.image_prompt || `An illustration for ${subtopic.title}`
+        }))
+      }));
+      
+      dispatch(generateSlides({
+        topics,
+        instructionalLevel: level as InstructionalLevel
+      }) as any);
     }
   };
 
@@ -153,7 +178,10 @@ const OutlineDisplay: React.FC = () => {
             <ListItemIcon sx={{ minWidth: 32 }}>
               <ArrowRightIcon sx={{ color: '#fff' }} />
             </ListItemIcon>
-            <ListItemText primary={point.text} />
+            <ListItemText 
+              primary={point.text} 
+              primaryTypographyProps={{ style: { color: '#e2e8f0' } }} 
+            />
             <ListItemSecondaryAction>
               <IconButton edge="end" size="small" onClick={() => handleEditPoint(topic.id!, i, point.text)}>
                 <EditIcon />

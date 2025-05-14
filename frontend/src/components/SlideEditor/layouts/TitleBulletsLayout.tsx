@@ -39,9 +39,11 @@ const BulletList = styled(Box)(({ theme }) => ({
 const BulletPoint = styled(Typography)(({ theme }) => ({
   fontSize: '1.25rem',
   color: theme.palette.text.secondary,
+  opacity: 0.9,  // Slightly more transparent
   '&:before': {
     content: '"•"',
-    marginRight: theme.spacing(1)
+    marginRight: theme.spacing(1),
+    color: theme.palette.grey[400]  // Lighter color for the bullet
   }
 }));
 

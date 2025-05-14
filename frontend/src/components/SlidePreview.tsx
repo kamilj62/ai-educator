@@ -1,14 +1,17 @@
 import React from 'react';
-import {
-  Box,
-  Typography,
-  IconButton,
+import { 
+  Box, 
+  Typography, 
+  IconButton, 
+  Paper,
   List,
   ListItem,
   ListItemText,
-  Paper,
-} from '@mui/material';
-import { NavigateNext, NavigateBefore, Fullscreen, FullscreenExit } from '@mui/icons-material';
+  NavigateNext, 
+  NavigateBefore, 
+  Fullscreen, 
+  FullscreenExit 
+} from '@/utils/mui';
 import { API_BASE_URL } from '../../config';
 import { Slide } from '../components/types';
 import Image from 'next/image';

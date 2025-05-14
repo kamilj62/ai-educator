@@ -16,7 +16,7 @@ export type Presentation = {
 
 export interface APIEndpoints {
   GENERATE_OUTLINE: '/generate/outline';
-  GENERATE_SLIDE: '/generate/slide';
+  GENERATE_SLIDES: '/generate/slides';
 }
 
 export interface APIConfig {
