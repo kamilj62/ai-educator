@@ -1,22 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Remove basePath and assetPrefix for now to test
-  // basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
-  // assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH || '',
   images: {
     domains: ['ai-powerpoint-f44a1d57b590.herokuapp.com'],
     unoptimized: true,
   },
-  // Add this to ensure static files are served correctly
   experimental: {
     optimizeFonts: true,
   },
-  // Ensure static files are properly cached
+  // Serve static files from the public folder
   async headers() {
     return [
       {
-        source: '/favicon.ico',
+        source: '/:path*',
         headers: [
           {
             key: 'Cache-Control',
@@ -25,6 +21,13 @@ const nextConfig = {
         ],
       },
     ];
+  },
+  // Serve static files directly
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback.fs = false;
+    }
+    return config;
   },
   async rewrites() {
     // Always use the Heroku backend URL
