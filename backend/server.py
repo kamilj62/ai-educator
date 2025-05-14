@@ -343,7 +343,7 @@ Example output:
   {
     "id": "slide_1",
     "title": "Phases of the Moon",
-    "key_points": [
+    "bullet_points": [
       "The moon has 8 phases in its monthly cycle",
       "Phases are caused by the moon's orbit around Earth",
       "New moon and full moon are opposite phases"
@@ -466,8 +466,8 @@ Example output:
             for topic in topics:
                 if (isinstance(topic, dict) and 
                     'title' in topic and 
-                    'key_points' in topic and 
-                    len(topic.get('key_points', [])) >= 1):
+                    'bullet_points' in topic and 
+                    len(topic.get('bullet_points', [])) >= 1):
                     valid_topics.append(topic)
             
             if valid_topics:
@@ -770,14 +770,14 @@ async def generate_slides(
                     # Ensure required fields are present
                     if 'title' not in topic_dict or not topic_dict['title']:
                         topic_dict['title'] = f"Topic {i}"
-                    if 'key_points' not in topic_dict or not topic_dict['key_points']:
-                        topic_dict['key_points'] = ["Key point 1", "Key point 2"]
+                    if 'bullet_points' not in topic_dict or not topic_dict['bullet_points']:
+                        topic_dict['bullet_points'] = ["Key point 1", "Key point 2"]
                     
                     # Create a SlideTopic instance
                     slide_topic = SlideTopic(
                         id=topic_dict.get('id', str(uuid.uuid4())),
                         title=topic_dict['title'],
-                        key_points=topic_dict['key_points'],
+                        bullet_points=topic_dict['bullet_points'],
                         image_prompt=topic_dict.get('image_prompt', ''),
                         description=topic_dict.get('description', ''),
                         subtopics=topic_dict.get('subtopics', [])
@@ -789,8 +789,8 @@ async def generate_slides(
                     # Ensure required fields are present
                     if 'title' not in topic_data or not topic_data['title']:
                         topic_data['title'] = f"Topic {i}"
-                    if 'key_points' not in topic_data or not topic_data['key_points']:
-                        topic_data['key_points'] = ["Key point 1", "Key point 2"]
+                    if 'bullet_points' not in topic_data or not topic_data['bullet_points']:
+                        topic_data['bullet_points'] = ["Key point 1", "Key point 2"]
                     if 'description' not in topic_data or not topic_data['description']:
                         topic_data['description'] = f"Description for {topic_data['title']}"
                     
