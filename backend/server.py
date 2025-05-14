@@ -635,43 +635,71 @@ async def generate_slides(
     request: Request,
     body: Dict[str, Any] = Body(default=None)  # Make body optional for GET requests
 ):
+    # Log the incoming request method and URL
+    logger.info(f"=== NEW SLIDE GENERATION REQUEST ({request.method}) ===")
+    logger.info(f"Request URL: {request.url}")
+    
+    # Log headers
+    logger.info("Headers:")
+    for name, value in request.headers.items():
+        logger.info(f"  {name}: {value}")
+    
     # For GET requests, parse query parameters
     if request.method == "GET":
+        logger.info("Processing GET request")
         body = dict(request.query_params)
+        logger.info(f"Query params: {body}")
     # For POST requests, use the request body
-    elif request.method == "POST" and body is None:
-        try:
-            body = await request.json()
-        except json.JSONDecodeError:
-            body = {}
-            
-    """Generate presentation slides from an outline."""
+    elif request.method == "POST":
+        logger.info("Processing POST request")
+        if body is None:
+            try:
+                body = await request.json()
+                logger.info("Parsed JSON body:")
+                logger.info(json.dumps(body, indent=2))
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse JSON: {str(e)}")
+                body = {}
+    
+    logger.info("Final request data:")
+    logger.info(json.dumps(body, indent=2))
+    
     try:
-        # Log the incoming request for debugging
-        logger.info("=== NEW SLIDE GENERATION REQUEST ===")
-        
-        # Log the raw request body
+        # Log the raw request body if available
         try:
             raw_body = await request.body()
-            logger.info("Raw request body: %s", raw_body.decode())
+            if raw_body:
+                logger.info("Raw request body:")
+                logger.info(raw_body.decode('utf-8', errors='replace'))
         except Exception as e:
-            logger.warning("Could not log raw request body: %s", str(e))
+            logger.warning(f"Could not log raw request body: {str(e)}")
         
         # Parse the request body with more flexible validation
         try:
             # Log the received body for debugging
-            logger.info(f"Received request body: {json.dumps(body, indent=2)}")
+            logger.info("=== REQUEST BODY VALIDATION ===")
+            logger.info(f"Body type: {type(body)}")
             
             # Check if we have a 'topics' key or if the body itself is an array of topics
             if 'topics' in body:
+                logger.info("Found 'topics' key in request body")
                 topics = body['topics']
                 instructional_level = body.get('instructional_level', 'middle_school')
                 layout = body.get('layout', 'title-bullets')
-            else:
-                # If no 'topics' key, assume the body is the topics array
-                topics = body if isinstance(body, list) else [body]
+            elif isinstance(body, list):
+                logger.info("Request body is an array, using as topics")
+                topics = body
                 instructional_level = 'middle_school'  # Default value
                 layout = 'title-bullets'  # Default value
+            else:
+                logger.info("No 'topics' key found, treating entire body as a single topic")
+                topics = [body]
+                instructional_level = body.get('instructional_level', 'middle_school')
+                layout = body.get('layout', 'title-bullets')
+            
+            logger.info(f"Topics after processing: {json.dumps(topics, indent=2)}")
+            logger.info(f"Instructional level: {instructional_level}")
+            logger.info(f"Layout: {layout}")
                 
             # Ensure topics is a list
             if not isinstance(topics, list):
