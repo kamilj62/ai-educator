@@ -1,10 +1,10 @@
-from fastapi import FastAPI, HTTPException, File, UploadFile, Request
+from fastapi import FastAPI, HTTPException, File, UploadFile, Request, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, Field, validator
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
 import os
 import shutil
 from pathlib import Path
@@ -182,7 +182,7 @@ class OutlineRequest(BaseModel):
     )
     instructional_level: str = Field(
         ...,
-        pattern='^(elementary_school|middle_school|high_school|university|professional)$',
+        pattern='^(elementary|middle_school|high_school|university|professional)$',
         description="Target audience level"
     )
     layout: Optional[str] = Field(
@@ -201,7 +201,7 @@ class SlideRequest(BaseModel):
     topic: SlideTopic
     instructional_level: str = Field(
         ...,
-        pattern='^(elementary_school|middle_school|high_school|university|professional)$',
+        pattern='^(elementary|middle_school|high_school|university|professional)$',
         description="Target audience level"
     )
     layout: str = Field(
@@ -579,47 +579,105 @@ async def switch_layout(switch: LayoutSwitch):
         "preserved_content": preserved_content
     }
 
+class GenerateSlidesRequest(BaseModel):
+    topics: List[Dict[str, Any]]
+    instructional_level: str = Field(
+        ...,
+        pattern='^(elementary|middle_school|high_school|university|professional)$',
+        description="Target audience level"
+    )
+    layout: str = Field(
+        default="title-bullets",
+        pattern='^(title-only|title-image|title-body|title-body-image|title-bullets|title-bullets-image|two-column|two-column-image)$'
+    )
+
+    class Config:
+        extra = 'ignore'  # Ignore extra fields in the request
+
+from pydantic import ValidationError
+
 @app.post("/api/generate/slides")
-async def generate_slides(request: SlideRequest):
+async def generate_slides(request: Dict[str, Any] = Body(...)):
     """Generate presentation slides from an outline."""
     try:
         # Log the incoming request for debugging
-        logger.debug("Received slide request: %s", request.dict())
-
-        # Process the topic into a slide
-        topic = request.topic
+        logger.info("Received slide request")
+        logger.debug("Request data: %s", request)
         
-        # Determine layout based on content and request
-        layout = request.layout or determine_slide_layout({
-            "title": topic.title,
-            "key_points": topic.key_points,
-            "image_prompt": topic.image_prompt,
-            "description": topic.description
-        })
+        # Parse and validate the request
+        try:
+            logger.debug("Validating request data")
+            request_data = GenerateSlidesRequest(**request)
+            logger.debug("Request validation successful")
+        except ValidationError as e:
+            error_msg = f"Validation error: {str(e)}"
+            logger.error(error_msg)
+            logger.error("Validation errors: %s", e.errors())
+            raise HTTPException(
+                status_code=422, 
+                detail={
+                    "type": "VALIDATION_ERROR",
+                    "message": "Invalid request data",
+                    "errors": e.errors()
+                }
+            )
+        except Exception as e:
+            error_msg = f"Unexpected error during validation: {str(e)}"
+            logger.error(error_msg)
+            raise HTTPException(status_code=422, detail=error_msg)
 
-        # Create response with proper field names
-        response = {
-            "title": topic.title,
-            "subtitle": "",  # Optional subtitle
-            "body": topic.description,
-            "bullet_points": topic.key_points,
-            "image_url": "",  # Will be populated by image generation
-            "image_alt": topic.image_prompt,
-            "image_caption": "",
-            "image_service": "generated"
-        }
+        # Log the parsed request data
+        logger.debug("Parsed request data: %s", request_data.dict())
 
-        return response
+        # Process each topic into a slide
+        topics = request_data.topics
+        if not topics:
+            error_msg = "No topics provided in the request"
+            logger.error(error_msg)
+            raise HTTPException(status_code=400, detail=error_msg)
+
+        logger.info(f"Processing {len(topics)} topics")
+        
+        slides = []
+        for i, topic in enumerate(topics, 1):
+            try:
+                logger.debug(f"Processing topic {i}: {topic.get('title', 'Untitled')}")
+                # Create slide for each topic
+                slide = {
+                    "title": topic.get("title", ""),
+                    "subtitle": "",  # Optional subtitle
+                    "body": topic.get("description", ""),
+                    "bullet_points": topic.get("key_points", []),
+                    "image_url": "",  # Will be populated by image generation
+                    "image_alt": topic.get("image_prompt", ""),
+                    "image_caption": "",
+                    "image_service": "generated",
+                    "layout": request_data.layout,
+                    "instructional_level": request_data.instructional_level
+                }
+                slides.append(slide)
+                logger.debug(f"Successfully processed topic {i}")
+            except Exception as e:
+                logger.error(f"Error processing topic {i}: {str(e)}")
+                raise
+
+        logger.info(f"Successfully generated {len(slides)} slides")
+        return slides
+        
+    except HTTPException:
+        # Re-raise HTTP exceptions as they are
+        raise
+        
     except Exception as e:
-        logger.error("Error generating slides: %s", str(e))
+        error_msg = f"Unexpected error generating slides: {str(e)}"
+        logger.error(error_msg)
+        logger.error(traceback.format_exc())
         raise HTTPException(
             status_code=500,
             detail={
-                "type": "API_ERROR",
-                "message": f"Failed to generate slides: {str(e)}",
-                "context": {
-                    "error": str(e)
-                }
+                "type": "SERVER_ERROR",
+                "message": "An unexpected error occurred while generating slides",
+                "error": str(e)
             }
         )
 
