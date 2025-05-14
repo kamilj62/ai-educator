@@ -78,11 +78,15 @@ export const generateOutline = createAsyncThunk(
       throw new Error(`Network error: ${error.message}`, { cause: error });
     }
     const data = await response.json();
-    return data.topics.map((topic: any) => ({
-      ...topic,
-      subtopics: topic.subtopics || [],
-      instructionalLevel: topic.instructionalLevel,
-    }));
+    const topics = data.topics || [];
+    return {
+      topics: topics.map((topic: any) => ({
+        ...topic,
+        subtopics: topic.subtopics || [],
+        instructionalLevel: topic.instructionalLevel || params.instructionalLevel,
+      })),
+      instructionalLevel: params.instructionalLevel
+    };
   }
 );
 
@@ -159,7 +163,8 @@ const presentationSlice = createSlice({
       })
       .addCase(generateOutline.fulfilled, (state, action) => {
         state.isGeneratingOutline = false;
-        state.outline = action.payload;
+        state.outline = action.payload.topics;
+        state.instructionalLevel = action.payload.instructionalLevel as InstructionalLevel;
       })
       .addCase(generateOutline.rejected, (state, action) => {
         state.isGeneratingOutline = false;

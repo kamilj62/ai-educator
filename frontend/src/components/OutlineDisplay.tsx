@@ -133,12 +133,10 @@ const OutlineDisplay: React.FC = () => {
 
   const handleGenerateSlides = () => {
     if (outline && outline.length > 0) {
-      // Get the instructional level from the first topic that has it, or use the one from Redux store
-      const level = outline.find(topic => topic.instructionalLevel)?.instructionalLevel || 
-                   instructionalLevel || 
-                   'elementary';
+      // Use the instructional level from Redux store
+      const level = instructionalLevel || 'elementary';
       
-      // Create a properly typed topics array with the correct instructional level
+      // Create a properly typed topics array
       const topics: SlideTopic[] = outline.map(topic => ({
         id: topic.id,
         title: topic.title,
@@ -156,7 +154,7 @@ const OutlineDisplay: React.FC = () => {
       
       dispatch(generateSlides({
         topics,
-        instructionalLevel: level as InstructionalLevel
+        instructionalLevel: level
       }) as any);
     }
   };
