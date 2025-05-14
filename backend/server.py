@@ -397,66 +397,64 @@ Example output:
                 return filtered_topics
         # If we reach here, all attempts failed
         logger.error("OpenAI could not generate valid slides after all attempts.")
+        # Try one last time with a simpler prompt
+        try:
+            system = """You are an expert educational presentation designer. Generate a simple outline with 3-5 key points per slide."""
+            user = f"""Generate a simple presentation outline for: {context}
+            Number of slides: {num_slides}
+            Audience level: {level}
+            
+            Format as a JSON array where each item has:
+            - id: unique_id
+            - title: slide title
+            - key_points: ["point 1", "point 2", "point 3"]
+            - image_prompt: description for an image
+            - description: brief description
+            
+            Return only the JSON array, no other text."""
+            
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(
+                None,
+                lambda: get_openai_client().chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user}
+                    ],
+                    temperature=0.3
+                )
+            )
+            
+            content = response.choices[0].message.content
+            topics = json.loads(content)
+            if not isinstance(topics, list):
+                topics = [topics]
+                
+            # Basic validation
+            valid_topics = []
+            for topic in topics:
+                if (isinstance(topic, dict) and 
+                    'title' in topic and 
+                    'key_points' in topic and 
+                    len(topic.get('key_points', [])) >= 1):
+                    valid_topics.append(topic)
+            
+            if valid_topics:
+                return valid_topics
+                
+        except Exception as e:
+            logger.error(f"Final fallback attempt failed: {str(e)}")
+        
+        # If we still have no valid topics, raise an error
         raise HTTPException(
             status_code=500,
             detail={
                 "type": "GENERATION_ERROR",
-                "message": "OpenAI could not generate valid slides for this topic. Please try rephrasing or choosing a different topic.",
-                "context": {"error": "No valid slides after multiple attempts."}
+                "message": "Could not generate valid slides. The topic might be too specific or complex. Please try a different topic or simplify your request.",
+                "context": {"error": "No valid slides after all attempts"}
             }
         )
-
-        system_prompt = """You are an expert presentation outline generator. 
-        Create detailed, well-structured presentation outlines based on the given topic, number of slides, and audience level.
-        Each slide should have a clear title and 3-4 key points.
-        For image-worthy slides, include an image prompt that describes what kind of image would enhance the content."""
-
-        user_prompt = f"""Generate a presentation outline for:
-        Topic: {context}
-        Number of slides: {num_slides}
-        Audience level: {level}
-        
-        Format each slide as:
-        {{
-            "id": "unique_id",
-            "title": "slide title",
-            "key_points": ["point 1", "point 2", "point 3"],
-            "image_prompt": "description for an image that would enhance this slide",
-            "description": "brief description of the slide's content"
-        }}"""
-
-        response = await get_openai_client().chat.completions.create(
-            model="gpt-4-turbo-preview",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            temperature=0.7,
-            max_tokens=2000,
-            top_p=1.0,
-            frequency_penalty=0.0,
-            presence_penalty=0.0,
-            response_format={"type": "json_object"}
-        )
-
-        # Parse and validate the response
-        content = response.choices[0].message.content
-        try:
-            import json
-            topics = json.loads(content)
-            if not isinstance(topics, list):
-                topics = [topics]
-            return topics
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse OpenAI response: {e}")
-            raise HTTPException(
-                status_code=500,
-                detail={
-                    "type": "API_ERROR",
-                    "message": "Failed to parse AI response",
-                    "context": {"error": str(e)}
-                }
-            )
 
     except OpenAIError as e:
         logger.error(f"OpenAI API error: {str(e)}")
