@@ -608,27 +608,55 @@ async def generate_slides(request: Dict[str, Any] = Body(...)):
         logger.info("Received slide request")
         logger.debug("Request data: %s", request)
         
+        # Log the raw request body for debugging
+        from fastapi.encoders import jsonable_encoder
+        logger.info("Raw request body: %s", jsonable_encoder(request))
+        
         # Parse and validate the request
         try:
             logger.debug("Validating request data")
+            logger.info("Request keys: %s", list(request.keys()))
+            if 'topics' in request and request['topics']:
+                logger.info("First topic keys: %s", list(request['topics'][0].keys()) if request['topics'] else "No topics")
             request_data = GenerateSlidesRequest(**request)
             logger.debug("Request validation successful")
         except ValidationError as e:
             error_msg = f"Validation error: {str(e)}"
             logger.error(error_msg)
             logger.error("Validation errors: %s", e.errors())
+            logger.error("Request data that caused validation error: %s", request)
+            
+            # Extract specific validation errors
+            error_details = []
+            for error in e.errors():
+                loc = ".".join(str(loc) for loc in error['loc'])
+                error_details.append({
+                    "field": loc,
+                    "msg": error['msg'],
+                    "type": error['type']
+                })
+                
             raise HTTPException(
                 status_code=422, 
                 detail={
                     "type": "VALIDATION_ERROR",
                     "message": "Invalid request data",
-                    "errors": e.errors()
+                    "errors": error_details,
+                    "request_data": request  # Include the problematic data for debugging
                 }
             )
         except Exception as e:
             error_msg = f"Unexpected error during validation: {str(e)}"
             logger.error(error_msg)
-            raise HTTPException(status_code=422, detail=error_msg)
+            logger.error(traceback.format_exc())
+            raise HTTPException(
+                status_code=422, 
+                detail={
+                    "type": "VALIDATION_ERROR",
+                    "message": error_msg,
+                    "error": str(e)
+                }
+            )
 
         # Log the parsed request data
         logger.debug("Parsed request data: %s", request_data.dict())
