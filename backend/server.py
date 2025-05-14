@@ -45,10 +45,25 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
+# Add middleware to add CORS headers to all responses
+@app.middleware("http")
+async def add_cors_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
+
 # Add OPTIONS handler for preflight requests
 @app.options("/api/{rest_of_path:path}")
 async def options_handler(rest_of_path: str):
-    return {"status": "ok"}
+    response = JSONResponse(content={"status": "ok"})
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
 
 # Ensure directories exist
 os.makedirs("static", exist_ok=True)
