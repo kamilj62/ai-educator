@@ -630,11 +630,21 @@ class GenerateSlidesRequest(BaseModel):
 
 from pydantic import ValidationError
 
-@app.post("/api/generate/slides")
+@app.api_route("/api/generate/slides", methods=["GET", "POST"])
 async def generate_slides(
     request: Request,
-    body: Dict[str, Any] = Body(...)  # This will be the parsed body
+    body: Dict[str, Any] = Body(default=None)  # Make body optional for GET requests
 ):
+    # For GET requests, parse query parameters
+    if request.method == "GET":
+        body = dict(request.query_params)
+    # For POST requests, use the request body
+    elif request.method == "POST" and body is None:
+        try:
+            body = await request.json()
+        except json.JSONDecodeError:
+            body = {}
+            
     """Generate presentation slides from an outline."""
     try:
         # Log the incoming request for debugging
