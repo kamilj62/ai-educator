@@ -15,8 +15,15 @@ export type Presentation = {
 };
 
 export interface APIEndpoints {
-  GENERATE_OUTLINE: '/generate/outline';
-  GENERATE_SLIDES: '/generate/slides';
+  GENERATE_OUTLINE: '/api/generate/outline';
+  GENERATE_SLIDES: '/api/generate/slides';
+  GENERATE_IMAGE: '/api/generate/image';
+  EXPORT: '/api/export';
+  LAYOUTS: '/api/layouts';
+  LAYOUT_VALIDATE: '/api/layout/validate';
+  LAYOUT_SWITCH: '/api/layout/switch';
+  UPLOAD_IMAGE: '/api/upload/image';
+  HEALTH: '/api/health';
 }
 
 export interface APIConfig {

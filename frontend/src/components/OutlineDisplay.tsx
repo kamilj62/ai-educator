@@ -1,25 +1,40 @@
 import React, { useState } from 'react';
 import {
   Box,
-  Typography,
+  Button,
+  Card,
+  CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
   List,
   ListItem,
-  ListItemText,
   ListItemIcon,
+  ListItemText,
   ListItemSecondaryAction,
   Paper,
-  IconButton,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
-  CircularProgress,
+  Typography
 } from '@mui/material';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../store/store';
-import { SlideTopic, BulletPoint, InstructionalLevel } from './types';
+import { SlideTopic, InstructionalLevel } from './types';
+
+// Local type for bullet points in this component
+type LocalBulletPoint = {
+  id: string;
+  text: string;
+};
+
+interface EditDialogProps {
+  open: boolean;
+  text: string;
+  onClose: () => void;
+  onSave: (text: string) => void;
+}
+
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
 import ImageIcon from '@mui/icons-material/Image';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -28,13 +43,6 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import PresentationIcon from '@mui/icons-material/Slideshow';
 import { generateSlides, updateOutline } from '../store/presentationSlice';
-
-interface EditDialogProps {
-  open: boolean;
-  text: string;
-  onClose: () => void;
-  onSave: (text: string) => void;
-}
 
 const EditDialog: React.FC<EditDialogProps> = ({ open, text, onClose, onSave }) => {
   const [editedText, setEditedText] = useState(text);
@@ -79,10 +87,63 @@ const OutlineDisplay: React.FC = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingPoint, setEditingPoint] = useState<{ topicId: string; index: number; text: string } | null>(null);
 
-  // Utility to ensure all key_points are BulletPoint[]
-  function normalizeKeyPoints(points: Array<string | BulletPoint>): BulletPoint[] {
-    return points.map((p) => typeof p === 'string' ? { text: p } : p);
-  }
+  // Convert string array to BulletPoint array with robust type checking
+  const toBulletPoints = (points: any): LocalBulletPoint[] => {
+    try {
+      console.log('toBulletPoints input:', points);
+      
+      // Handle null/undefined
+      if (points == null) {
+        console.warn('Received null or undefined points, returning empty array');
+        return [];
+      }
+      
+      // Handle non-array inputs
+      if (!Array.isArray(points)) {
+        console.warn('Expected an array but got:', typeof points, points);
+        // If it's a string, split by newlines
+        if (typeof points === 'string') {
+          console.log('Converting string to array by splitting on newlines');
+          points = points.split('\n').filter(Boolean);
+        } else {
+          // For other non-array types, wrap in array
+          points = [points];
+        }
+      }
+      
+      // Ensure we have an array of strings
+      return points
+        .map((item, index) => {
+          // Handle null/undefined items
+          if (item == null) {
+            console.warn(`Skipping null/undefined item at index ${index}`);
+            return null;
+          }
+          
+          // Convert to string and trim
+          const text = String(item).trim();
+          if (!text) {
+            console.warn(`Skipping empty string item at index ${index}`);
+            return null;
+          }
+          
+          return {
+            id: `point-${index}-${Math.random().toString(36).substr(2, 4)}`,
+            text
+          };
+        })
+        .filter((item): item is LocalBulletPoint => item !== null);
+    } catch (error) {
+      console.error('Error in toBulletPoints:', error);
+      return [];
+    }
+  };
+
+  // Convert BulletPoint array back to string array
+  const toStringArray = (points: LocalBulletPoint[] | undefined | null): string[] => {
+    if (!points) return [];
+    return points.map(p => p?.text || '');
+  };
 
   const handleEditPoint = (topicId: string, index: number, text: string) => {
     setEditingPoint({ topicId, index, text });
@@ -94,9 +155,15 @@ const OutlineDisplay: React.FC = () => {
       // Find the topic and update the point
       const updatedOutline = outline.map((topic: SlideTopic) => {
         if (topic.id === editingPoint.topicId) {
-          const updatedPoints: BulletPoint[] = normalizeKeyPoints(topic.key_points);
-          updatedPoints[editingPoint.index] = { text: newText };
-          return { ...topic, key_points: updatedPoints.map(bp => typeof bp === 'string' ? bp : bp.text) };
+          const bulletPoints = toBulletPoints(topic.bullet_points);
+          bulletPoints[editingPoint.index] = {
+            ...bulletPoints[editingPoint.index],
+            text: newText
+          };
+          return { 
+            ...topic, 
+            bullet_points: toStringArray(bulletPoints) 
+          };
         }
         return topic;
       });
@@ -109,8 +176,12 @@ const OutlineDisplay: React.FC = () => {
     if (outline) {
       const updatedOutline = outline.map((topic: SlideTopic) => {
         if (topic.id === topicId) {
-          const updatedPoints: BulletPoint[] = normalizeKeyPoints(topic.key_points).filter((_, i) => i !== index);
-          return { ...topic, key_points: updatedPoints.map(bp => typeof bp === 'string' ? bp : bp.text) };
+          const bulletPoints = toBulletPoints(topic.bullet_points);
+          bulletPoints.splice(index, 1);
+          return { 
+            ...topic, 
+            bullet_points: toStringArray(bulletPoints) 
+          };
         }
         return topic;
       });
@@ -122,8 +193,23 @@ const OutlineDisplay: React.FC = () => {
     if (outline) {
       const updatedOutline = outline.map((topic: SlideTopic) => {
         if (topic.id === topicId) {
-          const updatedPoints: BulletPoint[] = normalizeKeyPoints([...topic.key_points, { text: 'New point' }]);
-          return { ...topic, key_points: updatedPoints.map(bp => typeof bp === 'string' ? bp : bp.text) };
+          // Create a new bullet point with a unique ID
+          const newPoint: LocalBulletPoint = {
+            id: `point-${Math.random().toString(36).substr(2, 9)}`,
+            text: 'New point'
+          };
+          
+          // Convert existing points to BulletPoint array
+          const bulletPoints = toBulletPoints(topic.bullet_points);
+          
+          // Add the new point
+          const updatedBulletPoints = [...bulletPoints, newPoint];
+          
+          // Convert back to string array for storage
+          return { 
+            ...topic, 
+            bullet_points: toStringArray(updatedBulletPoints)
+          };
         }
         return topic;
       });
@@ -140,13 +226,13 @@ const OutlineDisplay: React.FC = () => {
       const topics: SlideTopic[] = outline.map(topic => ({
         id: topic.id,
         title: topic.title,
-        key_points: topic.key_points || [],
+        bullet_points: topic.bullet_points || [],
         description: topic.description || `A presentation about ${topic.title}`,
         image_prompt: topic.image_prompt || `An illustration representing ${topic.title}`,
         subtopics: (topic.subtopics || []).map(subtopic => ({
           id: subtopic.id,
           title: subtopic.title,
-          key_points: subtopic.key_points || [],
+          bullet_points: subtopic.bullet_points || [],
           description: subtopic.description || `Details about ${subtopic.title}`,
           image_prompt: subtopic.image_prompt || `An illustration for ${subtopic.title}`
         }))
@@ -159,63 +245,75 @@ const OutlineDisplay: React.FC = () => {
     }
   };
 
-  const renderTopic = (topic: SlideTopic, index: number) => (
-    <Paper key={topic.id || `topic-${index}`} sx={{ mb: 2, p: 2, bgcolor: '#18181b', borderRadius: 4 }}>
-      <Typography variant="h6" sx={{ color: '#60a5fa' }}>{topic.title}</Typography>
-      {topic.description && (
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <DescriptionIcon sx={{ mr: 1, color: '#60a5fa' }} />
-          <Typography variant="body2" sx={{ color: '#60a5fa' }}>
-            {topic.description}
-          </Typography>
-        </Box>
-      )}
-      <List dense>
-        {normalizeKeyPoints(topic.key_points).map((point: BulletPoint, i) => (
-          <ListItem key={`point-${index}-${i}`}>
-            <ListItemIcon sx={{ minWidth: 32 }}>
-              <ArrowRightIcon sx={{ color: '#fff' }} />
-            </ListItemIcon>
-            <ListItemText 
-              primary={point.text} 
-              primaryTypographyProps={{ style: { color: '#e2e8f0' } }} 
-            />
-            <ListItemSecondaryAction>
-              <IconButton edge="end" size="small" onClick={() => handleEditPoint(topic.id!, i, point.text)}>
-                <EditIcon />
-              </IconButton>
-              <IconButton edge="end" size="small" aria-label="delete" onClick={() => handleDeletePoint(topic.id!, i)} sx={{ color: '#60a5fa' }}>
-                <DeleteIcon />
-              </IconButton>
-            </ListItemSecondaryAction>
-          </ListItem>
-        ))}
-        <ListItem>
-          <Button
-            startIcon={<AddIcon sx={{ color: '#60a5fa' }} />}
-            onClick={() => handleAddPoint(topic.id!)}
-            sx={{ mt: 1, color: '#60a5fa' }}
-          >
-            Add Point
-          </Button>
-        </ListItem>
-      </List>
-      {topic.image_prompt && (
-        <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-          <ImageIcon sx={{ mr: 1, color: '#60a5fa' }} />
-          <Typography variant="body2" sx={{ color: '#60a5fa' }}>
-            Image: {topic.image_prompt}
-          </Typography>
-        </Box>
-      )}
-      {topic.subtopics && topic.subtopics.length > 0 && (
-        <Box sx={{ ml: 3, mt: 2 }}>
-          {topic.subtopics.map((subtopic: SlideTopic, subIndex: number) => renderTopic(subtopic, subIndex))}
-        </Box>
-      )}
-    </Paper>
-  );
+  const renderTopic = (topic: SlideTopic, index: number) => {
+    console.log('Rendering topic:', { 
+      id: topic.id, 
+      title: topic.title, 
+      bullet_points: topic.bullet_points 
+    });
+    
+    return (
+      <Paper key={topic.id || `topic-${index}`} sx={{ mb: 2, p: 2, bgcolor: '#18181b', borderRadius: 4 }}>
+        <Typography variant="h6" sx={{ color: '#60a5fa' }}>{topic.title}</Typography>
+        {topic.description && (
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            <DescriptionIcon sx={{ mr: 1, color: '#60a5fa' }} />
+            <Typography variant="body2" sx={{ color: '#60a5fa' }}>
+              {topic.description}
+            </Typography>
+          </Box>
+        )}
+        <List dense>
+          {toBulletPoints(topic.bullet_points || []).map((point: LocalBulletPoint, i) => (
+            <ListItem key={`point-${index}-${i}`}>
+              <ListItemIcon sx={{ minWidth: 32 }}>
+                <ArrowRightIcon sx={{ color: '#fff' }} />
+              </ListItemIcon>
+              <ListItemText 
+                primary={point.text} 
+                primaryTypographyProps={{ style: { color: '#e2e8f0' } }} 
+              />
+              <ListItemSecondaryAction>
+                <IconButton edge="end" size="small" onClick={() => handleEditPoint(topic.id!, i, point.text)}>
+                  <EditIcon sx={{ color: '#60a5fa' }} />
+                </IconButton>
+                <IconButton edge="end" size="small" onClick={() => handleDeletePoint(topic.id!, i)}>
+                  <DeleteIcon sx={{ color: '#ef4444' }} />
+                </IconButton>
+              </ListItemSecondaryAction>
+            </ListItem>
+          ))}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={() => handleAddPoint(topic.id!)}
+              sx={{ color: '#60a5fa', borderColor: '#60a5fa', '&:hover': { borderColor: '#3b82f6' } }}
+            >
+              Add Point
+            </Button>
+          </Box>
+        </List>
+        {topic.image_prompt && (
+          <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, mb: 1 }}>
+            <ImageIcon sx={{ mr: 1, color: '#60a5fa' }} />
+            <Typography variant="caption" sx={{ color: '#60a5fa' }}>
+              Image: {topic.image_prompt}
+            </Typography>
+          </Box>
+        )}
+        {topic.subtopics && topic.subtopics.length > 0 && (
+          <Box sx={{ ml: 3, mt: 2 }}>
+            {topic.subtopics.map((subtopic: SlideTopic, subIndex: number) => renderTopic(subtopic, subIndex))}
+          </Box>
+        )}
+      </Paper>
+    );
+  };
 
+  console.log('Rendering outline:', { outline, hasSlides });
+  
   return (
     <Box sx={{ p: 3 }}>
       {/* Show Generate All Slides button if there is an outline and no slides yet */}
@@ -236,7 +334,9 @@ const OutlineDisplay: React.FC = () => {
           {error}
         </Typography>
       )}
-      {outline && outline.map((topic: SlideTopic, index: number) => renderTopic(topic, index))}
+      {Array.isArray(outline) && outline.map((topic, index) => 
+        renderTopic(topic, index)
+      )}
       <EditDialog
         open={editDialogOpen}
         text={editingPoint?.text || ''}

@@ -195,7 +195,7 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
               const updatedTopic = {
                 id: oldSlide.id,
                 title: value,
-                key_points: oldSlide.content?.bullets ? oldSlide.content.bullets.split('\n') : [],
+                bullet_points: oldSlide.content?.bullets ? oldSlide.content.bullets.split('\n') : [],
                 description: oldSlide.content?.body || '',
               };
               handleSaveTopic(updatedTopic, undefined);
@@ -263,7 +263,7 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
         topic={{
           id: 'preview-topic',
           title: topic || 'Untitled',
-          key_points: [],
+          bullet_points: [],
           image_prompt: topic ? `Generate an educational image for ${topic}` : undefined,
         }}
       />

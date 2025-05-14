@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Slide, SlideContent, SlideLayout, SlideImage, SlideTopic, BulletPoint, InstructionalLevel } from '../components/types';
 import { RootState } from './store';
 import { normalizeBullets } from '../components/SlideEditor/components/utils';
-import { API_CONFIG } from '../config';
+import { API_CONFIG } from '../config/api';
 
 export interface APIError {
   message: string;
@@ -95,43 +95,127 @@ interface GenerateSlidesParams {
   instructionalLevel: InstructionalLevel;
 }
 
+// Helper function to clean topic objects recursively
+const cleanTopic = (topic: any): any => {
+  if (!topic) return null;
+  
+  const { instructionalLevel, ...rest } = topic;
+  
+  // Ensure bullet_points exists and is an array
+  const bulletPoints = Array.isArray(topic.bullet_points) 
+    ? topic.bullet_points.filter((bp: any) => bp !== null && bp !== undefined)
+    : [];
+  
+  // Ensure required fields have proper defaults
+  const cleanedTopic = {
+    ...rest,
+    id: topic.id || `topic-${Math.random().toString(36).substr(2, 9)}`,
+    title: topic.title || 'Untitled Topic',
+    bullet_points: bulletPoints,
+    description: topic.description || `A presentation about ${topic.title || 'this topic'}`,
+    image_prompt: topic.image_prompt || `An illustration representing ${topic.title || 'this topic'}`,
+    subtopics: Array.isArray(topic.subtopics) 
+      ? topic.subtopics.map(cleanTopic).filter(Boolean)
+      : []
+  };
+  
+  return cleanedTopic;
+};
+
 export const generateSlides = createAsyncThunk(
   'presentation/generateSlides',
   async ({ topics, instructionalLevel }: GenerateSlidesParams, { getState }) => {
     const state = getState() as RootState;
-    // Create a clean topics array without instructionalLevel field
-    const cleanTopics = topics.map(({ instructionalLevel: _, ...topic }) => ({
-      ...topic,
-      key_points: topic.key_points || [],
-      subtopics: (topic.subtopics || []).map(({ instructionalLevel: __, ...subtopic }) => ({
-        ...subtopic,
-        key_points: subtopic.key_points || []
-      }))
-    }));
-
-    const requestBody = {
-      topics: cleanTopics,
-      instructional_level: mapInstructionalLevel(instructionalLevel), // This must match the backend's expected field name
-      layout: state.presentation.defaultLayout,
-    };
-    console.log('Sending slides request to backend with body:', JSON.stringify(requestBody, null, 2));
-    const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.GENERATE_SLIDES}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody),
-    });
-    if (!response.ok) {
-      let errorMessage = 'Failed to generate slides';
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
-      } catch (e2) {
-        errorMessage = response.statusText;
+    
+    try {
+      // Clean topics recursively to ensure all required fields are present
+      const cleanTopics = topics.map(cleanTopic).filter(Boolean);
+      
+      if (cleanTopics.length === 0) {
+        throw new Error('No valid topics provided for slide generation');
       }
-      throw new Error(errorMessage);
+      
+      // Map the instructional level to the expected format
+      const mappedLevel = mapInstructionalLevel(instructionalLevel);
+      
+      const requestBody = {
+        topics: cleanTopics,
+        instructional_level: mappedLevel,
+        layout: state.presentation.defaultLayout || 'title-bullets',
+      };
+      
+      console.log('[generateSlides] Sending request to backend with body:', {
+        url: `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.GENERATE_SLIDES}`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody, null, 2)
+      });
+      
+      const url = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.GENERATE_SLIDES}`;
+      const options = {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      };
+      
+      console.log('Sending request to:', url);
+      console.log('Request options:', {
+        ...options,
+        body: JSON.parse(options.body) // Log the parsed body for better readability
+      });
+      
+      console.log('Sending request to backend...');
+      const response = await fetch(url, options);
+      const responseText = await response.text();
+      
+      console.log('Response status:', response.status, response.statusText);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      let responseData;
+      try {
+        responseData = responseText ? JSON.parse(responseText) : {};
+      } catch (e) {
+        console.error('Failed to parse response as JSON:', responseText);
+        throw new Error(`Invalid JSON response from server: ${responseText}`);
+      }
+
+      if (!response.ok) {
+        let errorMessage = `Failed to generate slides (Status: ${response.status} ${response.statusText})`;
+        console.error('Error response from server:', responseData);
+        
+        // Try to extract a more detailed error message
+        if (responseData) {
+          if (responseData.detail) {
+            if (typeof responseData.detail === 'string') {
+              errorMessage = responseData.detail;
+            } else if (responseData.detail.message) {
+              errorMessage = responseData.detail.message;
+            }
+            
+            // Log validation errors if present
+            if (responseData.detail.errors) {
+              console.error('Validation errors:', responseData.detail.errors);
+            }
+          } else if (responseData.message) {
+            errorMessage = responseData.message;
+          }
+        }
+        
+        const error = new Error(errorMessage);
+        (error as any).response = responseData;
+        throw error;
+      }
+      
+      // If we get here, the request was successful
+      console.log('Successfully generated slides:', responseData);
+      return responseData;
+    } catch (error) {
+      console.error('Error in generateSlides:', error);
+      throw error; // Re-throw to be handled by createAsyncThunk
     }
-    const data = await response.json();
-    return data;
   }
 );
 
@@ -175,12 +259,50 @@ const presentationSlice = createSlice({
         state.error = null;
       })
       .addCase(generateSlides.fulfilled, (state, action) => {
-        state.slides = action.payload;
+        // The backend returns { success: true, slides: [...] }
+        if (action.payload && action.payload.success && Array.isArray(action.payload.slides)) {
+          state.slides = action.payload.slides;
+        } else {
+          // Fallback to the old format if the new format is not present
+          state.slides = action.payload;
+        }
         state.isGeneratingSlides = false;
       })
       .addCase(generateSlides.rejected, (state, action) => {
         state.isGeneratingSlides = false;
-        state.error = action.error.message || 'Failed to generate slides';
+        
+        // Extract detailed error information
+        let errorMessage = 'Failed to generate slides';
+        const error = action.error as any;
+        
+        if (error.response) {
+          // We have a response from the server
+          const response = error.response;
+          
+          if (response.detail) {
+            // Handle structured error response
+            if (typeof response.detail === 'string') {
+              errorMessage = response.detail;
+            } else if (response.detail.message) {
+              errorMessage = response.detail.message;
+            }
+            
+            // Add validation errors if present
+            if (response.detail.errors) {
+              const validationErrors = response.detail.errors
+                .map((err: any) => `- ${err.loc.join('.')}: ${err.msg}`)
+                .join('\n');
+              errorMessage += `\n\nValidation Errors:\n${validationErrors}`;
+            }
+          } else if (response.message) {
+            errorMessage = response.message;
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        state.error = errorMessage;
+        console.error('Slide generation failed:', action.error);
       });
   },
 });

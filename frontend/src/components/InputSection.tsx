@@ -86,13 +86,13 @@ const InputSection: React.FC = () => {
       const topicsWithIds: SlideTopic[] = outline.map((topic, index) => ({
         id: topic.id || `topic-${index}`,
         title: topic.title,
-        key_points: topic.key_points || [],
+        bullet_points: topic.bullet_points || [],
         description: topic.description || `A presentation about ${topic.title}`,
         image_prompt: topic.image_prompt || `An illustration representing ${topic.title}`,
         subtopics: (topic.subtopics || []).map((subtopic, subIndex) => ({
           id: subtopic.id || `subtopic-${index}-${subIndex}`,
           title: subtopic.title,
-          key_points: subtopic.key_points || [],
+          bullet_points: subtopic.bullet_points || [],
           description: subtopic.description || `Details about ${subtopic.title}`,
           image_prompt: subtopic.image_prompt || `An illustration representing ${subtopic.title}`,
           instructionalLevel: subtopic.instructionalLevel || instructionalLevelInput

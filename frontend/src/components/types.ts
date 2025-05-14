@@ -21,7 +21,7 @@ export type InstructionalLevel =
 export interface SlideTopic {
   id: string;
   title: string;
-  key_points: string[];
+  bullet_points: string[];
   image_prompt?: string;
   description?: string;
   subtopics?: SlideTopic[];

@@ -168,7 +168,7 @@ class SlideTopic(BaseModel):
     """Model for a slide topic."""
     id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique identifier for the topic")
     title: str = Field(..., description="Title of the topic")
-    key_points: List[str] = Field(..., description="List of key points")
+    bullet_points: List[str] = Field(..., description="List of bullet points")
     image_prompt: Optional[str] = Field(None, description="Optional prompt for generating an image")
     description: Optional[str] = Field(None, description="Optional detailed description")
     subtopics: List[SlideTopicRef] = Field(default_factory=list, description="Optional list of subtopics")
@@ -286,7 +286,7 @@ def generate_sample_topics(context: str, num_slides: int, level: str, layout: st
         {
             "id": f"slide_{i+1}",
             "title": f"Slide {i+1}: {context} - Part {i+1}",
-            "key_points": [
+            "bullet_points": [
                 f"Key point 1 for {context}",
                 f"Key point 2 for {context}",
                 f"Key point 3 for {context}"
@@ -331,9 +331,9 @@ STRICT REQUIREMENTS:
   - a unique id (e.g. 'slide_1', 'slide_2', ...),
   - a clear, informative title,
   - a non-empty image_prompt (a description for an image that would enhance the slide),
-  - 3-5 key_points (bullet points), each a non-empty, concise, and unique string,
+  - 3-5 bullet_points (bullet points), each a non-empty, concise, and unique string,
   - a brief description.
-- If you cannot generate 3-5 key points for a slide, DO NOT include that slide.
+- If you cannot generate 3-5 bullet points for a slide, DO NOT include that slide.
 - If you cannot generate any valid slides, return an empty list ONLY (no explanations).
 - Be creative: break down the topic into subtopics, use examples, and avoid repetition.
 - Do NOT include any text or explanation outside the JSON array.
@@ -361,11 +361,11 @@ Example output:
         def build_prompts(context, num_slides, level, attempt=1):
             if attempt == 1:
                 system = system_prompt
-                user = f"""Generate a presentation outline for:\n        Topic: {context}\n        Number of slides: {num_slides}\n        Audience level: {level}\n        \n        Format each slide as:\n        {{\n            \"id\": \"unique_id\",\n            \"title\": \"slide title\",\n            \"key_points\": [\"point 1\", \"point 2\", \"point 3\"],\n            \"image_prompt\": \"description for an image that would enhance this slide\",\n            \"description\": \"brief description of the slide's content\"\n        }}\n        IMPORTANT: Only include slides with 3-5 key_points and a non-empty image_prompt. Do not include slides with fewer than 3 key_points.\n        If you are struggling to come up with 3-5 key points, try breaking the topic into smaller subtopics, using examples, or rephrasing points.\n        Output only valid JSON, no explanations. If you cannot generate valid slides, return an empty list ONLY."""
+                user = f"""Generate a presentation outline for:\n        Topic: {context}\n        Number of slides: {num_slides}\n        Audience level: {level}\n        \n        Format each slide as:\n        {{\n            \"id\": \"unique_id\",\n            \"title\": \"slide title\",\n            \"bullet_points\": [\"point 1\", \"point 2\", \"point 3\"],\n            \"image_prompt\": \"description for an image that would enhance this slide\",\n            \"description\": \"brief description of the slide's content\"\n        }}\n        IMPORTANT: Only include slides with 3-5 bullet_points and a non-empty image_prompt. Do not include slides with fewer than 3 bullet_points.\n        If you are struggling to come up with 3-5 bullet points, try breaking the topic into smaller subtopics, using examples, or rephrasing points.\n        Output only valid JSON, no explanations. If you cannot generate valid slides, return an empty list ONLY."""
             else:
                 # On retry, be even more forceful and explicit
                 system = system_prompt + "\n\nIMPORTANT: DO NOT return any slide unless it meets ALL requirements. If you cannot generate valid slides, return []. Do NOT return explanations. Think step by step: brainstorm subtopics and bullet points, then generate the JSON array."
-                user = f"""Generate a presentation outline for:\n        Topic: {context}\n        Number of slides: {num_slides}\n        Audience level: {level}\n        \n        Format each slide as:\n        {{\n            \"id\": \"unique_id\",\n            \"title\": \"slide title\",\n            \"key_points\": [\"point 1\", \"point 2\", \"point 3\"],\n            \"image_prompt\": \"description for an image that would enhance this slide\",\n            \"description\": \"brief description of the slide's content\"\n        }}\n        REMEMBER: If you cannot generate 3-5 key points for a slide, do NOT include it. If you cannot generate any valid slides, return []."""
+                user = f"""Generate a presentation outline for:\n        Topic: {context}\n        Number of slides: {num_slides}\n        Audience level: {level}\n        \n        Format each slide as:\n        {{\n            \"id\": \"unique_id\",\n            \"title\": \"slide title\",\n            \"bullet_points\": [\"point 1\", \"point 2\", \"point 3\"],\n            \"image_prompt\": \"description for an image that would enhance this slide\",\n            \"description\": \"brief description of the slide's content\"\n        }}\n        REMEMBER: If you cannot generate 3-5 bullet points for a slide, do NOT include it. If you cannot generate any valid slides, return []."""
             return system, user
 
         max_attempts = 2
@@ -411,17 +411,17 @@ Example output:
             # Filtering logic (same as before)
             filtered_topics = []
             for topic in topics:
-                key_points = topic.get("key_points", [])
+                bullet_points = topic.get("bullet_points", [])
                 image_prompt = topic.get("image_prompt", "")
-                valid_key_points = [kp for kp in key_points if isinstance(kp, str) and kp.strip()]
+                valid_bullet_points = [bp for bp in bullet_points if isinstance(bp, str) and bp.strip()]
                 if (
-                    isinstance(key_points, list)
-                    and 3 <= len(valid_key_points) <= 5
-                    and all(isinstance(kp, str) and kp.strip() for kp in key_points)
+                    isinstance(bullet_points, list)
+                    and 3 <= len(valid_bullet_points) <= 5
+                    and all(isinstance(bp, str) and bp.strip() for bp in bullet_points)
                     and isinstance(image_prompt, str)
                     and image_prompt.strip() != ""
                 ):
-                    filtered_topics.append({**topic, "key_points": valid_key_points, "image_prompt": image_prompt.strip()})
+                    filtered_topics.append({**topic, "bullet_points": valid_bullet_points, "image_prompt": image_prompt.strip()})
             logger.info(f"[OpenAI Attempt {attempt}] Filtered topics: {filtered_topics}")
             if filtered_topics:
                 return filtered_topics
@@ -429,7 +429,7 @@ Example output:
         logger.error("OpenAI could not generate valid slides after all attempts.")
         # Try one last time with a simpler prompt
         try:
-            system = """You are an expert educational presentation designer. Generate a simple outline with 3-5 key points per slide."""
+            system = """You are an expert educational presentation designer. Generate a simple outline with 3-5 bullet points per slide."""
             user = f"""Generate a simple presentation outline for: {context}
             Number of slides: {num_slides}
             Audience level: {level}
@@ -437,7 +437,7 @@ Example output:
             Format as a JSON array where each item has:
             - id: unique_id
             - title: slide title
-            - key_points: ["point 1", "point 2", "point 3"]
+            - bullet_points: ["point 1", "point 2", "point 3"]
             - image_prompt: description for an image
             - description: brief description
             
@@ -717,7 +717,7 @@ async def generate_slides(
                 processed_topic = {
                     'id': topic.get('id', f'topic-{i}'),
                     'title': topic_title,
-                    'key_points': topic.get('key_points', [f'Key point {i}']),
+                    'bullet_points': topic.get('bullet_points', [f'Bullet point {i}']),
                     'description': topic.get('description', f'Description for {topic_title}'),
                     'image_prompt': topic.get('image_prompt', f'Image for {topic_title}'),
                     'subtopics': topic.get('subtopics', [])
@@ -1058,7 +1058,7 @@ async def generate_slide_content(request: SlideGenerationRequest):
             elif field == 'body':
                 slide_content['content'][field] = topic_data.get('description', '')
             elif field == 'bullet_points':
-                slide_content['content'][field] = topic_data.get('key_points', [])
+                slide_content['content'][field] = topic_data.get('bullet_points', [])
             elif field == 'image_url':
                 # For now, we'll just return the image prompt
                 # In a real implementation, you would generate or fetch an image here

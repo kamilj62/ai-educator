@@ -139,7 +139,7 @@ export const LayoutSelector: React.FC<LayoutSelectorProps> = ({
             // Fix property names to match actual type
             const isRecommended = (
               (topic.image_prompt && features.supportsImage) ||
-              (topic.key_points?.length > 0 && features.supportsBullets)
+              (topic.bullet_points?.length > 0 && features.supportsBullets)
             );
 
             return (
