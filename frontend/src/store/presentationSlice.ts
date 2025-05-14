@@ -111,7 +111,7 @@ export const generateSlides = createAsyncThunk(
 
     const requestBody = {
       topics: cleanTopics,
-      instructional_level: mapInstructionalLevel(instructionalLevel),
+      instructional_level: mapInstructionalLevel(instructionalLevel), // This must match the backend's expected field name
       layout: state.presentation.defaultLayout,
     };
     console.log('Sending slides request to backend with body:', JSON.stringify(requestBody, null, 2));
