@@ -4,8 +4,11 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
-        <link rel="icon" href="https://cdn.jsdelivr.net/npm/twemoji@11.3.0/2/svg/1f4c8.svg" type="image/svg+xml" />
-        <link rel="shortcut icon" href="https://cdn.jsdelivr.net/npm/twemoji@11.3.0/2/svg/1f4c8.svg" />
+        <link 
+          rel="icon" 
+          href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%236366F1'/><text x='50%' y='50%' font-size='60' text-anchor='middle' dy='.3em' fill='white'>📊</text></svg>" 
+          type="image/svg+xml"
+        />
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#6366F1" />
