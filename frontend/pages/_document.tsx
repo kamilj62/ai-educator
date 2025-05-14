@@ -5,9 +5,10 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
-        <link rel="icon" href={`/favicon.svg?t=${timestamp}`} type="image/svg+xml" />
-        <link rel="alternate icon" href={`/favicon.svg?t=${timestamp}`} type="image/svg+xml" />
-        <link rel="apple-touch-icon" href={`/favicon.svg?t=${timestamp}`} />
+        <link rel="icon" href={`/ai-ppt-logo.svg?t=${timestamp}`} type="image/svg+xml" sizes="any" />
+        <link rel="icon" href={`/ai-ppt-logo.svg?t=${timestamp}`} type="image/svg+xml" />
+        <link rel="shortcut icon" href={`/ai-ppt-logo.svg?t=${timestamp}`} type="image/svg+xml" />
+        <link rel="apple-touch-icon" href={`/ai-ppt-logo.svg?t=${timestamp}`} />
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#6366F1" />

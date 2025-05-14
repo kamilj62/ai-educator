@@ -10,7 +10,7 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/(.*).(ico|svg|jpg|jpeg|png|webp|gif|avif|otf|ttf|woff|woff2|css|js)',
+        source: '/(.*).(jpg|jpeg|png|webp|gif|avif|otf|ttf|woff|woff2|css|js)',
         headers: [
           {
             key: 'Cache-Control',
@@ -19,11 +19,15 @@ const nextConfig = {
         ],
       },
       {
-        source: '/favicon.ico',
+        source: '/ai-ppt-logo.svg',
         headers: [
           {
             key: 'Cache-Control',
             value: 'no-store, no-cache, must-revalidate, max-age=0',
+          },
+          {
+            key: 'Content-Type',
+            value: 'image/svg+xml',
           },
         ],
       },
