@@ -190,6 +190,7 @@ const cleanTopic = (topic: any): any => {
     id: topic.id || `topic-${Math.random().toString(36).substr(2, 9)}`,
     title: topic.title || 'Untitled Topic',
     key_points: keyPoints,
+    bullet_points: Array.isArray(topic.bullet_points) ? topic.bullet_points : [],
     description: topic.description || `A presentation about ${topic.title || 'this topic'}`,
     image_prompt: topic.image_prompt || `An illustration representing ${topic.title || 'this topic'}`,
     subtopics: Array.isArray(topic.subtopics) 
