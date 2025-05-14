@@ -46,7 +46,7 @@ function MyApp({ Component, pageProps }: AppProps) {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <Head>
-          <link rel="icon" href="/favicon.ico" />
+          <link rel="icon" href={`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/favicon.ico`} />
         </Head>
         <ErrorBoundary>
           <Component {...pageProps} />
