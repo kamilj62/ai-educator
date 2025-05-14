@@ -580,7 +580,10 @@ async def switch_layout(switch: LayoutSwitch):
     }
 
 class GenerateSlidesRequest(BaseModel):
-    topics: List[Dict[str, Any]]
+    topics: List[SlideTopic] = Field(
+        ...,
+        description="List of slide topics to generate slides for"
+    )
     instructional_level: str = Field(
         ...,
         pattern='^(elementary|middle_school|high_school|university|professional)$',
@@ -588,7 +591,8 @@ class GenerateSlidesRequest(BaseModel):
     )
     layout: str = Field(
         default="title-bullets",
-        pattern='^(title-only|title-image|title-body|title-body-image|title-bullets|title-bullets-image|two-column|two-column-image)$'
+        pattern='^(title-only|title-image|title-body|title-body-image|title-bullets|title-bullets-image|two-column|two-column-image)$',
+        description="Default layout for the slides"
     )
 
     class Config:
@@ -641,15 +645,15 @@ async def generate_slides(request: Dict[str, Any] = Body(...)):
         slides = []
         for i, topic in enumerate(topics, 1):
             try:
-                logger.debug(f"Processing topic {i}: {topic.get('title', 'Untitled')}")
+                logger.debug(f"Processing topic {i}: {getattr(topic, 'title', 'Untitled')}")
                 # Create slide for each topic
                 slide = {
-                    "title": topic.get("title", ""),
+                    "title": getattr(topic, 'title', ''),
                     "subtitle": "",  # Optional subtitle
-                    "body": topic.get("description", ""),
-                    "bullet_points": topic.get("key_points", []),
+                    "body": getattr(topic, 'description', ''),
+                    "bullet_points": getattr(topic, 'key_points', []),
                     "image_url": "",  # Will be populated by image generation
-                    "image_alt": topic.get("image_prompt", ""),
+                    "image_alt": getattr(topic, 'image_prompt', ''),
                     "image_caption": "",
                     "image_service": "generated",
                     "layout": request_data.layout,
@@ -659,6 +663,7 @@ async def generate_slides(request: Dict[str, Any] = Body(...)):
                 logger.debug(f"Successfully processed topic {i}")
             except Exception as e:
                 logger.error(f"Error processing topic {i}: {str(e)}")
+                logger.error(traceback.format_exc())
                 raise
 
         logger.info(f"Successfully generated {len(slides)} slides")
