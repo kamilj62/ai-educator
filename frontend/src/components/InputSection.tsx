@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
+import type { AppDispatch } from '../store/store';
 import { generateOutline, generateSlides, selectLoading, selectError, selectOutline } from '../store/presentationSlice';
 import type { SlideTopic } from './types';
 import { RootState } from '../store/store';
