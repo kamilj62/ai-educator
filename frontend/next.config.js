@@ -1,34 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Disable static optimization to ensure files are always served fresh
+  output: 'standalone',
+  // Configure images
   images: {
     domains: ['ai-powerpoint-f44a1d57b590.herokuapp.com'],
     unoptimized: true,
+    disableStaticImages: true,
   },
+  // Disable static optimization for pages
   experimental: {
     optimizeFonts: true,
+    optimizeCss: false,
   },
-  // Serve static files from the public folder
-  async headers() {
-    return [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-    ];
-  },
-  // Serve static files directly
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback.fs = false;
-    }
-    return config;
-  },
+  // Disable file-system routing for static files
+  useFileSystemPublicRoutes: false,
   async rewrites() {
     // Always use the Heroku backend URL
     const backendUrl = 'https://ai-powerpoint-f44a1d57b590.herokuapp.com';
