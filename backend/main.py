@@ -14,7 +14,7 @@ from pptx import Presentation as pptx_Presentation
 from pptx.util import Inches
 from contextlib import asynccontextmanager
 import asyncio
-from .models import (
+from models import (
     PresentationInput, 
     OutlineResponse, 
     Presentation, 
@@ -28,9 +28,9 @@ from .models import (
     SlideContentNew,
     SlideNew as Slide
 )
-from .ai_service import AIService
-from .rate_limiter import RateLimiter
-from .exceptions import (
+from ai_service import AIService
+from rate_limiter import RateLimiter
+from exceptions import (
     ImageGenerationError,
     ContentSafetyError,
     ErrorType,
@@ -275,7 +275,7 @@ async def generate_slides(request: SlideGenerationRequest):
             "title": topic.title,
             "subtitle": "",
             "body": topic.description or "",
-            "bullet_points": topic.key_points,
+            "key_points": topic.key_points,
             "image": {
                 "url": getattr(topic, "image_url", None) or "",
                 "alt": topic.image_prompt,
@@ -327,9 +327,9 @@ async def quick_export(presentation: Presentation):
             content_slide.shapes.title.text = slide.title
             body_shape = content_slide.shapes.placeholders[1]
             tf = body_shape.text_frame
-            for point in slide.bullet_points:
+            for point in slide.key_points:
                 p = tf.add_paragraph()
-                p.text = point.text
+                p.text = point
             if slide.image_url:
                 img_path = os.path.join("marvelAI", slide.image_url)
                 if os.path.exists(img_path):

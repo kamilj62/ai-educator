@@ -31,13 +31,13 @@ def create_presentation(title: str, slides: list, output_dir: str = "exports") -
         title = content_slide.shapes.title
         title.text = slide_content["title"]
         
-        # Add bullet points
+        # Add key points
         body_shape = content_slide.shapes.placeholders[1]
         tf = body_shape.text_frame
         
-        for point in slide_content["bullet_points"]:
+        for point in slide_content["key_points"]:
             p = tf.add_paragraph()
-            p.text = point["text"]
+            p.text = point if isinstance(point, str) else point.get("text", "")
             p.level = 0
         
         # Add image if present

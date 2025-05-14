@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { ChromePicker } from 'react-color';
 import {
   Dialog,
   DialogTitle,
@@ -17,7 +18,8 @@ import {
   Grid,
   Box,
   Typography,
-  Stack
+  Stack,
+  Popover
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -92,21 +94,67 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   onImageUpload,
   onImageGenerate,
 }) => {
+  // Type definitions for bullet items
+  type BulletItem = string | { text: string };
+  type BulletArray = string[];
+
+  // Helper to parse bullets from HTML string to array
+  const parseBulletsFromHtml = (html: string): BulletArray => {
+    if (!html) return [];
+    if (typeof html !== 'string') return [];
+    
+    // If it's already an empty list
+    if (html.trim() === '<ul></ul>') return [];
+    
+    // Extract list items
+    const listItems = html
+      .replace(/<ul[^>]*>/g, '')
+      .replace(/<\/ul>/g, '')
+      .split(/<li[^>]*>|<\/li>/g)
+      .map(item => item.trim())
+      .filter(Boolean);
+      
+    return listItems;
+  };
+
+  // Helper to convert bullet array to HTML string
+  const bulletsToHtml = (bullets: BulletArray): string => {
+    if (!bullets || !bullets.length) return '<ul></ul>';
+    const validBullets = bullets.filter((b): b is string => typeof b === 'string');
+    return `<ul>${validBullets.map(b => `<li>${b}</li>`).join('')}</ul>`;
+  };
+
   // Helper to normalize bullets to HTML string
-  function normalizeBulletsForDialog(bullets: any): string {
-    if (!bullets) return '';
+  function normalizeBulletsForDialog(bullets: unknown): string {
+    if (!bullets) return '<ul></ul>';
+    
+    // Handle string input
     if (typeof bullets === 'string') {
-      if (bullets.trim().startsWith('<ul')) return bullets;
+      const trimmed = bullets.trim();
+      if (!trimmed) return '<ul></ul>';
+      if (trimmed.startsWith('<ul')) return bullets;
+      if (trimmed.startsWith('<li>')) return `<ul>${bullets}</ul>`;
       const lines = bullets.split('\n').map(l => l.trim()).filter(Boolean);
       if (lines.length) return `<ul>${lines.map(l => `<li>${l}</li>`).join('')}</ul>`;
-      return '';
+      return '<ul></ul>';
     }
+    
+    // Handle array input
     if (Array.isArray(bullets)) {
-      const lines = bullets.map(b => typeof b === 'string' ? b : (b && b.text ? b.text : '')).filter(Boolean);
-      if (lines.length) return `<ul>${lines.map(l => `<li>${l}</li>`).join('')}</ul>`;
-      return '';
+      if (bullets.length === 0) return '<ul></ul>';
+      
+      const lines = bullets
+        .map(b => {
+          if (typeof b === 'string') return b;
+          if (b && typeof b === 'object' && 'text' in b) return (b as { text: string }).text;
+          return '';
+        })
+        .filter((b): b is string => Boolean(b));
+        
+      return bulletsToHtml(lines);
     }
-    return '';
+    
+    return '<ul></ul>';
   }
 
   // Only update editedSlide when the dialog is opened or the slide changes (not on every render)
@@ -157,6 +205,8 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
 
   const [bodyError, setBodyError] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [colorPickerAnchorEl, setColorPickerAnchorEl] = useState<HTMLElement | null>(null);
+  const [currentColorType, setCurrentColorType] = useState<'background' | 'font' | null>(null);
 
   const handleLayoutChange = (newLayout: string) => {
     setEditedSlide((prev) => {
@@ -201,63 +251,64 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
 
   const handleBulletAdd = () => {
     // Parse the current bullets HTML string into an array, add a new empty bullet, then convert back to HTML string
-    let bulletsArr: string[] = [];
-    if (typeof editedSlide.content.bullets === 'string') {
-      bulletsArr = editedSlide.content.bullets
-        .replace(/<ul>|<\/ul>/g, '')
-        .split(/<li>|<\/li>/)
-        .map(b => b.trim())
-        .filter(Boolean);
-    }
+    const bulletsArr = parseBulletsFromHtml(
+      typeof editedSlide.content.bullets === 'string' 
+        ? editedSlide.content.bullets 
+        : '<ul></ul>'
+    );
     bulletsArr.push('');
-    const bulletsHtml = `<ul>${bulletsArr.map(b => `<li>${b}</li>`).join('')}</ul>`;
+    
     setEditedSlide({
       ...editedSlide,
       content: {
         ...editedSlide.content,
-        bullets: bulletsHtml,
+        bullets: bulletsToHtml(bulletsArr),
       },
     });
   };
 
   const handleBulletChange = (index: number, value: string) => {
-    // Parse HTML to array, change, then convert back to HTML
-    let bulletsArr: string[] = [];
-    if (typeof editedSlide.content.bullets === 'string') {
-      bulletsArr = editedSlide.content.bullets
-        .replace(/<ul>|<\/ul>/g, '')
-        .split(/<li>|<\/li>/)
-        .map(b => b.trim())
-        .filter(Boolean);
+    // Parse HTML to array, update the bullet at the given index, then convert back to HTML
+    const bulletsArr = parseBulletsFromHtml(
+      typeof editedSlide.content.bullets === 'string' 
+        ? editedSlide.content.bullets 
+        : '<ul></ul>'
+    );
+    
+    // Update the bullet at the given index
+    if (index >= 0 && index < bulletsArr.length) {
+      bulletsArr[index] = value;
+    } else if (index === bulletsArr.length) {
+      bulletsArr.push(value);
     }
-    bulletsArr[index] = value;
-    const bulletsHtml = `<ul>${bulletsArr.map(b => `<li>${b}</li>`).join('')}</ul>`;
+    
     setEditedSlide({
       ...editedSlide,
       content: {
         ...editedSlide.content,
-        bullets: bulletsHtml,
+        bullets: bulletsToHtml(bulletsArr),
       },
     });
   };
 
   const handleBulletDelete = (index: number) => {
-    // Parse HTML to array, delete, then convert back to HTML
-    let bulletsArr: string[] = [];
-    if (typeof editedSlide.content.bullets === 'string') {
-      bulletsArr = editedSlide.content.bullets
-        .replace(/<ul>|<\/ul>/g, '')
-        .split(/<li>|<\/li>/)
-        .map(b => b.trim())
-        .filter(Boolean);
+    // Parse HTML to array, remove the bullet at the given index, then convert back to HTML
+    const bulletsArr = parseBulletsFromHtml(
+      typeof editedSlide.content.bullets === 'string' 
+        ? editedSlide.content.bullets 
+        : '<ul></ul>'
+    );
+    
+    // Remove the bullet at the given index if it exists
+    if (index >= 0 && index < bulletsArr.length) {
+      bulletsArr.splice(index, 1);
     }
-    bulletsArr.splice(index, 1);
-    const bulletsHtml = `<ul>${bulletsArr.map(b => `<li>${b}</li>`).join('')}</ul>`;
+    
     setEditedSlide({
       ...editedSlide,
       content: {
         ...editedSlide.content,
-        bullets: bulletsHtml,
+        bullets: bulletsToHtml(bulletsArr),
       },
     });
   };
@@ -302,6 +353,9 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   }, [onImageGenerate, handleImageChange]);
 
   const handleBgColorChange = (color: string) => {
+    // If selecting 'custom', don't update the color yet
+    if (color === 'custom') return;
+    
     setEditedSlide((prev) => ({
       ...prev,
       backgroundColor: color,
@@ -309,15 +363,51 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
   };
 
   const handleFontColorChange = (color: string) => {
+    // If selecting 'custom', don't update the color yet
+    if (color === 'custom') return;
+    
     setEditedSlide((prev) => ({
       ...prev,
       fontColor: color,
     }));
   };
 
+  const handleColorPickerOpen = (event: React.MouseEvent<HTMLElement>, type: 'background' | 'font') => {
+    event.stopPropagation();
+    event.preventDefault();
+    setCurrentColorType(type);
+    setColorPickerAnchorEl(event.currentTarget);
+  };
+
+  const handleColorPickerClose = () => {
+    setColorPickerAnchorEl(null);
+    setCurrentColorType(null);
+  };
+
+  const handleCustomColorChange = (color: any) => {
+    if (!color || !color.hex) return;
+    
+    if (currentColorType === 'background') {
+      setEditedSlide(prev => ({
+        ...prev,
+        backgroundColor: color.hex
+      }));
+    } else if (currentColorType === 'font') {
+      setEditedSlide(prev => ({
+        ...prev,
+        fontColor: color.hex
+      }));
+    }
+  };
+
   useEffect(() => {
     if ((editedSlide.layout === 'title-bullets' || editedSlide.layout === 'title-bullets-image')) {
-      if (!editedSlide.content.bullets || editedSlide.content.bullets.trim() === '') {
+      const bullets = editedSlide.content.bullets;
+      const isEmpty = !bullets || 
+                    (typeof bullets === 'string' && bullets.trim() === '') ||
+                    (Array.isArray(bullets) && bullets.length === 0);
+      
+      if (isEmpty) {
         setBodyError('Bullet points are empty or missing.');
       } else {
         setBodyError(null);
@@ -363,17 +453,19 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Edit Slide</DialogTitle>
       <DialogContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-          <Button
-            onClick={() => handleImageGenerate(editedSlide.content.title || topic?.title || 'Generate slide content')}
-            startIcon={<AutoAwesomeIcon />}
-            variant="outlined"
-            color="secondary"
-            sx={{ minWidth: 180 }}
-          >
-            AI Generate Image
-          </Button>
-        </Box>
+        {(editedSlide.layout === 'title-bullets-image' || editedSlide.layout === 'title-image') && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+            <Button
+              onClick={() => handleImageGenerate(editedSlide.content.title || topic?.title || 'Generate slide content')}
+              startIcon={<AutoAwesomeIcon />}
+              variant="outlined"
+              color="secondary"
+              sx={{ minWidth: 180 }}
+            >
+              AI Generate Image
+            </Button>
+          </Box>
+        )}
         <Box sx={{
           position: 'sticky',
           top: 0,
@@ -393,9 +485,46 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
                 value={editedSlide.backgroundColor}
                 label="Slide Background"
                 onChange={(e) => handleBgColorChange(e.target.value as string)}
+                renderValue={(value) => (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box
+                      sx={{
+                        width: 20,
+                        height: 20,
+                        backgroundColor: value === 'custom' ? (editedSlide.backgroundColor || '#ffffff') : value,
+                        border: '1px solid #ccc',
+                        borderRadius: '50%',
+                      }}
+                    />
+                    {value === 'custom' ? 'Custom' : value}
+                  </Box>
+                )}
               >
-                {backgroundColors.map(opt => (
-                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                {backgroundColors.map((opt) => (
+                  <MenuItem 
+                    key={opt.value} 
+                    value={opt.value}
+                    onClick={(e) => {
+                      if (opt.value === 'custom') {
+                        e.preventDefault();
+                        handleColorPickerOpen(e as any, 'background');
+                      }
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box
+                        sx={{
+                          width: 20,
+                          height: 20,
+                          backgroundColor: opt.value === 'custom' ? 'transparent' : opt.value,
+                          border: '1px solid #ccc',
+                          borderRadius: '50%',
+                          background: opt.value === 'custom' ? 'linear-gradient(45deg, #ff0000, #ff9900, #ffff00, #33cc33, #3399ff, #cc33ff, #ff0066)' : 'none'
+                        }}
+                      />
+                      {opt.label}
+                    </Box>
+                  </MenuItem>
                 ))}
               </Select>
             </FormControl>
@@ -406,9 +535,46 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
                 value={editedSlide.fontColor}
                 label="Font Color"
                 onChange={(e) => handleFontColorChange(e.target.value as string)}
+                renderValue={(value) => (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box
+                      sx={{
+                        width: 20,
+                        height: 20,
+                        backgroundColor: value === 'custom' ? (editedSlide.fontColor || '#000000') : value,
+                        border: '1px solid #ccc',
+                        borderRadius: '50%',
+                      }}
+                    />
+                    {value === 'custom' ? 'Custom' : value}
+                  </Box>
+                )}
               >
-                {fontColors.map(opt => (
-                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                {fontColors.map((opt) => (
+                  <MenuItem 
+                    key={opt.value} 
+                    value={opt.value}
+                    onClick={(e) => {
+                      if (opt.value === 'custom') {
+                        e.preventDefault();
+                        handleColorPickerOpen(e as any, 'font');
+                      }
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box
+                        sx={{
+                          width: 20,
+                          height: 20,
+                          backgroundColor: opt.value === 'custom' ? 'transparent' : opt.value,
+                          border: '1px solid #ccc',
+                          borderRadius: '50%',
+                          background: opt.value === 'custom' ? 'linear-gradient(45deg, #000000, #666666, #999999, #cccccc, #ffffff)' : 'none'
+                        }}
+                      />
+                      {opt.label}
+                    </Box>
+                  </MenuItem>
                 ))}
               </Select>
             </FormControl>
@@ -454,15 +620,13 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
             <Box>
               <Typography variant="h6" gutterBottom>Bullet Points</Typography>
               {(() => {
-                // Parse HTML to array for editing
-                let bulletsArr: string[] = [];
-                if (typeof editedSlide.content.bullets === 'string') {
-                  bulletsArr = editedSlide.content.bullets
-                    .replace(/<ul>|<\/ul>/g, '')
-                    .split(/<li>|<\/li>/)
-                    .map(b => b.trim())
-                    .filter(Boolean);
-                }
+                // Parse HTML to array for editing using our helper function
+                const bulletsArr = parseBulletsFromHtml(
+                  typeof editedSlide.content.bullets === 'string' 
+                    ? editedSlide.content.bullets 
+                    : '<ul></ul>'
+                );
+                
                 return bulletsArr.map((bullet, index) => (
                   <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1 }}>
                     <TextField
@@ -519,8 +683,23 @@ const SlideEditDialog: React.FC<SlideEditDialogProps> = ({
         </Stack>
       </DialogContent>
       <DialogActions>
+        <Popover
+          open={Boolean(colorPickerAnchorEl)}
+          anchorEl={colorPickerAnchorEl}
+          onClose={handleColorPickerClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'left',
+          }}
+        >
+          <ChromePicker
+            color={currentColorType === 'background' 
+              ? editedSlide.backgroundColor || '#ffffff' 
+              : editedSlide.fontColor || '#000000'}
+            onChange={handleCustomColorChange}
+          />
+        </Popover>
         <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSave} variant="contained">Save</Button>
       </DialogActions>
     </Dialog>
   );

@@ -1,0 +1,41 @@
+{
+  "topics": [
+    {
+      "id": "slide_1",
+      "title": "Introduction to the Solar System",
+      "key_points": [
+        "The solar system consists of the sun and eight planets",
+        "Planets orbit the sun in specific paths",
+        "Each planet has unique characteristics"
+      ],
+      "image_prompt": "Illustration showing the sun at the center with orbiting planets labeled",
+      "description": "This slide provides an overview of the solar system and its basic components.",
+      "subtopics": []
+    },
+    {
+      "id": "slide_2",
+      "title": "Space Exploration History",
+      "key_points": [
+        "Humans have sent spacecraft to explore space",
+        "First human landing on the moon was in 1969",
+        "Space telescopes help us study distant galaxies"
+      ],
+      "image_prompt": "Historical photo of astronauts on the moon's surface",
+      "description": "This slide highlights key milestones in space exploration history.",
+      "subtopics": []
+    },
+    {
+      "id": "slide_3",
+      "title": "Importance of Space Exploration",
+      "key_points": [
+        "Space exploration helps us understand the universe",
+        "Discoveries in space lead to new technologies on Earth",
+        "Studying space can provide insights into Earth's environment"
+      ],
+      "image_prompt": "Image of a satellite orbiting Earth with data transmission",
+      "description": "This slide emphasizes the significance of space exploration for scientific advancements and Earth's well-being.",
+      "subtopics": []
+    }
+  ],
+  "warnings": []
+}

@@ -18,6 +18,9 @@ import traceback
 from collections import deque
 import openai
 import base64
+from datetime import datetime
+import requests
+from typing import Tuple, Optional
 
 # Load environment variables
 load_dotenv()
@@ -38,13 +41,22 @@ def get_openai_client():
 app = FastAPI()
 
 # --- CORS MIDDLEWARE SETUP ---
+# List of allowed origins - update this in production
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Local development
+    "http://localhost:8000",  # Also allow local backend origin if needed
+    "https://ai-powerpoint-f44a1d57b590.herokuapp.com",  # Your production frontend URL if different
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for development
+    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$|^https://ai-powerpoint-.*\.herokuapp\.com$",
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"],
     allow_headers=["*"],
     expose_headers=["*"],
+    max_age=600,  # Cache preflight requests for 10 minutes
 )
 
 # Add middleware to handle OPTIONS requests for all routes
@@ -168,7 +180,7 @@ class SlideTopic(BaseModel):
     """Model for a slide topic."""
     id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique identifier for the topic")
     title: str = Field(..., description="Title of the topic")
-    bullet_points: List[str] = Field(..., description="List of bullet points")
+    key_points: List[str] = Field(..., description="List of key points")
     image_prompt: Optional[str] = Field(None, description="Optional prompt for generating an image")
     description: Optional[str] = Field(None, description="Optional detailed description")
     subtopics: List[SlideTopicRef] = Field(default_factory=list, description="Optional list of subtopics")
@@ -181,7 +193,7 @@ class SlideTopic(BaseModel):
 # Define SlideGenerationRequest model
 class SlideGenerationRequest(BaseModel):
     """Request model for generating a single slide."""
-    topic: Dict[str, Any] = Field(..., description="Topic data for the slide")
+    topic: SlideTopic = Field(..., description="Topic data for the slide")
     instructional_level: str = Field(
         ...,
         pattern='^(elementary|middle_school|high_school|university|professional)$',
@@ -195,6 +207,9 @@ class SlideGenerationRequest(BaseModel):
     
     class Config:
         extra = 'forbid'  # Don't allow extra fields
+        json_encoders = {
+            'SlideTopic': lambda v: v.dict()
+        }
 
 class OutlineRequest(BaseModel):
     """Request model for outline generation."""
@@ -256,12 +271,12 @@ SUPPORTED_LAYOUTS = {
         "content_types": {"title": "text", "body": "text", "image_url": "image", "image_alt": "text"}
     },
     "title-bullets": {
-        "fields": ["title", "bullet_points"],
-        "content_types": {"title": "text", "bullet_points": "list"}
+        "fields": ["title", "key_points"],
+        "content_types": {"title": "text", "key_points": "list"}
     },
     "title-bullets-image": {
-        "fields": ["title", "bullet_points", "image_url", "image_alt"],
-        "content_types": {"title": "text", "bullet_points": "list", "image_url": "image", "image_alt": "text"}
+        "fields": ["title", "key_points", "image_url", "image_alt"],
+        "content_types": {"title": "text", "key_points": "list", "image_url": "image", "image_alt": "text"}
     },
     "two-column": {
         "fields": ["title", "column_left", "column_right"],
@@ -284,17 +299,29 @@ def generate_sample_topics(context: str, num_slides: int, level: str, layout: st
     logger.debug(f"Generating sample topics for: {context} with layout: {layout}")
     topics = [
         {
-            "id": f"slide_{i+1}",
-            "title": f"Slide {i+1}: {context} - Part {i+1}",
-            "bullet_points": [
-                f"Key point 1 for {context}",
-                f"Key point 2 for {context}",
-                f"Key point 3 for {context}"
+            "id": str(uuid.uuid4()),
+            "title": f"Introduction to {context}",
+            "key_points": [
+                f"What is {context}?",
+                f"Why is {context} important?",
+                f"Key concepts of {context}"
             ],
-            "image_prompt": f"An image representing {context} part {i+1}" if "image" in layout else None,
-            "description": f"Description of {context} part {i+1}"
+            "image_prompt": f"An illustration representing {context}",
+            "description": f"An introduction to the topic of {context}",
+            "subtopics": []
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "title": f"History of {context}",
+            "key_points": [
+                f"Origins of {context}",
+                f"Key milestones in {context} development",
+                f"Modern applications of {context}"
+            ],
+            "image_prompt": f"A historical timeline of {context}",
+            "description": f"Historical development of {context}",
+            "subtopics": []
         }
-        for i in range(num_slides)
     ]
     logger.debug(f"Generated {len(topics)} topics")
     return topics
@@ -411,17 +438,19 @@ Example output:
             # Filtering logic (same as before)
             filtered_topics = []
             for topic in topics:
-                bullet_points = topic.get("bullet_points", [])
+                key_points = topic.get("key_points", topic.get("bullet_points", []))  # Fallback to bullet_points for backward compatibility
                 image_prompt = topic.get("image_prompt", "")
-                valid_bullet_points = [bp for bp in bullet_points if isinstance(bp, str) and bp.strip()]
-                if (
-                    isinstance(bullet_points, list)
-                    and 3 <= len(valid_bullet_points) <= 5
-                    and all(isinstance(bp, str) and bp.strip() for bp in bullet_points)
-                    and isinstance(image_prompt, str)
-                    and image_prompt.strip() != ""
-                ):
-                    filtered_topics.append({**topic, "bullet_points": valid_bullet_points, "image_prompt": image_prompt.strip()})
+                
+                # Validate key points
+                valid_key_points = [kp for kp in key_points if isinstance(kp, str) and kp.strip()]
+                
+                if (topic.get("title") and 
+                    isinstance(key_points, list)
+                    and 3 <= len(valid_key_points) <= 5
+                    and all(isinstance(kp, str) and kp.strip() for kp in key_points)
+                    and image_prompt and isinstance(image_prompt, str) and image_prompt.strip()):
+                    
+                    filtered_topics.append({**topic, "key_points": valid_key_points, "image_prompt": image_prompt.strip()})
             logger.info(f"[OpenAI Attempt {attempt}] Filtered topics: {filtered_topics}")
             if filtered_topics:
                 return filtered_topics
@@ -714,10 +743,12 @@ async def generate_slides(
                     
                 # Ensure required fields exist with defaults
                 topic_title = topic.get('title', f'Topic {i}')
+                # Handle both key_points and bullet_points for backward compatibility
+                key_points = topic.get('key_points', topic.get('bullet_points', [f'Key point {i}']))
                 processed_topic = {
                     'id': topic.get('id', f'topic-{i}'),
                     'title': topic_title,
-                    'bullet_points': topic.get('bullet_points', [f'Bullet point {i}']),
+                    'key_points': key_points,
                     'description': topic.get('description', f'Description for {topic_title}'),
                     'image_prompt': topic.get('image_prompt', f'Image for {topic_title}'),
                     'subtopics': topic.get('subtopics', [])
@@ -770,14 +801,18 @@ async def generate_slides(
                     # Ensure required fields are present
                     if 'title' not in topic_dict or not topic_dict['title']:
                         topic_dict['title'] = f"Topic {i}"
-                    if 'bullet_points' not in topic_dict or not topic_dict['bullet_points']:
-                        topic_dict['bullet_points'] = ["Key point 1", "Key point 2"]
+                    # Handle both key_points and bullet_points for backward compatibility
+                    if 'key_points' not in topic_dict or not topic_dict['key_points']:
+                        if 'bullet_points' in topic_dict and topic_dict['bullet_points']:
+                            topic_dict['key_points'] = topic_dict['bullet_points']
+                        else:
+                            topic_dict['key_points'] = ["Key point 1", "Key point 2"]
                     
                     # Create a SlideTopic instance
                     slide_topic = SlideTopic(
                         id=topic_dict.get('id', str(uuid.uuid4())),
                         title=topic_dict['title'],
-                        bullet_points=topic_dict['bullet_points'],
+                        key_points=topic_dict['key_points'],
                         image_prompt=topic_dict.get('image_prompt', ''),
                         description=topic_dict.get('description', ''),
                         subtopics=topic_dict.get('subtopics', [])
@@ -789,8 +824,12 @@ async def generate_slides(
                     # Ensure required fields are present
                     if 'title' not in topic_data or not topic_data['title']:
                         topic_data['title'] = f"Topic {i}"
-                    if 'bullet_points' not in topic_data or not topic_data['bullet_points']:
-                        topic_data['bullet_points'] = ["Key point 1", "Key point 2"]
+                    # Handle both key_points and bullet_points for backward compatibility
+                    if 'key_points' not in topic_data or not topic_data['key_points']:
+                        if 'bullet_points' in topic_data and topic_data['bullet_points']:
+                            topic_data['key_points'] = topic_data['bullet_points']
+                        else:
+                            topic_data['key_points'] = ["Key point 1", "Key point 2"]
                     if 'description' not in topic_data or not topic_data['description']:
                         topic_data['description'] = f"Description for {topic_data['title']}"
                     
@@ -834,7 +873,8 @@ async def generate_slides(
                                     "title": slide_content.get('title', f"Slide {len(slides) + 1}"),
                                     "content": slide_content.get('content', {}),
                                     "layout": slide_layout,
-                                    "order": len(slides) + 1
+                                    "order": len(slides) + 1,
+                                    "image_source": slide_content.get('content', {}).get('image_source', 'none')
                                 }
                                 
                                 # Add the slide to the presentation
@@ -951,15 +991,67 @@ async def upload_image(file: UploadFile = File(...)):
             }
         )
 
+def save_image_from_b64(b64_image: str, prompt: str) -> Tuple[str, str]:
+    """Save base64 image data to disk and return the URL and filepath."""
+    try:
+        image_data = base64.b64decode(b64_image)
+        filename = f"{uuid.uuid4().hex[:8]}.png"
+        filepath = f"static/images/{filename}"
+        os.makedirs("static/images", exist_ok=True)
+        with open(filepath, "wb") as f:
+            f.write(image_data)
+        image_url = f"/static/images/{filename}"
+        logger.info(f"Saved image to: {filepath}")
+        return image_url, filepath
+    except Exception as e:
+        logger.error(f"Error saving image: {str(e)}")
+        raise
+
+async def generate_with_imagen(prompt: str) -> Optional[dict]:
+    """Generate image using Google's Imagen API."""
+    try:
+        # Replace this with actual Imagen API call when available
+        # For now, we'll simulate a failure to trigger the fallback
+        logger.info(f"Attempting to generate with Imagen: {prompt}")
+        raise Exception("Imagen API not yet implemented")
+        
+        # Example implementation (commented out since we don't have the actual API yet):
+        # response = requests.post(
+        #     "https://imagen-api-url/generate",
+        #     json={"prompt": prompt},
+        #     headers={"Authorization": f"Bearer {os.getenv('IMAGEN_API_KEY')}"}
+        # )
+        # response.raise_for_status()
+        # return {"b64_image": response.json()["image"], "source": "imagen"}
+    except Exception as e:
+        logger.warning(f"Imagen generation failed: {str(e)}")
+        return None
+
+async def generate_with_dalle(prompt: str) -> dict:
+    """Generate image using OpenAI's DALL-E."""
+    try:
+        logger.info(f"Generating with DALL-E: {prompt}")
+        client = get_openai_client()
+        response = openai.images.generate(
+            prompt=prompt,
+            n=1,
+            size="1024x1024",
+            response_format="b64_json"
+        )
+        return {"b64_image": response.data[0].b64_json, "source": "dalle"}
+    except Exception as e:
+        logger.error(f"DALL-E generation failed: {str(e)}")
+        raise
+
 # --- IMAGE GENERATION ENDPOINT ---
 @app.post("/api/generate/image")
 async def generate_image(request: dict):
+    """Generate an image using Imagen (with fallback to DALL-E)."""
     logger.info('[server.py] /api/generate/image called')
     logger.info('[server.py] Request data: %s', request)
-    logger.info('[server.py] OPENAI_API_KEY present: %s', bool(os.environ.get('OPENAI_API_KEY')))
+    
     try:
-        logger.info(f"Received image generation request: {request}")
-        # Ensure prompt is present and valid
+        # Validate request
         prompt = request.get('prompt') if isinstance(request, dict) else None
         if not prompt or not isinstance(prompt, str) or not prompt.strip():
             logger.error("Image generation request missing valid 'prompt'")
@@ -971,58 +1063,52 @@ async def generate_image(request: dict):
                     "error_type": "INVALID_REQUEST"
                 }
             )
+        
+        source = None
         try:
-            # Generate image using OpenAI DALL-E (openai>=1.0.0 syntax)
-            client = get_openai_client()
-            response = openai.images.generate(
-                prompt=prompt,
-                n=1,
-                size="1024x1024",
-                response_format="b64_json"
-            )
-            b64_image = response.data[0].b64_json
-            # Save image to static/images
-            image_data = base64.b64decode(b64_image)
-            filename = f"{uuid.uuid4().hex[:8]}.png"
-            filepath = f"static/images/{filename}"
-            with open(filepath, "wb") as f:
-                f.write(image_data)
-            image_url = f"/static/images/{filename}"
-            logger.info(f"Generated image URL: {image_url}")
+            # Try Imagen first
+            imagen_result = await generate_with_imagen(prompt)
+            if imagen_result:
+                image_url, _ = save_image_from_b64(imagen_result["b64_image"], prompt)
+                source = "imagen"
+            else:
+                # Fall back to DALL-E
+                dalle_result = await generate_with_dalle(prompt)
+                image_url, _ = save_image_from_b64(dalle_result["b64_image"], prompt)
+                source = "dalle"
+                
+            # Log the successful generation
             add_openai_log({
                 "prompt": prompt,
-                "image_url": image_url
+                "image_url": image_url,
+                "source": source
             })
-            return {"image_url": image_url}
-        except openai.OpenAIError as oe:
-            logger.error(f"OpenAI API error: {str(oe)}")
-            return JSONResponse(
-                status_code=500,
-                content={
-                    "status": "error",
-                    "message": f"OpenAI API error: {str(oe)}",
-                    "error_type": "OPENAI_API_ERROR"
-                }
-            )
+            
+            return {
+                "image_url": image_url,
+                "source": source
+            }
+            
         except Exception as e:
-            logger.error(f"Unexpected error in OpenAI image generation: {str(e)}")
+            logger.error(f"Error in image generation: {str(e)}")
             logger.error(traceback.format_exc())
             return JSONResponse(
                 status_code=500,
                 content={
                     "status": "error",
-                    "message": f"Unexpected error: {str(e)}",
-                    "error_type": "UNEXPECTED_ERROR"
+                    "message": f"Failed to generate image: {str(e)}",
+                    "error_type": "IMAGE_GENERATION_ERROR"
                 }
             )
+            
     except Exception as e:
-        logger.error(f"Error in generate_image: {str(e)}")
+        logger.error(f"Error in generate_image endpoint: {str(e)}")
         logger.error(traceback.format_exc())
         return JSONResponse(
             status_code=500,
             content={
                 "status": "error",
-                "message": f"Error generating image: {str(e)}"
+                "message": "Internal server error during image generation"
             }
         )
 
@@ -1030,23 +1116,25 @@ async def generate_image(request: dict):
 async def generate_slide_content(request: SlideGenerationRequest):
     """Generate content for a single slide."""
     try:
-        logger.info(f"Generating slide content for topic: {request.topic.get('title', 'Untitled')}")
-        
-        # Ensure we have a valid topic dictionary
-        if not isinstance(request.topic, dict):
-            raise HTTPException(status_code=400, detail=f"Invalid topic format: {type(request.topic)}")
+        logger.info(f"Generating slide content for topic: {request.topic.title}")
         
         # Get the topic data
         topic_data = request.topic
         
-        # Validate layout
+        # Validate layout - this should be handled by Pydantic, but we'll double-check
         if request.layout not in SUPPORTED_LAYOUTS:
-            raise HTTPException(status_code=400, detail=f"Unsupported layout: {request.layout}")
+            logger.warning(f"Unsupported layout: {request.layout}")
+            raise HTTPException(status_code=400, detail={
+                "detail": f"Unsupported layout: {request.layout}",
+                "error_type": "validation_error",
+                "field": "layout",
+                "allowed_values": list(SUPPORTED_LAYOUTS.keys())
+            })
         
         # Prepare the slide content based on the layout
         slide_content = {
             "layout": request.layout,
-            "title": topic_data.get('title', 'Untitled'),
+            "title": topic_data.title or 'Untitled',
             "content": {}
         }
         
@@ -1054,19 +1142,37 @@ async def generate_slide_content(request: SlideGenerationRequest):
         layout_config = SUPPORTED_LAYOUTS[request.layout]
         for field in layout_config['fields']:
             if field == 'title':
-                slide_content['content'][field] = topic_data.get('title', 'Untitled')
+                slide_content['content'][field] = topic_data.title or 'Untitled'
             elif field == 'body':
-                slide_content['content'][field] = topic_data.get('description', '')
-            elif field == 'bullet_points':
-                slide_content['content'][field] = topic_data.get('bullet_points', [])
+                slide_content['content'][field] = topic_data.description or ''
+            elif field == 'key_points':
+                # Include both 'bullets' and 'key_points' for compatibility
+                slide_content['content']['bullets'] = topic_data.key_points or []
+                slide_content['content']['key_points'] = topic_data.key_points or []
             elif field == 'image_url':
-                # For now, we'll just return the image prompt
-                # In a real implementation, you would generate or fetch an image here
-                slide_content['content'][field] = f"Generated image for: {topic_data.get('image_prompt', '')}"
-                slide_content['content']['image_alt'] = topic_data.get('image_prompt', '')
+                # Generate or fetch the image
+                if topic_data.image_prompt:
+                    try:
+                        # Call our image generation endpoint
+                        image_result = await generate_image({"prompt": topic_data.image_prompt})
+                        if isinstance(image_result, dict) and 'image_url' in image_result:
+                            slide_content['content'][field] = image_result['image_url']
+                            slide_content['content']['image_alt'] = topic_data.image_prompt
+                            slide_content['content']['image_source'] = image_result.get('source', 'unknown')
+                        else:
+                            # Fallback to just showing the prompt if generation fails
+                            slide_content['content'][field] = f"Generated image for: {topic_data.image_prompt}"
+                            slide_content['content']['image_alt'] = topic_data.image_prompt
+                    except Exception as e:
+                        logger.error(f"Error generating image: {str(e)}")
+                        slide_content['content'][field] = f"Error generating image: {topic_data.image_prompt}"
+                        slide_content['content']['image_alt'] = topic_data.image_prompt
+                else:
+                    slide_content['content'][field] = ""
+                    slide_content['content']['image_alt'] = ""
             elif field in ['column_left', 'column_right']:
                 # For two-column layouts, we'll split the description
-                desc = topic_data.get('description', '')
+                desc = topic_data.description or ''
                 parts = desc.split('. ')
                 mid = len(parts) // 2
                 if field == 'column_left':

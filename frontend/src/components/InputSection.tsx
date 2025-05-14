@@ -144,42 +144,34 @@ const InputSection: React.FC = () => {
       console.log('Starting slide generation with outline:', effectiveOutline);
       
       // Create a copy of the outline with all required fields
-      const topicsWithIds: SlideTopic[] = effectiveOutline.map((topic, index) => {
+      const topicsWithIds: SlideTopic[] = effectiveOutline.map((topic: any, index) => {
         // Ensure we have a valid topic
         if (!topic) {
           console.warn(`Skipping invalid topic at index ${index}`);
-          return null;
+          return {
+            id: `topic-${index}-${Date.now()}`,
+            title: 'Invalid Topic',
+            key_points: ['Topic data is invalid'],
+            bullet_points: ['Topic data is invalid'],
+            description: 'This topic could not be processed due to invalid data.',
+            image_prompt: 'error',
+            instructionalLevel: instructionalLevelInput,
+            subtopics: []
+          };
         }
         
-        try {
-          return {
-            id: topic.id || `topic-${index}`,
-            title: topic.title || `Topic ${index + 1}`,
-            key_points: Array.isArray(topic.key_points) && topic.key_points.length > 0 
-              ? topic.key_points 
-              : ['Key point 1'],
-            description: topic.description || `A presentation about ${topic.title || 'this topic'}`,
-            image_prompt: topic.image_prompt || `An illustration representing ${topic.title || 'this topic'}`,
-            subtopics: Array.isArray(topic.subtopics) 
-              ? topic.subtopics
-                  .filter(subtopic => subtopic) // Filter out any null/undefined subtopics
-                  .map((subtopic, subIndex) => ({
-                    id: subtopic.id || `subtopic-${index}-${subIndex}`,
-                    title: subtopic.title || `Subtopic ${subIndex + 1}`,
-                    key_points: Array.isArray(subtopic.key_points) && subtopic.key_points.length > 0
-                      ? subtopic.key_points 
-                      : ['Key point 1'],
-                    description: subtopic.description || `Details about ${subtopic.title || 'this subtopic'}`,
-                    image_prompt: subtopic.image_prompt || `An illustration for ${subtopic.title || 'this subtopic'}`,
-                    instructionalLevel: subtopic.instructionalLevel || instructionalLevelInput
-                  }))
-              : [],
-            instructionalLevel: topic.instructionalLevel || instructionalLevelInput
-          };
-        } catch (topicErr) {
-          console.error(`Error processing topic at index ${index}:`, topicErr);
-          return null;
-        }
+        // Return the topic with all required fields
+        return {
+          id: topic.id || `topic-${index}-${Date.now()}`,
+          title: topic.title || 'Untitled Topic',
+          key_points: Array.isArray(topic.key_points) ? topic.key_points : 
+                    (Array.isArray(topic.bullet_points) ? topic.bullet_points : ['No key points available']),
+          bullet_points: Array.isArray(topic.bullet_points) ? topic.bullet_points : [],
+          description: topic.description || `A presentation about ${topic.title || 'this topic'}`,
+          image_prompt: topic.image_prompt || `An illustration representing ${topic.title || 'this topic'}`,
+          instructionalLevel: topic.instructionalLevel || instructionalLevelInput,
+          subtopics: Array.isArray(topic.subtopics) ? topic.subtopics : []
+        };
       }).filter(Boolean); // Remove any null entries from the array
       
       if (topicsWithIds.length === 0) {

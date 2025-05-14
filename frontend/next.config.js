@@ -1,8 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Add basePath and assetPrefix for proper static asset serving
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
+  assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH || '',
   images: {
     domains: ['ai-powerpoint-f44a1d57b590.herokuapp.com'],
+    // Add unoptimized: true if you're using Next.js Image component with external URLs
+    unoptimized: true,
   },
   async rewrites() {
     // Always use the Heroku backend URL

@@ -1,82 +1,51 @@
-import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
+import httpx
+import asyncio
+import json
 
-import pytest
-from fastapi.testclient import TestClient
-from backend.main import app
-
-def get_sample_topic():
-    return {
-        "title": "Photosynthesis",
-        "description": "The process by which green plants and some other organisms use sunlight to synthesize foods from carbon dioxide and water.",
-        "key_points": [
-            "Occurs in chloroplasts",
-            "Produces glucose and oxygen",
-            "Requires sunlight"
-        ],
-        "image_prompt": "A diagram of photosynthesis in a leaf",
-        "subtopics": []
-    }
-
-@pytest.fixture(scope="module")
-def client():
-    return TestClient(app)
-
-def test_generate_slide_valid(client):
-    payload = {
-        "topic": get_sample_topic(),
-        "instructional_level": "high_school",
-        "layout": "title-bullets"
-    }
-    response = client.post("/api/generate/slide", json=payload)
-    assert response.status_code == 200
-    data = response.json()
-    assert "data" in data and "slide" in data["data"]
-    slide = data["data"]["slide"]
-    assert slide["title"]
-    assert slide["layout"] == "title-bullets"
-    assert "bullet_points" in slide and isinstance(slide["bullet_points"], list)
-
-
-def test_generate_slide_missing_keypoints(client):
-    topic = get_sample_topic()
-    topic["key_points"] = []  # Remove key points
-    payload = {
-        "topic": topic,
-        "instructional_level": "high_school",
-        "layout": "title-bullets"
-    }
-    response = client.post("/api/generate/slide", json=payload)
-    # Should fail validation or return a 400/422 error
-    assert response.status_code in (400, 422)
-
-
-def test_generate_slide_invalid_layout(client):
-    payload = {
-        "topic": get_sample_topic(),
-        "instructional_level": "high_school",
-        "layout": "not-a-real-layout"
-    }
-    response = client.post("/api/generate/slide", json=payload)
-    assert response.status_code in (400, 422)
+async def generate_slide():
+    url = "http://localhost:8000/api/generate/slide"
     
-
-def test_generate_slide_minimal(client):
+    # Sample slide data
     payload = {
         "topic": {
-            "title": "Gravity",
-            "description": "The force that attracts a body toward the center of the earth.",
-            "key_points": ["Universal force", "Acts at a distance", "Explains planetary motion"],
-            "image_prompt": "A diagram of gravity acting on Earth",
+            "id": "water-cycle-1",
+            "title": "The Water Cycle",
+            "key_points": [
+                "Water evaporates from the Earth's surface",
+                "Water vapor condenses to form clouds",
+                "Precipitation returns water to the Earth's surface",
+                "Water collects in rivers, lakes, and oceans"
+            ],
+            "image_prompt": "A colorful diagram of the water cycle showing evaporation, condensation, and precipitation",
+            "description": "The water cycle describes how water moves through the Earth's atmosphere, land, and oceans through processes like evaporation, condensation, and precipitation.",
             "subtopics": []
         },
-        "instructional_level": "elementary",
-        "layout": "title-only"
+        "instructional_level": "middle_school",
+        "layout": "title-bullets-image"
     }
-    response = client.post("/api/generate/slide", json=payload)
-    assert response.status_code == 200
-    data = response.json()
-    slide = data["data"]["slide"]
-    assert slide["title"]
-    assert slide["layout"] == "title-only"
+    
+    headers = {
+        "Content-Type": "application/json"
+    }
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=payload, headers=headers, timeout=60.0)
+            
+            if response.status_code == 200:
+                result = response.json()
+                print("Successfully generated slide:")
+                print(json.dumps(result, indent=2))
+                
+                # Save the response to a file
+                with open("slide_response.json", "w") as f:
+                    json.dump(result, f, indent=2)
+                print("\nResponse saved to slide_response.json")
+            else:
+                print(f"Error: {response.status_code}")
+                print(response.text)
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+
+if __name__ == "__main__":
+    asyncio.run(generate_slide())

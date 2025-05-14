@@ -3,7 +3,7 @@ import time
 from typing import Dict, Optional
 import logging
 from contextlib import asynccontextmanager
-from .models import ImageServiceProvider
+from models import ImageServiceProvider
 
 logger = logging.getLogger(__name__)
 

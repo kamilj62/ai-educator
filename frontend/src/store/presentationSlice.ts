@@ -177,6 +177,13 @@ const cleanTopic = (topic: any): any => {
   } else if (topic.key_points) {
     // If key_points is not an array but exists, convert it to an array with a single item
     keyPoints = [String(topic.key_points)];
+  } else if (topic.bullet_points && Array.isArray(topic.bullet_points) && topic.bullet_points.length > 0) {
+    // If key_points is missing but bullet_points exists, use bullet_points as key_points
+    keyPoints = topic.bullet_points.map((bp: any) => {
+      if (typeof bp === 'string') return bp;
+      if (bp && typeof bp === 'object' && 'text' in bp) return String(bp.text);
+      return String(bp);
+    });
   }
   
   // If we still don't have any key points, add a default one
@@ -218,14 +225,32 @@ export const generateSlides = createAsyncThunk(
       const mappedLevel = mapInstructionalLevel(instructionalLevel);
       
       // Prepare topics with all required fields
-      const preparedTopics = cleanTopics.map(topic => ({
-        id: topic.id || `topic-${Math.random().toString(36).substr(2, 9)}`,
-        title: topic.title || 'Untitled Topic',
-        key_points: topic.key_points || [`Key information about ${topic.title || 'this topic'}`],
-        description: topic.description || `A presentation about ${topic.title || 'this topic'}`,
-        image_prompt: topic.image_prompt || `An illustration representing ${topic.title || 'this topic'}`,
-        subtopics: topic.subtopics || []
-      }));
+      const preparedTopics = cleanTopics.map(topic => {
+        // Ensure key_points is properly set
+        let keyPoints: string[] = [];
+        
+        if (Array.isArray(topic.key_points) && topic.key_points.length > 0) {
+          keyPoints = topic.key_points;
+        } else if (Array.isArray(topic.bullet_points) && topic.bullet_points.length > 0) {
+          // Fallback to bullet_points if key_points is missing
+          keyPoints = topic.bullet_points.map((bp: any) => 
+            typeof bp === 'string' ? bp : (bp?.text ? String(bp.text) : String(bp))
+          );
+        } else {
+          // Default key point
+          keyPoints = [`Key information about ${topic.title || 'this topic'}`];
+        }
+        
+        return {
+          id: topic.id || `topic-${Math.random().toString(36).substr(2, 9)}`,
+          title: topic.title || 'Untitled Topic',
+          key_points: keyPoints,
+          bullet_points: Array.isArray(topic.bullet_points) ? topic.bullet_points : [],
+          description: topic.description || `A presentation about ${topic.title || 'this topic'}`,
+          image_prompt: topic.image_prompt || `An illustration representing ${topic.title || 'this topic'}`,
+          subtopics: Array.isArray(topic.subtopics) ? topic.subtopics : []
+        };
+      });
       
       const requestBody = {
         topics: preparedTopics,

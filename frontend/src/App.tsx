@@ -11,7 +11,27 @@ const App: React.FC = () => {
   const slides = useAppSelector(state => state.presentation.slides);
   const outline = useAppSelector(state => state.presentation.outline);
   const hasSlides = slides && slides.length > 0;
-  const hasOutline = outline && outline.length > 0;
+  // Check if outline exists and is an array with items
+  const hasOutline = Array.isArray(outline) && outline.length > 0;
+  
+  // Debug logging for outline data
+  React.useEffect(() => {
+    console.log('App - Outline data:', { 
+      outline, 
+      hasOutline, 
+      type: typeof outline, 
+      isArray: Array.isArray(outline),
+      length: outline?.length,
+      outlineContents: JSON.stringify(outline, null, 2)
+    });
+    
+    // Log Redux state for debugging
+    console.log('App - Full Redux state:', {
+      outline: outline,
+      slides: slides,
+      hasSlides: hasSlides
+    });
+  }, [outline, hasOutline, slides, hasSlides]);
 
   return (
     <Box sx={{ minHeight: '100vh', width: '100vw', background: 'radial-gradient(circle at 60% 10%, #6366f1 0%, #18181b 80%)', py: 6 }}>
@@ -40,11 +60,18 @@ const App: React.FC = () => {
           <Paper elevation={4} sx={{ p: { xs: 2, md: 4 }, mb: 3, borderRadius: 4, background: 'rgba(255,255,255,0.97)' }}>
             <InputSection />
           </Paper>
-          {hasOutline && (
-            <Paper elevation={3} sx={{ p: { xs: 2, md: 4 }, mb: 3, borderRadius: 4, background: 'rgba(255,255,255,0.97)' }}>
-              <OutlineDisplay />
-            </Paper>
-          )}
+          {/* Always render OutlineDisplay but let it handle the empty state */}
+          <Paper 
+            elevation={3} 
+            sx={{ 
+              p: { xs: 2, md: 4 }, 
+              mb: 3, 
+              borderRadius: 4, 
+              background: 'rgba(255,255,255,0.97)'
+            }}
+          >
+            <OutlineDisplay />
+          </Paper>
           {hasSlides && (
             <Paper 
               elevation={5}

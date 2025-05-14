@@ -53,7 +53,7 @@ class SlideContent(BaseModel):
     title: str
     subtitle: Optional[str] = None
     body: Optional[str] = None
-    bullet_points: Optional[List[BulletPoint]] = None
+    key_points: Optional[List[Union[str, Dict[str, str]]]] = None
     examples: Optional[List[Example]] = None
     discussion_questions: Optional[List[str]] = None
     image_url: Optional[str] = None
@@ -65,7 +65,7 @@ class SlideContentNew(BaseModel):
     title: str
     subtitle: Optional[str] = None
     body: Optional[str] = None
-    bullet_points: Optional[List[Dict[str, str]]] = None  # List of {"text": "point text"}
+    key_points: Optional[List[Union[str, Dict[str, str]]]] = None  # List of strings or {"text": "point text"}
     image_url: Optional[str] = None
     image_caption: Optional[str] = None
     layout: str = Field(..., description="Layout type in kebab-case format")

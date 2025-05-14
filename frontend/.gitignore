@@ -28,3 +28,4 @@ static/exports/
 # Ignore lock files (optional)
 # package-lock.json
 yarn.lock
+.vercel

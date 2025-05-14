@@ -1,7 +1,10 @@
 {
   "/_app": "pages/_app.js",
+  "/api/generate-image": "pages/api/generate-image.js",
+  "/app": "pages/app.html",
+  "/": "pages/index.html",
   "/_error": "pages/_error.js",
+  "/api/[...path]": "pages/api/[...path].js",
   "/_document": "pages/_document.js",
-  "/": "pages/index.js",
-  "/app": "pages/app.js"
+  "/404": "pages/404.html"
 }

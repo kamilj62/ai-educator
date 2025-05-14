@@ -5,7 +5,7 @@ import { Box, styled, Alert } from '@mui/material';
 const SlideContainer = styled(Box)(({ theme }) => ({
   width: '100%',
   maxWidth: '960px',  // Standard 16:9 width
-  height: 'calc(960px * 9/16)',  // 16:9 aspect ratio
+  height: '540px',  // 16:9 aspect ratio (960 * 9/16)
   display: 'flex',
   flexDirection: 'column',
   padding: theme.spacing(4),
@@ -13,12 +13,31 @@ const SlideContainer = styled(Box)(({ theme }) => ({
   borderRadius: theme.spacing(1),
   boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
   position: 'relative',
-  overflow: 'auto',
+  overflow: 'hidden', // Changed from 'auto' to 'hidden' to prevent double scrollbars
   margin: '0 auto',
   '@media (max-width: 1200px)': {
     width: '100%',
-    height: 'calc(100vw * 9/16)',
-    maxHeight: 'calc(100vh - 200px)',
+    height: 'calc(100vh - 200px)',
+    maxHeight: 'none',
+  },
+  '& > div': {
+    height: '100%',
+    overflowY: 'auto', // Add scroll to inner content
+    paddingRight: theme.spacing(1), // Space for scrollbar
+    '&::-webkit-scrollbar': {
+      width: '8px',
+    },
+    '&::-webkit-scrollbar-track': {
+      background: theme.palette.grey[100],
+      borderRadius: '4px',
+    },
+    '&::-webkit-scrollbar-thumb': {
+      background: theme.palette.grey[400],
+      borderRadius: '4px',
+      '&:hover': {
+        background: theme.palette.grey[500],
+      },
+    },
   },
 }));
 

@@ -110,6 +110,11 @@ const TitleImageLayout: React.FC<TitleImageLayoutProps> = ({ slide, onChange, on
                 x: image.x || 0,
                 y: image.y || 0,
               }}
+              minWidth={120}
+              minHeight={80}
+              maxWidth={800}
+              maxHeight={600}
+              dragHandleClassName="draggable-image-handle"
               onDragStop={(e, d) => {
                 onChange({
                   ...slide,
@@ -119,25 +124,32 @@ const TitleImageLayout: React.FC<TitleImageLayoutProps> = ({ slide, onChange, on
                       ...image,
                       x: d.x,
                       y: d.y,
+                      url: image.url || '',
+                      alt: image.alt || '',
+                      service: image.service || 'upload',
                     },
                   },
                 });
               }}
-              onResize={(e, direction, ref, delta, position) => {
+              onResizeStop={(e, direction, ref, delta, position) => {
                 onChange({
                   ...slide,
                   content: {
                     ...slide.content,
                     image: {
                       ...image,
-                      width: ref.offsetWidth,
-                      height: ref.offsetHeight,
+                      width: parseInt(ref.style.width, 10),
+                      height: parseInt(ref.style.height, 10),
                       x: position.x,
                       y: position.y,
+                      url: image.url || '',
+                      alt: image.alt || '',
+                      service: image.service || 'upload',
                     },
                   },
                 });
               }}
+              style={{ zIndex: 2, display: 'block', margin: '0 auto 2.5rem auto' }}
             >
               <img
                 src={image.url}
@@ -148,8 +160,11 @@ const TitleImageLayout: React.FC<TitleImageLayoutProps> = ({ slide, onChange, on
                   width: '100%',
                   height: '100%',
                   objectFit: 'contain',
-                  userSelect: 'none',
+                  borderRadius: 8,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
                   cursor: 'grab',
+                  transition: 'box-shadow 0.2s, transform 0.1s',
+                  userSelect: 'none',
                 }}
               />
             </Rnd>

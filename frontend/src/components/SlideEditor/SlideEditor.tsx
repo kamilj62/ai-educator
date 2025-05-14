@@ -9,7 +9,7 @@ import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../store/store';
-import { setSlides } from '../../store/presentationSlice';
+import { setSlides, setActiveSlide } from '../../store/presentationSlice';
 import SlideSorter from './components/SlideSorter';
 import SavePresentation from './components/SavePresentation';
 import SlideEditDialog from './components/SlideEditDialog';
@@ -39,12 +39,12 @@ const SlideEditor: React.FC = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (["ArrowRight", "ArrowDown", " ", "Enter"].includes(e.key)) {
         if (activeSlideIdx < slides.length - 1) {
-          // Removed setActiveSlide dispatch call
+          dispatch(setActiveSlide(slides[activeSlideIdx + 1].id));
         }
         e.preventDefault();
       } else if (["ArrowLeft", "ArrowUp"].includes(e.key)) {
         if (activeSlideIdx > 0) {
-          // Removed setActiveSlide dispatch call
+          dispatch(setActiveSlide(slides[activeSlideIdx - 1].id));
         }
         e.preventDefault();
       } else if (e.key === "Escape") {
@@ -61,23 +61,49 @@ const SlideEditor: React.FC = () => {
     }
   }, [slides, activeSlideId, dispatch]);
 
-  const activeSlide = slides.find(slide => slide.id === activeSlideId);
+  // Ensure we have a valid active slide ID
+  useEffect(() => {
+    if (slides.length > 0 && !activeSlideId) {
+      // Set the first slide as active if no active slide is set
+      dispatch(setActiveSlide(slides[0].id));
+    } else if (activeSlideId && !slides.some(slide => slide.id === activeSlideId)) {
+      // Reset active slide if it's not in the slides array
+      dispatch(setActiveSlide(slides[0]?.id || null));
+    }
+  }, [slides, activeSlideId, dispatch]);
+
+  const activeSlide = activeSlideId ? slides.find(slide => slide.id === activeSlideId) : null;
+  
+  // Debug logging
+  console.log('Active Slide ID:', activeSlideId);
+  console.log('Active Slide:', activeSlide);
+  console.log('All Slides:', slides);
 
   const handleSlideSelect = async (slideId: string) => {
-    // Removed setActiveSlide dispatch call
+    dispatch(setActiveSlide(slideId));
   };
 
   const handleSlidesReorder = (newSlides: Slide[]) => {
     dispatch(setSlides(newSlides));
+    // Update active slide ID if the current active slide was removed
+    if (activeSlideId && !newSlides.some(slide => slide.id === activeSlideId)) {
+      dispatch(setActiveSlide(newSlides[0]?.id || null));
+    }
   };
 
   const handleSlideDelete = (slideId: string) => {
     const newSlides = slides.filter(slide => slide.id !== slideId);
     dispatch(setSlides(newSlides));
-    if (activeSlideId === slideId && newSlides.length > 0) {
-      // Removed setActiveSlide dispatch call
-    } else if (newSlides.length === 0) {
-      // Removed setActiveSlide dispatch call
+    
+    // Update active slide if the current one was deleted
+    if (activeSlideId === slideId) {
+      if (newSlides.length > 0) {
+        // Set the first slide as active
+        dispatch(setActiveSlide(newSlides[0].id));
+      } else {
+        // No slides left
+        dispatch(setActiveSlide(null));
+      }
     }
   };
 
@@ -368,7 +394,7 @@ const SlideEditor: React.FC = () => {
         onSave={handleSave}
         slides={slides}
       />
-      {(pendingNewSlide || (activeSlide && topics.length > 0)) && (
+      {(pendingNewSlide || activeSlide) && (
         <SlideEditDialog
           open={editDialogOpen}
           onClose={() => {

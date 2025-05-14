@@ -72,3 +72,6 @@ backend/credentials/marvelai-imagen-sa-key.json
 
 backend/venv/
 .vercel
+
+backend/.env
+credentials/ 

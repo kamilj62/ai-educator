@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { FC } from 'react';
 import { useState } from 'react';
 import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import pptxgen from 'pptxgenjs';
@@ -13,7 +13,7 @@ interface SavePresentationProps {
 
 type FileFormat = 'pptx' | 'json';
 
-const SavePresentation: React.FC<SavePresentationProps> = ({
+const SavePresentation: FC<SavePresentationProps> = ({
   open,
   onClose,
   onSave,
@@ -68,15 +68,29 @@ const SavePresentation: React.FC<SavePresentationProps> = ({
           fontSize: 14,
         });
       } else if (slide.content.bullets && slide.content.bullets.length > 0) {
-        // Parse HTML bullet string to array of text
-        const bulletsArr = slide.content.bullets.replace(/<\/?ul>/g, '').split(/<li>|<\/li>/).filter(Boolean).map(text => ({ text }));
-        pptSlide.addText(bulletsArr, {
-          x: 0.5,
-          y: 1.5,
-          w: '90%',
-          bullet: true,
-          fontSize: 14,
-        });
+        // Handle both string and string[] types for bullets
+        let bulletsArr: { text: string }[] = [];
+        
+        if (Array.isArray(slide.content.bullets)) {
+          bulletsArr = slide.content.bullets.map(text => ({ text }));
+        } else if (typeof slide.content.bullets === 'string') {
+          // Parse HTML bullet string to array of text
+          bulletsArr = slide.content.bullets
+            .replace(/<\/?ul[^>]*>/g, '')
+            .split(/<li[^>]*>|<\/li[^>]*>/)
+            .filter(Boolean)
+            .map(text => ({ text: text.trim() }));
+        }
+        
+        if (bulletsArr.length > 0) {
+          pptSlide.addText(bulletsArr, {
+            x: 0.5,
+            y: 1.5,
+            w: '90%',
+            bullet: true,
+            fontSize: 14,
+          });
+        }
       } else if (slide.content.body) {
         pptSlide.addText(slide.content.body, {
           x: 0.5,
@@ -130,9 +144,9 @@ const SavePresentation: React.FC<SavePresentationProps> = ({
         if (format === 'pptx') {
           // Generate PowerPoint file
           const pptx = await createPowerPoint();
-          // Export as binary data
-          const data = await pptx.stream();
-          const blob = new Blob([data], { type: getMimeType('pptx') });
+          // Export as binary data using write() instead of stream()
+          const data = await pptx.write({ outputType: 'blob' });
+          const blob = data as Blob;
           // Write the blob to the file
           await writable.write(blob);
         } else {
@@ -153,9 +167,9 @@ const SavePresentation: React.FC<SavePresentationProps> = ({
         if (format === 'pptx') {
           // Generate PowerPoint file
           const pptx = await createPowerPoint();
-          // Export as binary data
-          const data = await pptx.stream();
-          blob = new Blob([data], { type: getMimeType('pptx') });
+          // Export as binary data using write() instead of stream()
+          const data = await pptx.write({ outputType: 'blob' });
+          blob = data as Blob;
         } else {
           // Write JSON content
           const presentationData = {

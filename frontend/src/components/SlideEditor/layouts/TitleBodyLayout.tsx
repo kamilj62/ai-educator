@@ -72,21 +72,69 @@ const TitleBodyLayout: React.FC<TitleBodyLayoutProps> = ({
           <Rnd
             bounds="parent"
             size={{
-              width: slide.content.image.width || '60%',
-              height: slide.content.image.height || 280,
+              width: slide.content.image.width || 400,
+              height: slide.content.image.height || 300,
             }}
             position={{
               x: slide.content.image.x || 0,
               y: slide.content.image.y || 0,
             }}
-            disableDragging
-            enableResizing={false}
-            style={{ margin: '0 auto', display: 'block' }}
+            minWidth={120}
+            minHeight={80}
+            maxWidth={800}
+            maxHeight={600}
+            dragHandleClassName="draggable-image-handle"
+            onDragStop={(e, d) => {
+              if (!slide.content.image) return;
+              onChange({
+                ...slide,
+                content: {
+                  ...slide.content,
+                  image: {
+                    ...slide.content.image,
+                    x: d.x,
+                    y: d.y,
+                    url: slide.content.image.url || '',
+                    alt: slide.content.image.alt || '',
+                    service: slide.content.image.service || 'upload',
+                  },
+                },
+              });
+            }}
+            onResizeStop={(e, direction, ref, delta, position) => {
+              if (!slide.content.image) return;
+              onChange({
+                ...slide,
+                content: {
+                  ...slide.content,
+                  image: {
+                    ...slide.content.image,
+                    width: parseInt(ref.style.width, 10),
+                    height: parseInt(ref.style.height, 10),
+                    x: position.x,
+                    y: position.y,
+                    url: slide.content.image.url || '',
+                    alt: slide.content.image.alt || '',
+                    service: slide.content.image.service || 'upload',
+                  },
+                },
+              });
+            }}
+            style={{ zIndex: 2, display: 'block', margin: '0 auto 2.5rem auto' }}
           >
             <img
               src={slide.content.image.url}
-              alt={slide.content.image.alt || ''}
-              style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 8 }}
+              alt={slide.content.image.alt || 'Slide image'}
+              style={{ 
+                width: '100%', 
+                height: '100%', 
+                objectFit: 'contain', 
+                borderRadius: 8, 
+                cursor: 'grab',
+                transition: 'box-shadow 0.2s, transform 0.1s'
+              }}
+              className="draggable-image-handle"
+              draggable={false}
             />
           </Rnd>
         )}

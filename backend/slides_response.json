@@ -1,0 +1,58 @@
+{
+  "success": true,
+  "slides": [
+    {
+      "id": "bef66ca7-79a5-41c2-9602-4844204b9800",
+      "title": "Introduction to the Solar System",
+      "content": {
+        "title": "Introduction to the Solar System",
+        "bullets": [
+          "The solar system consists of the sun and eight planets",
+          "Planets orbit the sun in specific paths",
+          "Each planet has unique characteristics"
+        ],
+        "key_points": [
+          "The solar system consists of the sun and eight planets",
+          "Planets orbit the sun in specific paths",
+          "Each planet has unique characteristics"
+        ],
+        "image_url": "/static/images/54475e14.png",
+        "image_alt": "Illustration showing the sun at the center with orbiting planets labeled",
+        "image_source": "dalle"
+      },
+      "layout": "title-bullets-image",
+      "order": 1,
+      "image_source": "dalle",
+      "image_prompt": "Illustration showing the sun at the center with orbiting planets labeled"
+    },
+    {
+      "id": "b381f7eb-e6bc-4b0c-9b6a-db4c8abde730",
+      "title": "Space Exploration History",
+      "content": {
+        "title": "Space Exploration History",
+        "bullets": [
+          "Humans have sent spacecraft to explore space",
+          "First human landing on the moon was in 1969",
+          "Space telescopes help us study distant galaxies"
+        ],
+        "key_points": [
+          "Humans have sent spacecraft to explore space",
+          "First human landing on the moon was in 1969",
+          "Space telescopes help us study distant galaxies"
+        ],
+        "image_url": "/static/images/f433a69f.png",
+        "image_alt": "Historical photo of astronauts on the moon's surface",
+        "image_source": "dalle"
+      },
+      "layout": "title-bullets-image",
+      "order": 2,
+      "image_source": "dalle",
+      "image_prompt": "Historical photo of astronauts on the moon's surface"
+    }
+  ],
+  "metadata": {
+    "generated_at": "2025-05-14T05:56:28.530961",
+    "topics_processed": 2,
+    "slides_generated": 2
+  }
+}

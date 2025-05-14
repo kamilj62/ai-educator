@@ -4,6 +4,15 @@
     { "src": "package.json", "use": "@vercel/next" }
   ],
   "routes": [
+    { "handle": "filesystem" },
+    { "src": "/_next/static/(.*)", "dest": "/_next/static/$1" },
+    { "src": "/static/(.*)", "dest": "/static/$1" },
     { "src": "/(.*)", "dest": "/" }
-  ]
+  ],
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_API_URL": "https://ai-powerpoint-f44a1d57b590.herokuapp.com"
+    }
+  },
+  "outputDirectory": ".next"
 }

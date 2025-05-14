@@ -21,29 +21,67 @@ const ContentContainer = styled(Box)(({ theme }) => ({
   flexDirection: 'column',
   justifyContent: 'flex-start',
   alignItems: 'stretch',
-  gap: theme.spacing(2)
+  gap: theme.spacing(2),
+  overflow: 'hidden', // Prevent container from scrolling
+  '& > *:first-child': {
+    flexShrink: 0, // Prevent title from shrinking
+  },
+  '& > *:last-child': {
+    flexGrow: 1, // Allow content to take remaining space
+    overflow: 'hidden', // Hide overflow from this container
+    display: 'flex',
+    flexDirection: 'column',
+  }
 }));
 
 const TitleContainer = styled(Box)(({ theme }) => ({
   fontSize: '2.5rem',
   fontWeight: 'bold',
-  color: theme.palette.text.primary
+  color: theme.palette.text.primary,
+  marginBottom: theme.spacing(2),
+  lineHeight: 1.2,
+  [theme.breakpoints.down('sm')]: {
+    fontSize: '2rem',
+  }
 }));
 
 const BulletList = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
-  gap: theme.spacing(1)
+  gap: theme.spacing(1.5),
+  overflowY: 'auto', // Add scroll to bullet list
+  paddingRight: theme.spacing(1),
+  margin: theme.spacing(0, -1),
+  padding: theme.spacing(0, 1),
+  '&::-webkit-scrollbar': {
+    width: '6px',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: theme.palette.grey[400],
+    borderRadius: '3px',
+  },
+  '&::-webkit-scrollbar-thumb:hover': {
+    backgroundColor: theme.palette.grey[500],
+  },
 }));
 
 const BulletPoint = styled(Typography)(({ theme }) => ({
   fontSize: '1.25rem',
-  color: theme.palette.text.secondary,
-  opacity: 0.9,  // Slightly more transparent
+  color: theme.palette.text.primary,
+  lineHeight: 1.5,
+  display: 'flex',
+  alignItems: 'flex-start',
   '&:before': {
     content: '"•"',
-    marginRight: theme.spacing(1),
-    color: theme.palette.grey[400]  // Lighter color for the bullet
+    fontSize: '1.5em',
+    lineHeight: 1,
+    marginRight: theme.spacing(1.5),
+    color: theme.palette.primary.main,
+    flexShrink: 0,
+    marginTop: '0.15em',
+  },
+  [theme.breakpoints.down('sm')]: {
+    fontSize: '1.1rem',
   }
 }));
 
@@ -84,29 +122,105 @@ function normalizeBullets(bullets: any): string {
 
 const TitleBulletsLayout: React.FC<TitleBulletsLayoutProps> = ({ slide, index, onChange, onImageUpload, onImageGenerate }) => {
   const image = slide.content.image;
-  // Parse bullets HTML to array for rendering
+  // Parse bullets to array for rendering
   let bulletsArr: string[] = [];
-  if (typeof slide.content.bullets === 'string') {
-    bulletsArr = slide.content.bullets
-      .replace(/<ul>|<\/ul>/g, '')
+  
+  // Debug log to see the slide content
+  console.log('TitleBulletsLayout - slide content:', JSON.stringify(slide.content, null, 2));
+  
+  // Helper function to extract text from HTML
+  const extractTextFromHtml = (html: string): string => {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    return div.textContent || div.innerText || '';
+  };
+
+  // Type definitions for bullet items
+  type BulletItem = string | { text: string };
+  
+  // Type guard for bullet items
+  const isBulletItem = (item: unknown): item is BulletItem => {
+    return typeof item === 'string' || 
+           (!!item && typeof item === 'object' && 'text' in item && typeof (item as {text: unknown}).text === 'string');
+  };
+
+  // Helper to get text from a bullet item
+  const getBulletText = (item: BulletItem): string => {
+    return typeof item === 'string' ? item : item.text;
+  };
+
+  // Try to get bullets from different possible locations
+  const bulletsContent = slide.content.bullets || slide.content.key_points || [];
+  
+  if (Array.isArray(bulletsContent)) {
+    // Process array of bullet items
+    const validBullets = bulletsContent.filter(isBulletItem);
+    
+    bulletsArr = validBullets
+      .map(item => {
+        const text = getBulletText(item);
+        // If it's a string that looks like HTML, extract the text
+        if (typeof text === 'string' && text.trim().startsWith('<')) {
+          return extractTextFromHtml(text).trim();
+        }
+        return text.trim();
+      })
+      .filter(Boolean) as string[];
+  } else if (typeof bulletsContent === 'string') {
+    // If it's a string, try to parse it as HTML list
+    bulletsArr = bulletsContent
+      .replace(/<ul>|<\/ul>|<ol>|<\/ol>/g, '')
       .split(/<li>|<\/li>/)
       .map(b => b.trim())
-      .filter(Boolean);
+      .filter(Boolean)
+      .map(extractTextFromHtml);
+  }
+  
+  // If we still don't have bullets, try to extract from the body
+  if (bulletsArr.length === 0 && slide.content.body) {
+    const bodyText = typeof slide.content.body === 'string' ? slide.content.body : '';
+    // Try different bullet point formats
+    const bulletMatches = [
+      ...(bodyText.match(/•([^•\n]+)/g) || []),  // • bullet points
+      ...(bodyText.match(/\n\s*[-*]\s*([^\n]+)/g) || []),  // - or * bullet points
+      ...(bodyText.match(/\d+\.\s*([^\n]+)/g) || [])  // 1. numbered lists
+    ];
+    
+    if (bulletMatches.length > 0) {
+      bulletsArr = bulletMatches
+        .map(b => b.replace(/^[•\-*]|^\d+\./, '').trim())
+        .filter(Boolean);
+    } else {
+      // If no bullet points found, split the body into paragraphs
+      bulletsArr = bodyText
+        .split('\n\n')
+        .map(p => p.trim())
+        .filter(Boolean);
+    }
+  }
+  
+  // Ensure we have at least one bullet point with a default message if needed
+  if (bulletsArr.length === 0) {
+    bulletsArr = ['No content available'];
   }
 
   return (
     <BaseLayout>
       <ContentContainer>
-        {slide.content.title && (
-          <TitleContainer>{slide.content.title.replace(/<[^>]+>/g, '')}</TitleContainer>
-        )}
-        {bulletsArr.length > 0 && (
-          <BulletList>
-            {bulletsArr.map((bullet, idx) => (
-              <BulletPoint key={idx}>{bullet}</BulletPoint>
-            ))}
-          </BulletList>
-        )}
+        <div>
+          {slide.content.title && (
+            <TitleContainer>{slide.content.title.replace(/<[^>]+>/g, '')}</TitleContainer>
+          )}
+        </div>
+        <div>
+          {bulletsArr.length > 0 && (
+            <BulletList>
+              {bulletsArr.map((bullet, idx) => (
+                <BulletPoint key={idx}>{bullet}</BulletPoint>
+              ))}
+            </BulletList>
+          )}
+        </div>
         {image && image.url && (
           <Rnd
             bounds="parent"

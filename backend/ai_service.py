@@ -20,7 +20,7 @@ from google.oauth2 import service_account
 from google.api_core import retry, exceptions
 from fastapi import FastAPI, HTTPException
 import httpx
-from .models import (
+from models import (
     InstructionalLevel,
     SlideContent,
     SlideTopic,
@@ -31,15 +31,16 @@ from .models import (
     SlideContentNew,
     SlideLayout
 )
-from .rate_limiter import RateLimiter
-from .exceptions import (
+from rate_limiter import RateLimiter
+from exceptions import (
     ImageGenerationError,
+    ImageGenerationErrorType,
     ImageServiceProvider,
     ErrorType,
     ContentSafetyError
 )
 from dotenv import load_dotenv
-from .utils.export_utils import create_presentation
+from utils.export_utils import create_presentation
 
 # Load environment variables from .env file
 load_dotenv()
@@ -254,100 +255,93 @@ class AIService:
                 ]
             )
 
-    async def generate_slide_content(self, topic: SlideTopic, instructional_level: InstructionalLevel, layout: str) -> SlideContentNew:
+    async def generate_slide_content(self, topic: SlideTopic, level: InstructionalLevel, layout: str) -> SlideContentNew:
         """Generate content for a slide based on topic, level, and layout."""
         try:
-            # Layout-specific prompts based on our layout system
-            layout_prompts = {
-                'title': "Create a title slide with an engaging title.",
-                'title-image': "Create a title slide with a subtitle and an image that captures the main concept.",
-                'title-body': "Create a slide with a title and detailed paragraph text.",
-                'title-body-image': "Create a slide with a title, detailed paragraph text, and a relevant image.",
-                'title-bullets': "Create a slide with a title and key points as bullet points.",
-                'title-bullets-image': "Create a slide with a title, bullet points, and a supporting image.",
-                'two-column': "Create a slide with a title and content split into two columns.",
-                'two-column-image': "Create a slide with a title, two columns of content, and an image.",
-                'title-only': "Create a title slide with only a title. Do not include a subtitle, body, or bullet points."
-            }
-
-            # Validate layout
-            if layout not in layout_prompts:
-                logger.error(f"Invalid layout requested: {layout}")
-                raise ValueError(f"Unsupported layout: {layout}")
-
-            # Build the prompt based on layout
-            system_prompt = """You are an expert presentation content creator.\nReturn content in JSON format with this structure:\n{\n    \"title\": \"Slide Title\",\n    \"subtitle\": \"Optional subtitle\",\n    \"body\": \"Main content if layout requires body text\",\n    \"bullet_points\": [\"Point 1\", \"Point 2\", \"Point 3\"],\n    \"column_left\": \"Left column content if two-column layout\",\n    \"column_right\": \"Right column content if two-column layout\"\n}\n"""
+            # System prompt for the AI
+            system_prompt = """You are an expert presentation content creator.\nReturn content in JSON format with this structure:\n{\n    \"title\": \"Slide Title\",\n    \"subtitle\": \"Optional subtitle\",\n    \"body\": \"Main content if layout requires body text\",\n    \"key_points\": [\"Point 1\", \"Point 2\", \"Point 3\"],\n    \"column_left\": \"Left column content if two-column layout\",\n    \"column_right\": \"Right column content if two-column layout\"\n}\n"""
 
             user_prompt = f"""
             Generate content for a {layout} slide about {topic.title}.
-            The content should be suitable for {instructional_level} level.
-            {layout_prompts[layout]}
+            Target audience: {level.value}
+            Key points to cover: {', '.join(topic.key_points) if hasattr(topic, 'key_points') and topic.key_points else 'Not specified'}
             
-            Key points to cover:
-            {', '.join(topic.key_points)}
-            
-            Additional context:
-            {topic.description or 'No additional context provided.'}
+            Return the content in the specified JSON format.
             """
 
-            logger.info(f"Generating slide content for topic: {topic.title}")
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ]
 
-            # Generate slide content using OpenAI
-            completion = await self.client.chat.completions.create(
-                model="gpt-4-turbo-preview",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
+            # Generate slide content
+            response = await self._make_openai_request(
+                "chat",
+                self.client.chat.completions.create,
+                model="gpt-4",
+                messages=messages,
                 temperature=0.7,
-                max_tokens=500,
-                response_format={ "type": "json_object" }
+                max_tokens=1000
             )
 
             # Parse the response
-            try:
-                content = json.loads(completion.choices[0].message.content)
-                logger.debug(f"Received content: {json.dumps(content, indent=2)}")
-            except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse OpenAI response: {str(e)}")
-                logger.error(f"Raw response: {completion.choices[0].message.content}")
-                raise ValueError("Failed to parse slide content response")
-
-            # Generate image if layout requires it
-            image_url = None
+            content = response.choices[0].message.content
+            content = content.strip()
+            
+            # Clean up the response (remove markdown code blocks if present)
+            if content.startswith("```json"):
+                content = content[7:]
+            if content.endswith("```"):
+                content = content[:-3]
+            content = content.strip()
+            
+            # Parse the JSON response
+            content_data = json.loads(content)
+            
+            # Generate an image if needed
+            image_path = None
             image_caption = None
-            if '-image' in layout:
+            
+            if layout in ["title-image", "title-body-image", "title-bullets-image"]:
                 try:
-                    image_result = await self.generate_image(topic.image_prompt)
-                    image_url = image_result.get('url')
-                    image_caption = topic.image_prompt
-                except ImageGenerationError as e:
-                    # Log the error but continue - image is optional
-                    logger.error(f"Image generation failed: {str(e)}")
-
-            # Map key_points to bullet_points (for layouts that use bullets)
-            bullet_points = None
+                    # Use the generate_image method which handles the actual image generation
+                    image_data = await self.generate_image(
+                        prompt=topic.title,
+                        context={"topic": topic.title, "level": level.value}
+                    )
+                    if image_data and 'data' in image_data and 'image_url' in image_data['data']:
+                        image_path = image_data['data']['image_url']
+                        image_caption = f"Image of {topic.title}"
+                except Exception as e:
+                    logger.error(f"Error generating image: {str(e)}")
+                    # Continue without an image if generation fails
+                    image_path = None
+                    image_caption = None
+            
+            # Prepare key_points for the layout
+            key_points = None
             if hasattr(topic, 'key_points') and topic.key_points:
-                bullet_points = [{"text": point} for point in topic.key_points]
+                key_points = [point if isinstance(point, str) else str(point) for point in topic.key_points]
 
             slide_content = SlideContentNew(
-                title=content["title"],
-                subtitle=content.get("subtitle"),
-                body=content.get("body"),
-                bullet_points=bullet_points,
-                image_url=image_url,
+                title=content_data.get("title", ""),
+                subtitle=content_data.get("subtitle"),
+                body=content_data.get("body"),
+                key_points=key_points or content_data.get("key_points", []),
+                image_url=image_path,
                 image_caption=image_caption,
                 layout=layout,
-                column_left=content.get('column_left') if 'two-column' in layout else None,
-                column_right=content.get('column_right') if 'two-column' in layout else None
+                notes=content_data.get("notes", ""),
+                column_left=content_data.get("column_left"),
+                column_right=content_data.get("column_right")
             )
-
+            
             return slide_content
-
+            
         except Exception as e:
-            logger.error(f"Error in generate_slide_content: {str(e)}")
+            logger.error(f"Error generating slide content: {str(e)}")
             logger.error(traceback.format_exc())
-            raise
+            raise ValueError(f"Failed to generate slide content: {str(e)}")
 
     async def generate_outline(self, context: str, num_slides: int, level: InstructionalLevel, sensitive: bool = False) -> dict:
         """Generate a presentation outline based on context and parameters."""
@@ -740,7 +734,7 @@ class AIService:
                         Required JSON structure:
                         {
                             "title": "string (3-7 words)",
-                            "bullet_points": ["string", "string", ...],
+                            "key_points": ["string", "string", ...],
                             "examples": ["string", "string", ...],
                             "discussion_questions": ["string", "string", ...]
                         }
@@ -756,7 +750,7 @@ class AIService:
                     {
                         "role": "user",
                         "content": json.dumps({
-                            "topic": topic.dict(),
+                            "topic": topic.model_dump(),
                             "level": level.value,
                             "instructions": "Generate educational slide content following the exact JSON structure specified."
                         }, indent=2)
@@ -769,27 +763,36 @@ class AIService:
             response_text = completion.choices[0].message.content
             content_data = await self._validate_json_response(response_text)
             
-            # Generate an image for the slide
-            try:
-                image_path, image_caption = await self._generate_image_url(topic.title, level)
-            except ImageGenerationError as e:
-                # Re-raise ImageGenerationError to be handled by the endpoint
-                raise
-            except Exception as e:
-                # Convert other errors to ImageGenerationError
-                raise ImageGenerationError(
-                    message=f"Failed to generate image: {str(e)}",
-                    error_type=ImageGenerationErrorType.API_ERROR,
-                    service=ImageServiceProvider.IMAGEN
-                )
+            # Generate an image for the slide if layout requires it
+            image_url = None
+            image_caption = None
             
-            # Create the slide content
+            if layout in ["title-image", "title-body-image", "title-bullets-image"]:
+                try:
+                    # Use the generate_image method which handles the actual image generation
+                    image_data = await self.generate_image(
+                        prompt=topic.title,
+                        context={"topic": topic.title, "level": level.value}
+                    )
+                    if image_data and 'data' in image_data and 'image_url' in image_data['data']:
+                        image_url = image_data['data']['image_url']
+                        image_caption = f"Image of {topic.title}"
+                except Exception as e:
+                    logger.error(f"Error generating image: {str(e)}")
+                    # Continue without an image if generation fails
+                    image_url = None
+                    image_caption = None
+            
+            # Format key points as a list of strings if they're not already
+            key_points = content_data.get("key_points", content_data.get("bullet_points", []))
+            if key_points and isinstance(key_points[0], dict):
+                key_points = [point.get("text", str(point)) for point in key_points]
+            
+            # Create the slide content with only the fields that SlideContentNew expects
             return SlideContentNew(
                 title=content_data["title"],
-                bullet_points=[BulletPoint(text=point) for point in content_data["bullet_points"]],
-                examples=[Example(text=example) for example in content_data["examples"]],
-                discussion_questions=content_data["discussion_questions"],
-                image_url=str(image_path),
+                key_points=key_points,
+                image_url=image_url,
                 image_caption=image_caption,
                 layout=layout
             )
@@ -846,7 +849,7 @@ class AIService:
             for slide in presentation.slides:
                 slide_data = {
                     "title": slide.title,
-                    "bullet_points": [{"text": point.text} for point in slide.bullet_points],
+                    "key_points": [point.text if hasattr(point, 'text') else str(point) for point in slide.key_points],
                     "examples": [{"text": ex.text} for ex in slide.examples],
                     "discussion_questions": slide.discussion_questions,
                     "image_url": slide.image_url

@@ -192,10 +192,20 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
           onSave={(value: string) => {
             if (slides && editingTopic) {
               const oldSlide = slides[editingTopic.index];
+              // Handle both string and string[] types for bullets
+              const bullets = oldSlide.content?.bullets;
+              let keyPoints: string[] = [];
+              
+              if (Array.isArray(bullets)) {
+                keyPoints = bullets;
+              } else if (typeof bullets === 'string') {
+                keyPoints = bullets.split('\n').filter(Boolean);
+              }
+              
               const updatedTopic = {
                 id: oldSlide.id,
                 title: value,
-                bullet_points: oldSlide.content?.bullets ? oldSlide.content.bullets.split('\n') : [],
+                key_points: keyPoints,
                 description: oldSlide.content?.body || '',
               };
               handleSaveTopic(updatedTopic, undefined);
@@ -263,7 +273,7 @@ const OutlineEditor: React.FC<OutlineEditorProps> = ({ onOutlineGenerated }) => 
         topic={{
           id: 'preview-topic',
           title: topic || 'Untitled',
-          bullet_points: [],
+          key_points: [],
           image_prompt: topic ? `Generate an educational image for ${topic}` : undefined,
         }}
       />

@@ -52,7 +52,7 @@ export function backendSlideToFrontend(raw: any): Slide {
       title: raw.title,
       subtitle: raw.subtitle,
       body: raw.body || '',
-      bullets: Array.isArray(raw.bullets) ? raw.bullets : (Array.isArray(raw.bullet_points) ? raw.bullet_points : []),
+      bullets: Array.isArray(raw.bullets) ? raw.bullets : (Array.isArray(raw.key_points) ? raw.key_points : []),
       image: raw.image_url
         ? {
             url: raw.image_url,

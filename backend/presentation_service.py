@@ -74,15 +74,15 @@ class PresentationService:
                 title = slide.shapes.title
                 title.text = slide_content.title
                 
-                # Add bullet points
+                # Add key points
                 content = slide.placeholders[1]
                 tf = content.text_frame
                 tf.clear()  # Clear any default text
                 
-                # Add bullet points
-                for point in slide_content.bullet_points:
+                # Add key points
+                for point in slide_content.key_points:
                     p = tf.add_paragraph()
-                    p.text = point.text
+                    p.text = point if isinstance(point, str) else point.get("text", "")
                     p.level = 0
                 
                 # Add examples section if present
