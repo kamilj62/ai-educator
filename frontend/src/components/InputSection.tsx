@@ -23,7 +23,7 @@ import { InstructionalLevel } from './types';
 import ErrorDisplay from './ErrorDisplay';
 
 const InputSection: React.FC = () => {
-  const dispatch = useAppDispatch() as AppDispatch;
+  const dispatch = useAppDispatch();
   const loading = useAppSelector(selectLoading);
   const error = useAppSelector(selectError);
   const outline = useAppSelector(selectOutline) as SlideTopic[];
@@ -60,7 +60,7 @@ const InputSection: React.FC = () => {
       });
       
       // First generate the outline
-      const result = await dispatch(generateOutline({
+      const result = await dispatch<any>(generateOutline({
         topic: contextInput.trim(),
         numSlides: Number(numSlidesInput),
         instructionalLevel: instructionalLevelInput,
