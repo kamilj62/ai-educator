@@ -605,12 +605,20 @@ async def generate_slides(request: Dict[str, Any] = Body(...)):
     """Generate presentation slides from an outline."""
     try:
         # Log the incoming request for debugging
-        logger.info("Received slide request")
-        logger.debug("Request data: %s", request)
+        logger.info("=== NEW SLIDE GENERATION REQUEST ===")
+        logger.info("Request data type: %s", type(request))
+        logger.info("Request data: %s", request)
+        
+        # Log the structure of the request
+        logger.info("Request keys: %s", list(request.keys()))
+        if 'topics' in request and request['topics']:
+            logger.info("Number of topics: %d", len(request['topics']))
+            if request['topics']:
+                logger.info("First topic keys: %s", list(request['topics'][0].keys()))
         
         # Log the raw request body for debugging
         from fastapi.encoders import jsonable_encoder
-        logger.info("Raw request body: %s", jsonable_encoder(request))
+        logger.info("JSON-encoded request: %s", jsonable_encoder(request))
         
         # Parse and validate the request
         try:
@@ -621,19 +629,26 @@ async def generate_slides(request: Dict[str, Any] = Body(...)):
             request_data = GenerateSlidesRequest(**request)
             logger.debug("Request validation successful")
         except ValidationError as e:
-            error_msg = f"Validation error: {str(e)}"
-            logger.error(error_msg)
-            logger.error("Validation errors: %s", e.errors())
-            logger.error("Request data that caused validation error: %s", request)
+            logger.error("=== VALIDATION ERROR ===")
+            logger.error("Error: %s", str(e))
+            logger.error("Validation errors:")
             
-            # Extract specific validation errors
+            # Extract and log detailed error information
             error_details = []
             for error in e.errors():
-                loc = ".".join(str(loc) for loc in error['loc'])
+                loc = ".".join(str(loc) for loc in error.get('loc', []))
+                error_type = error.get('type', 'unknown')
+                error_msg = error.get('msg', 'No message')
+                
+                logger.error("- Field '%s': %s (type: %s)", loc, error_msg, error_type)
+                logger.error("  Context: %s", error.get('ctx', 'No context'))
+                
+                # Add error to response
                 error_details.append({
                     "field": loc,
-                    "msg": error['msg'],
-                    "type": error['type']
+                    "message": error_msg,
+                    "type": error_type,
+                    "context": error.get('ctx', {})
                 })
                 
             raise HTTPException(
