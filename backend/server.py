@@ -159,6 +159,9 @@ class LayoutSwitch(BaseModel):
     to_layout: str = Field(..., description="Name of the layout to switch to")
     content: Dict[str, Any] = Field(..., description="Content to switch")
 
+# Create a forward reference for the recursive type
+SlideTopicRef = ForwardRef('SlideTopic')
+
 class SlideTopic(BaseModel):
     """Model for a slide topic."""
     id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique identifier for the topic")
@@ -166,7 +169,12 @@ class SlideTopic(BaseModel):
     key_points: List[str] = Field(..., description="List of key points")
     image_prompt: Optional[str] = Field(None, description="Optional prompt for generating an image")
     description: Optional[str] = Field(None, description="Optional detailed description")
-    subtopics: Optional[List['SlideTopic']] = Field(default_factory=list, description="Optional list of subtopics")
+    subtopics: List[SlideTopicRef] = Field(default_factory=list, description="Optional list of subtopics")
+    
+    class Config:
+        json_encoders = {
+            'SlideTopic': lambda v: v.dict()
+        }
 
 class OutlineRequest(BaseModel):
     """Request model for outline generation."""
@@ -842,6 +850,9 @@ async def generate_image(request: dict):
                 "message": f"Error generating image: {str(e)}"
             }
         )
+# Update forward references
+SlideTopic.update_forward_refs()
+
 if __name__ == "__main__":
     import uvicorn
     print("Starting server on port 8000...")
