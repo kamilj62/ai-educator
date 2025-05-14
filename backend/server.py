@@ -649,12 +649,21 @@ async def generate_slides(
         
         # Parse the request body with more flexible validation
         try:
-            # Ensure we have required fields with defaults
-            if 'topics' not in body or not body['topics']:
-                raise ValueError("No topics provided in the request")
+            # Log the received body for debugging
+            logger.info(f"Received request body: {json.dumps(body, indent=2)}")
+            
+            # Check if we have a 'topics' key or if the body itself is an array of topics
+            if 'topics' in body:
+                topics = body['topics']
+                instructional_level = body.get('instructional_level', 'middle_school')
+                layout = body.get('layout', 'title-bullets')
+            else:
+                # If no 'topics' key, assume the body is the topics array
+                topics = body if isinstance(body, list) else [body]
+                instructional_level = 'middle_school'  # Default value
+                layout = 'title-bullets'  # Default value
                 
             # Ensure topics is a list
-            topics = body.get('topics', [])
             if not isinstance(topics, list):
                 topics = [topics]
                 
@@ -666,12 +675,13 @@ async def generate_slides(
                     continue
                     
                 # Ensure required fields exist with defaults
+                topic_title = topic.get('title', f'Topic {i}')
                 processed_topic = {
                     'id': topic.get('id', f'topic-{i}'),
-                    'title': topic.get('title', f'Topic {i}'),
+                    'title': topic_title,
                     'key_points': topic.get('key_points', [f'Key point {i}']),
-                    'description': topic.get('description', f'Description for {topic.get("title", f"Topic {i}")}'),
-                    'image_prompt': topic.get('image_prompt', f'Image for {topic.get("title", f"Topic {i}")}'),
+                    'description': topic.get('description', f'Description for {topic_title}'),
+                    'image_prompt': topic.get('image_prompt', f'Image for {topic_title}'),
                     'subtopics': topic.get('subtopics', [])
                 }
                 processed_topics.append(processed_topic)
@@ -679,13 +689,11 @@ async def generate_slides(
             if not processed_topics:
                 raise ValueError("No valid topics found in the request")
                 
-            # Get instructional level with default
-            instructional_level = body.get('instructional_level', 'middle_school')
+            # Validate instructional level
             if instructional_level not in ['elementary', 'middle_school', 'high_school', 'university', 'professional']:
                 instructional_level = 'middle_school'  # Default to middle_school if invalid
                 
-            # Get layout with default
-            layout = body.get('layout', 'title-bullets')
+            # Validate layout
             if layout not in ['title-only', 'title-image', 'title-body', 'title-body-image', 'title-bullets', 'title-bullets-image', 'two-column', 'two-column-image']:
                 layout = 'title-bullets'  # Default to title-bullets if invalid
                 
