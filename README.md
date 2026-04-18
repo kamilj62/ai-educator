@@ -2,6 +2,8 @@
 
 An AI-powered tool that generates complete educational presentations from a topic and difficulty level. Enter any subject, select an instructional level, and the app produces a full slide deck with AI-generated content and images — exported as a viewable presentation or downloadable PowerPoint file.
 
+🌐 **Live Demo:** [ai-educator-ten.vercel.app](https://ai-educator-ten.vercel.app)
+
 Deployed on Vercel (frontend) with a FastAPI backend.
 
 ---
